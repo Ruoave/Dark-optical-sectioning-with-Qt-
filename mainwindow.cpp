@@ -495,5 +495,5 @@ for (int c = 0; c < Nc; c++) {
     ui->textEdit->append("Processing time: " + QString::number(duration.count()) + " ms");
     ui->textEdit->append("Processed " + QString::number(Nz) + " frames");
 }
-
+//
 

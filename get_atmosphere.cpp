@@ -79,7 +79,6 @@ double get_atmosphere(Mat image, Mat dark_channel)
     }
     
     double atmosphere_value_result = accumulator / n_search_pixels;
-        cout << "atmosphere: " << atmosphere_value_result << endl;
 
     return atmosphere_value_result;
 }
