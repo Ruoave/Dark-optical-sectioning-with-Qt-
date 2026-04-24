@@ -2,6 +2,7 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+
 CONFIG += c++11
 
 # The following define makes your compiler emit warnings if you use
@@ -17,18 +18,51 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     main.cpp \
-    mainwindow.cpp
-
+    mainwindow.cpp \
+    Lp_denoise.cpp \
+    OTF_estimate.cpp \
+    PSF_Generator.cpp \
+    confirm_block.cpp \
+    dehaze.cpp \
+    dehaze_fast2.cpp \
+    get_atmosphere.cpp \
+    get_dark_channel.cpp \
+    get_laplacian.cpp \
+    get_radiance.cpp \
+    get_transmission_estimate.cpp \
+    guided_filter.cpp \
+    guidedfilter.cpp \
+    kmeans.cpp \
+    separateHiLo.cpp \
+    window_sum_filter.cpp \
+    port_matlab2opencv.cpp
+    ViewMat.cpp
 HEADERS += \
-    mainwindow.h
-
+    mainwindow.h \
+    params.h \
+    ViewMat.h \
+    port_matlab2opencv.h
 FORMS += \
     mainwindow.ui
-
-TRANSLATIONS += \
-    Dark_WidgetsMaterial_V1_0_0_zh_CN.ts
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+
+INCLUDEPATH += D:\Qt\opencv-4.10.0\opencvBuild\install\include
+INCLUDEPATH += D:/Qt/Tools/mingw730_64/x86_64-w64-mingw32/include
+
+# OpenCV library configuration - OpenCV 4.10.0
+LIBS += -LD:/Qt/opencv-4.10.0/opencvBuild/install/x64/mingw/lib \
+        -lopencv_core4100 \
+        -lopencv_imgproc4100 \
+        -lopencv_imgcodecs4100 \
+        -lopencv_highgui4100 \
+        -lopencv_videoio4100 \
+        -lopencv_calib3d4100 \
+        -lopencv_features2d4100 \
+        -lopencv_flann4100 \
+        -lopencv_photo4100
+
