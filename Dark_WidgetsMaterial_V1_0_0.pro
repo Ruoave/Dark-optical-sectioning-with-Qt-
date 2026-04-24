@@ -24,6 +24,7 @@ INCLUDEPATH += $$PWD/libs/Include
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
+    darkSectioning.cpp \
     Lp_denoise.cpp \
     OTF_estimate.cpp \
     PSF_Generator.cpp \
@@ -44,6 +45,7 @@ SOURCES += \
     port_matlab2opencv.cpp
 HEADERS += \
     mainwindow.h \
+    darkSectioning.h \
     params.h \
     ViewMat.h \
     port_matlab2opencv.h

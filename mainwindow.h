@@ -5,6 +5,7 @@
 
 #include "ui_mainwindow.h"
 #include "params.h"
+#include "darkSectioning.h"
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <chrono>
@@ -31,7 +32,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    void darkSectioning();
+    DarkSectioning *darkSectioning;
 };
 
 #endif // MAINWINDOW_H
