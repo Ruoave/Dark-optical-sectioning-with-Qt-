@@ -25,6 +25,7 @@
 #include <vector>
 #include <QFileDialog>
 #include <QString>
+#include <QStandardPaths>
 #include "qtmaterialautocomplete.h"
 
 using namespace cv;
@@ -57,6 +58,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
 }
 
 MainWindow::~MainWindow()
@@ -66,9 +68,9 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_pushButton_clicked()
 {
-    ui->textEdit->append("Starting Dark Sectioning...");
+    ui->textEdit->append("开始图像处理...");
     darkSectioning();
-    ui->textEdit->append("Dark Sectioning completed!");
+    ui->textEdit->append("图像处理完成!");
 }
 
 void MainWindow::on_pushButton_browse_clicked()
@@ -144,6 +146,15 @@ void MainWindow::darkSectioning()
     if (inputPathQt.isEmpty()) {
         ui->textEdit->append("Error: 请先选择输入图片路径");
         return;
+    }
+    
+    // 检查输出目录
+    QString outputPathQt = ui->lineEdit_outputPath->text();
+    if (outputPathQt.isEmpty()) {
+        // 设置默认输出目录为桌面
+        QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+        ui->lineEdit_outputPath->setText(desktopPath);
+        ui->textEdit->append("没有选择输出目录，图片将输出到桌面");
     }
 
     string inputPath = inputPathQt.toStdString();
@@ -455,7 +466,7 @@ for (int c = 0; c < Nc; c++) {
     }
 
     // 获取用户选择的输出目录
-    QString outputPathQt = ui->lineEdit_outputPath->text();
+    //QString outputPathQt = ui->lineEdit_outputPath->text();
     string outputPath = outputPathQt.isEmpty() ? "D:/QtWorkSpace/DarkQt_V_3_8_2/output" : outputPathQt.toStdString();
 
     // 确保路径以斜杠结尾
