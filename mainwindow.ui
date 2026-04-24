@@ -17,8 +17,14 @@
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QLabel" name="label">
+      <property name="styleSheet">
+       <string notr="true">QLabel {
+	font: 75 18pt &quot;微软雅黑&quot;;
+	color: rgb(85, 170, 255)
+}</string>
+      </property>
       <property name="text">
-       <string>Dark Sectioning</string>
+       <string>开始程序</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -86,6 +92,18 @@
      <height>26</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>菜单？</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menu_2">
+    <property name="title">
+     <string>菜单？？</string>
+    </property>
+   </widget>
+   <addaction name="menu"/>
+   <addaction name="menu_2"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
  </widget>

@@ -16,6 +16,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+#MATERIAL-SDK
+LIBS += $$PWD/libs/libcomponents.a
+INCLUDEPATH += $$PWD/libs/Include
+
+
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
@@ -35,8 +40,8 @@ SOURCES += \
     kmeans.cpp \
     separateHiLo.cpp \
     window_sum_filter.cpp \
+    ViewMat.cpp \
     port_matlab2opencv.cpp
-    ViewMat.cpp
 HEADERS += \
     mainwindow.h \
     params.h \
@@ -55,7 +60,7 @@ INCLUDEPATH += D:\Qt\opencv-4.10.0\opencvBuild\install\include
 INCLUDEPATH += D:/Qt/Tools/mingw730_64/x86_64-w64-mingw32/include
 
 # OpenCV library configuration - OpenCV 4.10.0
-LIBS += -LD:/Qt/opencv-4.10.0/opencvBuild/install/x64/mingw/lib \
+LIBS += -L D:/Qt/opencv-4.10.0/opencvBuild/install/x64/mingw/lib \
         -lopencv_core4100 \
         -lopencv_imgproc4100 \
         -lopencv_imgcodecs4100 \

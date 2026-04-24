@@ -25,6 +25,7 @@
 #include <vector>
 #include <QFileDialog>
 #include <QString>
+#include "qtmaterialautocomplete.h"
 
 using namespace cv;
 using namespace std;
