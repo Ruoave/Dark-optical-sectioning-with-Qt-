@@ -16,8 +16,10 @@
 #include <QStandardPaths>
 #include <QImage>
 #include <QPixmap>
+#include <QImageReader>
 #include <QLayout>
 #include <QApplication>
+#include <QTimer>
 
 using namespace cv;
 using namespace std;
@@ -805,40 +807,68 @@ void MainWindow::updateImageDisplay()
 }
 
 
-// ==================== 核心函数：从多帧TIFF文件中读取指定帧 ====================
-// 功能：读取TIFF文件的特定帧并转换为QImage
+// ==================== 窗口大小改变事件处理函数 ====================
+// 功能：当窗口大小改变时自动重新缩放图片以适应新的窗口尺寸
+// 参数：event - Qt resize事件对象
+void MainWindow::resizeEvent(QResizeEvent *event)
+{
+    // 调用父类的resizeEvent处理（确保正常的布局更新）
+    QMainWindow::resizeEvent(event);
+    
+    // 延迟调用图片更新，等待布局完成后再重新计算大小
+    // 使用单次定时器延迟50ms，确保QLabel的新尺寸已经计算完成
+    QTimer::singleShot(50, this, [this]() {
+        updateImageDisplay();
+    });
+}
+
+
+// ==================== 核心函数：从多帧TIFF文件中读取指定帧（Qt原生方式）====================
+// 功能：使用Qt原生QImageReader读取TIFF文件的特定帧
+//       直接返回QImage，无需OpenCV转换，显示效果与Windows照片查看器一致
 // 参数：filePath - TIFF文件路径，frameIndex - 帧索引（从0开始）
 // 返回：QImage对象（如果读取失败返回空QImage）
 QImage MainWindow::readTiffFrame(const QString& filePath, int frameIndex)
 {
-    // 使用OpenCV的imreadmulti读取所有帧（仅提取需要的帧）
-    std::vector<cv::Mat> frames;
-    std::string path = filePath.toStdString();
+    // 使用Qt的QImageReader直接读取图像文件（支持TIFF多帧）
+    QImageReader reader(filePath);
     
-    // 读取TIFF文件的所有帧
-    bool success = cv::imreadmulti(path, frames, cv::IMREAD_UNCHANGED);
-    
-    if (!success || frames.empty()) {
+    // 检查文件是否可以读取
+    if (!reader.canRead()) {
         ui->textEdit_log->append("错误: 无法读取文件 " + filePath);
-        return QImage();  // 返回空QImage
-    }
-    
-    // 边界检查：确保帧索引在有效范围内
-    if (frameIndex < 0 || frameIndex >= static_cast<int>(frames.size())) {
-        ui->textEdit_log->append(QString("错误: 帧索引 %1 超出范围 (总帧数: %2)")
-                                 .arg(frameIndex)
-                                 .arg(frames.size()));
         return QImage();
     }
     
-    // 获取指定帧的Mat数据
-    Mat frame = frames[frameIndex];
+    // 获取总帧数（用于边界检查）
+    int totalFrames = reader.imageCount();
     
-    // 应用标准色调映射（模拟Windows照片查看器的显示效果）
-    // 这一步确保显示效果与Windows双击打开文件看到的一致
-    QImage result = applyStandardToneMapping(frame);
+    if (totalFrames <= 0) {
+        // 单帧图像或无法确定帧数，直接读取第一帧
+        return reader.read();
+    }
     
-    return result;
+    // 边界检查：确保帧索引在有效范围内
+    if (frameIndex < 0 || frameIndex >= totalFrames) {
+        ui->textEdit_log->append(QString("错误: 帧索引 %1 超出范围 (总帧数: %2)")
+                                 .arg(frameIndex)
+                                 .arg(totalFrames));
+        return QImage();
+    }
+    
+    // 跳转到指定帧并读取
+    if (!reader.jumpToImage(frameIndex)) {
+        ui->textEdit_log->append(QString("错误: 无法跳转到帧 %1").arg(frameIndex));
+        return QImage();
+    }
+    
+    // 读取指定帧并返回（Qt自动处理颜色空间转换）
+    QImage image = reader.read();
+    
+    if (image.isNull()) {
+        ui->textEdit_log->append(QString("错误: 读取帧 %1 失败").arg(frameIndex));
+    }
+    
+    return image;
 }
 
 

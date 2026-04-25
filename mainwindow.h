@@ -67,6 +67,12 @@ private slots:
     // 信号源：ui->pushButton_syncFrames clicked信号
     // 功能：同步处理前后图片的显示帧数，按下后两边帧数同步改变
     void onSyncFramesClicked();
+    
+protected:
+    // Qt原生事件重载：窗口大小改变时自动调用
+    // 信号源：系统resizeEvent
+    // 功能：窗口缩放时自动重新计算图片大小并更新显示（无需手动点击"同步帧"）
+    void resizeEvent(QResizeEvent *event) override;
 
 private:
     Ui::MainWindow *ui;
