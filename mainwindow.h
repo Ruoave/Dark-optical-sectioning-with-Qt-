@@ -94,11 +94,13 @@ private:
     QtMaterialSlider *m_sliderProcessed;          // 处理后图片帧滑块
     QtMaterialRaisedButton *m_syncButton;         // 同步帧凸起按钮
     
-    // ==================== 图像数据显示 ====================
-    std::vector<cv::Mat> imageStack;              // 处理前图像栈（OpenCV Mat数据）
-    std::vector<cv::Mat> final_images;            // 处理后图像栈（OpenCV Mat数据）
+    // ==================== 图像文件路径（方案B：从文件读取显示）====================
+    QString m_inputFilePath;                      // 输入图片文件路径
+    QString m_outputFilePath;                     // 输出图片文件路径（处理后）
     int currentOriginalFrame;                     // 当前处理前图片帧索引
     int currentProcessedFrame;                    // 当前处理后图片帧索引
+    int totalOriginalFrames;                      // 处理前图片总帧数
+    int totalProcessedFrames;                     // 处理后图片总帧数
     bool isSyncMode;                              // 同步模式标志位
     
     // ==================== 辅助函数声明 ====================
@@ -115,11 +117,14 @@ private:
     // 绑定所有信号槽连接
     void connectSignalsAndSlots();
     
-    // 更新图像显示（从Mat数据转换为QImage显示在QLabel上）
+    // 更新图像显示（方案B：从文件路径直接读取显示）
     void updateImageDisplay();
     
-    // OpenCV Mat转QImage格式转换辅助函数
-    QImage matToQImage(const cv::Mat& mat);
+    // 从多帧TIFF文件中读取指定帧并转换为QImage（核心函数）
+    QImage readTiffFrame(const QString& filePath, int frameIndex);
+    
+    // 应用标准色调映射（模拟Windows照片查看器的显示效果）
+    QImage applyStandardToneMapping(const cv::Mat& mat);
     
     // 预加载图像预览辅助函数
     void preloadImagePreview(const QString& filePath);

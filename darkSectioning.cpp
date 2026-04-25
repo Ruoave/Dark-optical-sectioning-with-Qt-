@@ -336,7 +336,9 @@ void DarkSectioning::process()
     }
 
     // 后处理优化：动态范围归一化和最终结果输出
-    // 保存结果（多页TIFF）- 使用成员变量final_images供MainWindow访问
+    // 清空成员变量并保存结果到成员变量（供MainWindow访问）
+    this->final_images.clear();
+    
     for (int z = 0; z < Nz; z++) {
         if (Nc == 1) {
             // 单通道灰度图像

@@ -29,9 +29,13 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     darkSectioning(new DarkSectioning(ui)),
-    currentOriginalFrame(0),
-    currentProcessedFrame(0),
-    isSyncMode(false)
+    m_inputFilePath(""),                        // 初始化输入文件路径为空
+    m_outputFilePath(""),                       // 初始化输出文件路径为空
+    currentOriginalFrame(0),                    // 当前处理前图片帧索引=0
+    currentProcessedFrame(0),                   // 当前处理后图片帧索引=0
+    totalOriginalFrames(0),                     // 处理前总帧数=0
+    totalProcessedFrames(0),                    // 处理后总帧数=0
+    isSyncMode(false)                           // 同步模式默认关闭
 {
     // 第1步：调用Qt Designer生成的UI设置
     ui->setupUi(this);
@@ -422,30 +426,55 @@ void MainWindow::on_pushButton_run_clicked()
     // 强制刷新UI
     QApplication::processEvents();
     
+    // ========== 方案B：保存文件路径而非Mat数据 ==========
+    
+    // 第1步：获取并保存输入文件路径
+    m_inputFilePath = ui->lineEdit_inputPath->text();
+    if (m_inputFilePath.isEmpty()) {
+        ui->textEdit_log->append("错误: 请先选择输入图片路径");
+        m_runButton->setEnabled(true);
+        return;
+    }
+    
     // 更新进度条到10%
     m_progressBar->setValue(10);
     QApplication::processEvents();
     
-    // 调用原有的DarkSectioning处理函数（不修改任何业务逻辑）
+    // 第2步：调用原有的DarkSectioning处理函数（不修改任何业务逻辑）
     // darkSectioning->process() 内部会：
-    // 1. 读取imageStack到darkSectioning->imageStack成员变量
-    // 2. 执行处理算法，结果保存到darkSectioning->final_images成员变量
+    // 1. 读取输入文件并处理
+    // 2. 将结果保存到输出目录的Dark.tif文件
     // 3. 定期调用QApplication::processEvents()保持UI响应
     darkSectioning->process();
-    
-    // 处理完成后，从darkSectioning获取数据到MainWindow成员变量
-    imageStack = darkSectioning->imageStack;
-    final_images = darkSectioning->final_images;
     
     // 更新进度条到90%
     m_progressBar->setValue(90);
     QApplication::processEvents();
     
+    // 第3步：构建输出文件路径（方案B核心：从该路径读取显示）
+    QString outputDir = ui->lineEdit_outputPath->text();
+    if (outputDir.isEmpty()) {
+        outputDir = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    }
+    
+    // 确保路径以斜杠结尾
+    if (!outputDir.endsWith('/') && !outputDir.endsWith('\\')) {
+        outputDir += '/';
+    }
+    
+    m_outputFilePath = outputDir + "Dark.tif";  // 输出文件固定名为Dark.tif
+    
+    // 第4步：获取帧数信息（从darkSectioning的成员变量读取）
+    totalOriginalFrames = darkSectioning->imageStack.size();
+    totalProcessedFrames = darkSectioning->final_images.size();
+    
     // 在日志中记录完成信息
     ui->textEdit_log->append("图像处理完成!");
+    ui->textEdit_log->append(QString("输入文件: %1").arg(m_inputFilePath));
+    ui->textEdit_log->append(QString("输出文件: %1").arg(m_outputFilePath));
     ui->textEdit_log->append(QString("处理前帧数: %1, 处理后帧数: %2")
-                             .arg(imageStack.size())
-                             .arg(final_images.size()));
+                             .arg(totalOriginalFrames)
+                             .arg(totalProcessedFrames));
     
     // ---------- 处理完成后：更新界面状态 ----------
     
@@ -454,16 +483,16 @@ void MainWindow::on_pushButton_run_clicked()
     m_sliderOriginal->show();
     m_sliderProcessed->show();
     
-    // 如果imageStack有数据，更新处理前图片的滑块范围
-    if (!imageStack.empty()) {
-        m_sliderOriginal->setRange(0, imageStack.size() - 1);
+    // 更新处理前图片的滑块范围
+    if (totalOriginalFrames > 0) {
+        m_sliderOriginal->setRange(0, totalOriginalFrames - 1);
         m_sliderOriginal->setValue(0);
         currentOriginalFrame = 0;
     }
     
     // 更新处理后图片的滑块范围
-    if (!final_images.empty()) {
-        m_sliderProcessed->setRange(0, final_images.size() - 1);
+    if (totalProcessedFrames > 0) {
+        m_sliderProcessed->setRange(0, totalProcessedFrames - 1);
         m_sliderProcessed->setValue(0);
         currentProcessedFrame = 0;
     }
@@ -472,7 +501,7 @@ void MainWindow::on_pushButton_run_clicked()
     m_progressBar->setValue(100);
     QApplication::processEvents();
     
-    // 立即更新图像显示（在QLabel中嵌入显示，不是弹出窗口）
+    // 立即更新图像显示（方案B：从文件路径直接读取，效果与Windows一致）
     updateImageDisplay();
     
     // 恢复Run按钮
@@ -522,25 +551,31 @@ void MainWindow::on_pushButton_browse_clicked()
 }
 
 
-// ==================== 预加载图像预览 ====================
+// ==================== 预加载图像预览（方案B：仅获取帧数信息）====================
 // 功能：在选择文件后立即显示第一帧预览
 void MainWindow::preloadImagePreview(const QString& filePath)
 {
+    // 保存输入文件路径
+    m_inputFilePath = filePath;
+    
     std::string path = filePath.toStdString();
     
-    // 尝试读取多帧图像
+    // 尝试读取多帧图像以获取帧数信息
     std::vector<cv::Mat> tempStack;
     bool success = cv::imreadmulti(path, tempStack, cv::IMREAD_UNCHANGED);
     
     if (success && !tempStack.empty()) {
-        // 保存到成员变量
-        imageStack = tempStack;
+        // 保存总帧数（方案B：只保存帧数，不保存Mat数据）
+        totalOriginalFrames = tempStack.size();
         
         // 显示第一帧到左侧QLabel
         currentOriginalFrame = 0;
         updateImageDisplay();
         
-        ui->textEdit_log->append("已预加载 " + QString::number(imageStack.size()) + " 帧");
+        ui->textEdit_log->append("已预加载 " + QString::number(totalOriginalFrames) + " 帧");
+        
+        // 更新滑块范围
+        m_sliderOriginal->setRange(0, totalOriginalFrames - 1);
     }
 }
 
@@ -585,10 +620,10 @@ void MainWindow::on_pushButton_browseOutput_clicked()
 
 // ==================== 项目自定义槽函数：左侧上一帧 ====================
 // 信号源：m_prevLeftButton clicked信号
-// 功能：imageStack当前帧索引减1，显示前一张处理前图片
+// 功能：处理前图片当前帧索引减1，显示前一张图片
 void MainWindow::onPrevFrameLeft()
 {
-    // 边界检查：确保不超出图像栈范围
+    // 边界检查：确保不超出总帧数范围（方案B：使用totalOriginalFrames）
     if (currentOriginalFrame > 0) {
         currentOriginalFrame--;
         
@@ -608,11 +643,11 @@ void MainWindow::onPrevFrameLeft()
 
 // ==================== 项目自定义槽函数：左侧下一帧 ====================
 // 信号源：m_nextLeftButton clicked信号
-// 功能：imageStack当前帧索引加1，显示下一张处理前图片
+// 功能：处理前图片当前帧索引加1，显示下一张图片
 void MainWindow::onNextFrameLeft()
 {
-    // 边界检查：确保不超过图像栈大小
-    if (currentOriginalFrame < static_cast<int>(imageStack.size()) - 1) {
+    // 边界检查：确保不超过总帧数（方案B：使用totalOriginalFrames）
+    if (currentOriginalFrame < totalOriginalFrames - 1) {
         currentOriginalFrame++;
         
         // 更新滑块位置
@@ -631,10 +666,10 @@ void MainWindow::onNextFrameLeft()
 
 // ==================== 项目自定义槽函数：右侧上一帧 ====================
 // 信号源：m_prevRightButton clicked信号
-// 功能：final_images当前帧索引减1，显示前一张处理后图片
+// 功能：处理后图片当前帧索引减1，显示前一张图片
 void MainWindow::onPrevFrameRight()
 {
-    // 边界检查
+    // 边界检查（方案B：使用totalProcessedFrames）
     if (currentProcessedFrame > 0) {
         currentProcessedFrame--;
         
@@ -654,11 +689,11 @@ void MainWindow::onPrevFrameRight()
 
 // ==================== 项目自定义槽函数：右侧下一帧 ====================
 // 信号源：m_nextRightButton clicked信号
-// 功能：final_images当前帧索引加1，显示下一张处理后图片
+// 功能：处理后图片当前帧索引加1，显示下一张图片
 void MainWindow::onNextFrameRight()
 {
-    // 边界检查
-    if (currentProcessedFrame < static_cast<int>(final_images.size()) - 1) {
+    // 边界检查（方案B：使用totalProcessedFrames）
+    if (currentProcessedFrame < totalProcessedFrames - 1) {
         currentProcessedFrame++;
         
         // 更新滑块位置
@@ -714,113 +749,264 @@ void MainWindow::onSyncFramesClicked()
 }
 
 
-// ==================== 辅助函数：更新图像显示 ====================
+// ==================== 辅助函数：更新图像显示（方案B核心实现）====================
 // 功能：根据currentOriginalFrame和currentProcessedFrame，
-//       从imageStack和final_images中读取Mat数据并转换为QImage显示
+//       从文件路径直接读取图像并显示（效果与Windows照片查看器一致）
 void MainWindow::updateImageDisplay()
 {
-    // ---------- 显示处理前图片（左侧QLabel）----------
+    // ---------- 显示处理前图片（左侧QLabel）- 从输入文件读取 ----------
     
-    // 检查当前帧索引是否有效
-    if (currentOriginalFrame >= 0 && 
-        currentOriginalFrame < static_cast<int>(imageStack.size())) {
+    // 检查文件路径和帧索引是否有效
+    if (!m_inputFilePath.isEmpty() && 
+        currentOriginalFrame >= 0 && 
+        currentOriginalFrame < totalOriginalFrames) {
         
-        // 获取当前帧的Mat数据
-        Mat originalImg = imageStack[currentOriginalFrame];
+        // 方案B核心：从文件路径读取指定帧
+        QImage qOriginalImg = readTiffFrame(m_inputFilePath, currentOriginalFrame);
         
-        // 转换为QImage格式
-        QImage qOriginalImg = matToQImage(originalImg);
-        
-        // 缩放以适应QLabel大小，使用IgnoreAspectRatio让图片填满整个区域
-        QPixmap pixmapOriginal = QPixmap::fromImage(qOriginalImg);
-        QPixmap scaledOriginal = pixmapOriginal.scaled(
-            ui->label_originalImage->size(),
-            Qt::IgnoreAspectRatio,           // 忽略宽高比，填满整个区域
-            Qt::SmoothTransformation         // 平滑缩放
-        );
-        
-        // 显示在左侧QLabel上（嵌入橙色区，不是弹出窗口）
-        ui->label_originalImage->setPixmap(scaledOriginal);
+        if (!qOriginalImg.isNull()) {
+            // 缩放以适应QLabel大小，使用KeepAspectRatio保持原始比例（不变形）
+            QPixmap pixmapOriginal = QPixmap::fromImage(qOriginalImg);
+            QPixmap scaledOriginal = pixmapOriginal.scaled(
+                ui->label_originalImage->size(),
+                Qt::KeepAspectRatio,             // 保持宽高比，不拉伸变形
+                Qt::SmoothTransformation         // 平滑缩放
+            );
+            
+            // 显示在左侧QLabel上（嵌入橙色区，不是弹出窗口）
+            ui->label_originalImage->setPixmap(scaledOriginal);
+        }
     }
     
     
-    // ---------- 显示处理后图片（右侧QLabel）----------
+    // ---------- 显示处理后图片（右侧QLabel）- 从输出文件读取 ----------
     
-    // 检查当前帧索引是否有效
-    if (currentProcessedFrame >= 0 && 
-        currentProcessedFrame < static_cast<int>(final_images.size())) {
+    // 检查输出文件路径和帧索引是否有效
+    if (!m_outputFilePath.isEmpty() && 
+        currentProcessedFrame >= 0 && 
+        currentProcessedFrame < totalProcessedFrames) {
         
-        // 获取当前帧的Mat数据
-        Mat processedImg = final_images[currentProcessedFrame];
+        // 方案B核心：从输出文件路径读取指定帧
+        QImage qProcessedImg = readTiffFrame(m_outputFilePath, currentProcessedFrame);
         
-        // 转换为QImage格式
-        QImage qProcessedImg = matToQImage(processedImg);
-        
-        // 缩放以适应QLabel大小，使用IgnoreAspectRatio让图片填满整个区域
-        QPixmap pixmapProcessed = QPixmap::fromImage(qProcessedImg);
-        QPixmap scaledProcessed = pixmapProcessed.scaled(
-            ui->label_processedImage->size(),
-            Qt::IgnoreAspectRatio,           // 忽略宽高比，填满整个区域
-            Qt::SmoothTransformation         // 平滑缩放
-        );
-        
-        // 显示在右侧QLabel上（嵌入橙色区，不是弹出窗口）
-        ui->label_processedImage->setPixmap(scaledProcessed);
+        if (!qProcessedImg.isNull()) {
+            // 缩放以适应QLabel大小，使用KeepAspectRatio保持原始比例（不变形）
+            QPixmap pixmapProcessed = QPixmap::fromImage(qProcessedImg);
+            QPixmap scaledProcessed = pixmapProcessed.scaled(
+                ui->label_processedImage->size(),
+                Qt::KeepAspectRatio,             // 保持宽高比，不拉伸变形
+                Qt::SmoothTransformation         // 平滑缩放
+            );
+            
+            // 显示在右侧QLabel上（嵌入橙色区，不是弹出窗口）
+            ui->label_processedImage->setPixmap(scaledProcessed);
+        }
     }
 }
 
 
-// ==================== 辅助函数：OpenCV Mat转QImage ====================
-// 功能：将OpenCV的Mat数据转换为Qt的QImage格式
-// 支持灰度图、BGR彩色图、BGRA带Alpha通道图等多种格式
-QImage MainWindow::matToQImage(const cv::Mat& mat)
+// ==================== 核心函数：从多帧TIFF文件中读取指定帧 ====================
+// 功能：读取TIFF文件的特定帧并转换为QImage
+// 参数：filePath - TIFF文件路径，frameIndex - 帧索引（从0开始）
+// 返回：QImage对象（如果读取失败返回空QImage）
+QImage MainWindow::readTiffFrame(const QString& filePath, int frameIndex)
 {
-    // 根据Mat的通道数和类型进行转换
+    // 使用OpenCV的imreadmulti读取所有帧（仅提取需要的帧）
+    std::vector<cv::Mat> frames;
+    std::string path = filePath.toStdString();
     
-    switch (mat.type()) {
-        // ---------- 单通道灰度图 ----------
-        case CV_8UC1:
-        {
-            QImage image(mat.data, mat.cols, mat.rows, 
-                        static_cast<int>(mat.step), QImage::Format_Grayscale8);
-            return image.copy();  // 返回深拷贝，避免Mat释放后悬空指针
-        }
-        
-        // ---------- 三通道BGR彩色图（OpenCV默认格式）----------
-        case CV_8UC3:
-        {
-            // OpenCV使用BGR格式，Qt使用RGB格式，需要转换色彩空间
-            cv::Mat rgbMat;
-            cv::cvtColor(mat, rgbMat, cv::COLOR_BGR2RGB);
-            
-            QImage image(rgbMat.data, rgbMat.cols, rgbMat.rows,
-                        static_cast<int>(rgbMat.step), QImage::Format_RGB888);
-            return image.copy();
-        }
-        
-        // ---------- 四通道BGRA带Alpha通道图 ----------
-        case CV_8UC4:
-        {
-            // OpenCV使用BGRA格式，Qt使用RGBA格式，需要转换
-            cv::Mat rgbaMat;
-            cv::cvtColor(mat, rgbaMat, cv::COLOR_BGRA2RGBA);
-            
-            QImage image(rgbaMat.data, rgbaMat.cols, rgbaMat.rows,
-                        static_cast<int>(rgbaMat.step), QImage::Format_RGBA8888);
-            return image.copy();
-        }
-        
-        // ---------- 其他格式（如16位深度图等）----------
-        default:
-        {
-            // 对于不支持的格式，先转换为8位三通道再转换
-            cv::Mat convertedMat;
-            if (mat.channels() == 1) {
-                mat.convertTo(convertedMat, CV_8UC1);
-            } else {
-                mat.convertTo(convertedMat, CV_8UC3);
-            }
-            return matToQImage(convertedMat);  // 递归调用自身
-        }
+    // 读取TIFF文件的所有帧
+    bool success = cv::imreadmulti(path, frames, cv::IMREAD_UNCHANGED);
+    
+    if (!success || frames.empty()) {
+        ui->textEdit_log->append("错误: 无法读取文件 " + filePath);
+        return QImage();  // 返回空QImage
     }
+    
+    // 边界检查：确保帧索引在有效范围内
+    if (frameIndex < 0 || frameIndex >= static_cast<int>(frames.size())) {
+        ui->textEdit_log->append(QString("错误: 帧索引 %1 超出范围 (总帧数: %2)")
+                                 .arg(frameIndex)
+                                 .arg(frames.size()));
+        return QImage();
+    }
+    
+    // 获取指定帧的Mat数据
+    Mat frame = frames[frameIndex];
+    
+    // 应用标准色调映射（模拟Windows照片查看器的显示效果）
+    // 这一步确保显示效果与Windows双击打开文件看到的一致
+    QImage result = applyStandardToneMapping(frame);
+    
+    return result;
+}
+
+
+// ==================== 色调映射函数：模拟Windows照片查看器效果 ====================
+// 功能：将OpenCV Mat数据转换为QImage，应用标准色调映射算法
+//       确保显示效果与Windows照片查看器一致
+// 参数：mat - OpenCV Mat对象（支持CV_8U/CV_16U/CV_32F等格式）
+// 返回：QImage对象（RGB888格式）
+QImage MainWindow::applyStandardToneMapping(const cv::Mat& mat)
+{
+    // 检查Mat是否为空
+    if (mat.empty()) {
+        return QImage();
+    }
+    
+    cv::Mat displayMat;
+    
+    // ---------- 根据Mat类型进行不同的处理 ----------
+    
+    switch (mat.depth()) {
+        case CV_8U:
+            // 8位图像：直接使用，无需特殊处理
+            displayMat = mat.clone();
+            break;
+            
+        case CV_16U:
+        {
+            // 16位图像：使用百分位数裁剪 + 线性拉伸（模拟Windows照片查看器）
+            
+            double minVal, maxVal;
+            cv::minMaxLoc(mat, &minVal, &maxVal);
+            
+            if (maxVal <= minVal) {
+                // 常量图像或异常情况
+                mat.convertTo(displayMat, CV_8U);
+                break;
+            }
+            
+            // 计算直方图并找到1%和99%的百分位数（排除极端值）
+            int histSize = 65536;
+            float range[] = {0, 65536};
+            const float* histRange = {range};
+            cv::Mat hist;
+            cv::calcHist(&mat, 1, 0, cv::Mat(), hist, 1, &histSize, &histRange);
+            
+            // 找到1%和99%百分位数对应的像素值
+            int totalPixels = mat.rows * mat.cols;
+            int lowThreshold = static_cast<int>(totalPixels * 0.01);
+            int highThreshold = static_cast<int>(totalPixels * 0.99);
+            
+            int sum = 0;
+            int pLow = 0;   // 1%百分位
+            int pHigh = 65535;  // 99%百分位
+            
+            for (int i = 0; i < histSize; i++) {
+                sum += static_cast<int>(hist.at<float>(i));
+                if (sum < lowThreshold) pLow = i;
+                if (sum < highThreshold) pHigh = i;
+            }
+            
+            // 如果百分位范围太小，使用全局范围
+            if (pHigh - pLow < 256) {
+                pLow = static_cast<int>(minVal);
+                pHigh = static_cast<int>(maxVal);
+            }
+            
+            // 应用线性拉伸到0-255范围
+            double alpha = 255.0 / (pHigh - pLow);  // 缩放因子
+            double beta = -pLow * alpha;             // 偏移量
+            
+            mat.convertTo(displayMat, CV_8U, alpha, beta);
+            break;
+        }
+            
+        case CV_16S:
+        {
+            // 16位有符号图像：转为无符号后再处理
+            cv::Mat absMat = cv::abs(mat);
+            double minVal, maxVal;
+            cv::minMaxLoc(absMat, &minVal, &maxVal);
+            
+            if (maxVal > 255.0 && maxVal > minVal) {
+                absMat.convertTo(displayMat, CV_8U, 255.0 / maxVal);
+            } else {
+                absMat.convertTo(displayMat, CV_8U);
+            }
+            break;
+        }
+            
+        case CV_32F:
+        case CV_64F:
+        {
+            // 浮点图像：标准化到0-255范围
+            double minVal, maxVal;
+            cv::minMaxLoc(mat, &minVal, &maxVal);
+            double range = maxVal - minVal;
+            
+            if (range > 0) {
+                mat.convertTo(displayMat, CV_8U, 255.0 / range, -255.0 * minVal / range);
+            } else {
+                displayMat = cv::Mat(mat.size(), CV_8U, cv::Scalar(128));
+            }
+            break;
+        }
+            
+        default:
+            mat.convertTo(displayMat, CV_8U);
+            break;
+    }
+    
+    // ---------- 根据通道数转换颜色空间 ----------
+    
+    QImage result;
+    
+    switch (displayMat.channels()) {
+        case 1:
+        {
+            // 单通道灰度图：转换为RGB（灰度值的R=G=B）
+            cv::Mat rgbMat;
+            cv::cvtColor(displayMat, rgbMat, cv::COLOR_GRAY2RGB);
+            
+            result = QImage(rgbMat.data, rgbMat.cols, rgbMat.rows,
+                           static_cast<int>(rgbMat.step), QImage::Format_RGB888)
+                    .copy();  // 深拷贝，避免悬空指针
+            break;
+        }
+            
+        case 3:
+        {
+            // 三通道彩色图：BGR转RGB（OpenCV默认是BGR，Qt需要RGB）
+            cv::Mat rgbMat;
+            cv::cvtColor(displayMat, rgbMat, cv::COLOR_BGR2RGB);
+            
+            result = QImage(rgbMat.data, rgbMat.cols, rgbMat.rows,
+                           static_cast<int>(rgbMat.step), QImage::Format_RGB888)
+                    .copy();  // 深拷贝，避免悬空指针
+            break;
+        }
+            
+        case 4:
+        {
+            // 四通道带Alpha：BGRA转RGBA
+            cv::Mat rgbaMat;
+            cv::cvtColor(displayMat, rgbaMat, cv::COLOR_BGRA2RGBA);
+            
+            result = QImage(rgbaMat.data, rgbaMat.cols, rgbaMat.rows,
+                           static_cast<int>(rgbaMat.step), QImage::Format_RGBA8888)
+                    .copy();  // 深拷贝，避免悬空指针
+            break;
+        }
+            
+        default:
+            // 其他通道数，尝试用灰度方式处理
+            cv::Mat grayMat;
+            if (displayMat.channels() > 1) {
+                cv::cvtColor(displayMat, grayMat, cv::COLOR_BGR2GRAY);
+            } else {
+                grayMat = displayMat;
+            }
+            
+            cv::Mat rgbMat;
+            cv::cvtColor(grayMat, rgbMat, cv::COLOR_GRAY2RGB);
+            
+            result = QImage(rgbMat.data, rgbMat.cols, rgbMat.rows,
+                           static_cast<int>(rgbMat.step), QImage::Format_RGB888)
+                    .copy();
+            break;
+    }
+    
+    return result;
 }
