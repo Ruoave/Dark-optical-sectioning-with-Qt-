@@ -39,7 +39,7 @@ void DarkSectioning::process()
 
     QString inputPathQt = ui->lineEdit_inputPath->text();
     if (inputPathQt.isEmpty()) {
-        ui->textEdit->append("Error: 请先选择输入图片路径");
+        ui->textEdit_log->append("Error: 请先选择输入图片路径");
         return;
     }
     
@@ -49,7 +49,7 @@ void DarkSectioning::process()
         // 设置默认输出目录为桌面
         QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
         ui->lineEdit_outputPath->setText(desktopPath);
-        ui->textEdit->append("没有选择输出目录，图片将输出到桌面");
+        ui->textEdit_log->append("没有选择输出目录，图片将输出到桌面");
     }
 
     std::string inputPath = inputPathQt.toStdString();
@@ -58,8 +58,8 @@ void DarkSectioning::process()
     // 检查图像读取结果
     if (!success || imageStack.empty()) {
         std::cout << "图片读取失败" << std::endl;
-        ui->textEdit->append("Error: Could not read input image stack");
-        ui->textEdit->append(QString::fromStdString("Please make sure the input file exists: " + inputPath));
+        ui->textEdit_log->append("Error: Could not read input image stack");
+        ui->textEdit_log->append(QString::fromStdString("Please make sure the input file exists: " + inputPath));
         return;
     } else {
         // 获取第一帧的通道数以判断彩色/灰度
@@ -77,14 +77,14 @@ void DarkSectioning::process()
     // 检查图像尺寸是否有效
     if (Nx0 <= 0 || Ny0 <= 0 || Nc <= 0) {
         std::cout << "图像尺寸无效" << std::endl;
-        ui->textEdit->append("Error: Invalid image dimensions");
+        ui->textEdit_log->append("Error: Invalid image dimensions");
         return;
     }
 
     int Nx = Nx0;
     int Ny = Ny0;
 
-    ui->textEdit->append("Loaded image stack: " + QString::number(Nx0) + "x" +
+    ui->textEdit_log->append("Loaded image stack: " + QString::number(Nx0) + "x" +
                          QString::number(Ny0) + "x" + QString::number(Nz) +
                          " (channels: " + QString::number(Nc) + ")");
 
@@ -369,9 +369,9 @@ void DarkSectioning::process()
         std::string savePath = outputPath + "Dark.tif";
         bool success = cv::imwritemulti(savePath, final_images);
         if (success) {
-            ui->textEdit->append("Successfully saved multi-frame TIFF");
+            ui->textEdit_log->append("Successfully saved multi-frame TIFF");
         } else {
-            ui->textEdit->append("Failed to save multi-frame TIFF, saving as individual files");
+            ui->textEdit_log->append("Failed to save multi-frame TIFF, saving as individual files");
             // 保存失败时的备用方案
             std::string savePathFirst = outputPath + "Dark.tif";
             cv::imwrite(savePathFirst, final_images[0]);
@@ -383,11 +383,11 @@ void DarkSectioning::process()
     }
 
     // 输出保存路径信息
-    ui->textEdit->append("Output directory: " + QString::fromStdString(outputPath));
+    ui->textEdit_log->append("Output directory: " + QString::fromStdString(outputPath));
 
     // 计时结束
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    ui->textEdit->append("Processing time: " + QString::number(duration.count()) + " ms");
-    ui->textEdit->append("Processed " + QString::number(Nz) + " frames");
+    ui->textEdit_log->append("Processing time: " + QString::number(duration.count()) + " ms");
+    ui->textEdit_log->append("Processed " + QString::number(Nz) + " frames");
 }

@@ -19,7 +19,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #MATERIAL-SDK
 LIBS += $$PWD/libs/libcomponents.a
 INCLUDEPATH += $$PWD/libs/Include
-
+PRE_TARGETDEPS += $$PWD/libs/libcomponents.a
 
 SOURCES += \
     main.cpp \
