@@ -56,6 +56,7 @@ void DarkSectioning::process()
         // 设置默认输出目录为桌面
         QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
         ui->lineEdit_outputPath->setText(desktopPath);
+        outputPathQt = desktopPath;  // 同时更新变量，避免后续使用空值
         ui->textEdit_log->append("没有选择输出目录，图片将输出到桌面");
     }
 
