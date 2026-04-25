@@ -159,6 +159,9 @@ void MainWindow::initMaterialComponents()
     
     // 创建同步帧按钮
     m_syncButton = new QtMaterialRaisedButton("同步帧");
+    // 设置同步帧按钮的大小策略，使其能够拉伸填充空间
+    m_syncButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_syncButton->setMinimumHeight(30);
 }
 
 
@@ -501,8 +504,7 @@ void MainWindow::on_pushButton_run_clicked()
     
     // ---------- 处理完成后：更新界面状态 ----------
     
-    // 隐藏进度条，显示滑块
-    m_progressBar->hide();
+    // 显示滑块，保持进度条显示
     m_sliderOriginal->show();
     m_sliderProcessed->show();
     
