@@ -1,6 +1,7 @@
 #include "darkSectioning.h"
 #include <QStandardPaths>
 #include <QApplication>  // 添加：用于保持UI响应
+#include <QFileInfo>     // 添加：用于文件路径操作
 
 // 外部函数声明
 void separateHiLo(cv::Mat image, Params params, double deg, double divide, cv::Mat& Hi, cv::Mat& Lo, cv::Mat& lp, cv::Mat& EL);
@@ -45,6 +46,9 @@ void DarkSectioning::process()
         ui->textEdit_log->append("Error: 请先选择输入图片路径");
         return;
     }
+    
+    // 提取输入文件名（不含路径）
+    QString image_name = QFileInfo(inputPathQt).fileName();
     
     // 检查输出目录
     QString outputPathQt = ui->lineEdit_outputPath->text();
@@ -371,25 +375,30 @@ void DarkSectioning::process()
         outputPath += '/';
     }
 
+    // 构建输出文件名：原始文件名 + _Darked.tif
+    QString baseName = QFileInfo(image_name).baseName();  // 去除扩展名的文件名
+    QString outputFileName = baseName + "_Darked.tif";
+    std::string outputFileNameStd = outputFileName.toStdString();
+    
     // 保存多页TIFF
     if (Nz == 1) {
         // 单帧图像，使用imwrite
-        std::string savePath = outputPath + "Dark.tif";
+        std::string savePath = outputPath + outputFileNameStd;
         cv::imwrite(savePath, final_images[0]);
         //暂时先默认存为tif，imwrite还可以存png，jpg文件，后面再加功能
     } else {
         // 多帧图像，使用imwritemulti，多帧只能存tif或tiff图像
-        std::string savePath = outputPath + "Dark.tif";
+        std::string savePath = outputPath + outputFileNameStd;
         bool success = cv::imwritemulti(savePath, final_images);
         if (success) {
             ui->textEdit_log->append("Successfully saved multi-frame TIFF");
         } else {
             ui->textEdit_log->append("Failed to save multi-frame TIFF, saving as individual files");
             // 保存失败时的备用方案
-            std::string savePathFirst = outputPath + "Dark.tif";
+            std::string savePathFirst = outputPath + outputFileNameStd;
             cv::imwrite(savePathFirst, final_images[0]);
             for (int z = 1; z < Nz; z++) {
-                std::string filename = outputPath + "Dark_" + std::to_string(z) + ".tif";
+                std::string filename = outputPath + baseName.toStdString() + "_Darked_" + std::to_string(z) + ".tif";
                 cv::imwrite(filename, final_images[z]);
             }
         }

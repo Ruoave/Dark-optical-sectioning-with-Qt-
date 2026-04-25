@@ -453,7 +453,7 @@ void MainWindow::on_pushButton_run_clicked()
     m_progressBar->setValue(90);
     QApplication::processEvents();
     
-    // 第3步：构建输出文件路径（方案B核心：从该路径读取显示）
+    // 第3步：设置输出文件路径（方案B：从文件路径读取显示）
     QString outputDir = ui->lineEdit_outputPath->text();
     if (outputDir.isEmpty()) {
         outputDir = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
@@ -464,7 +464,11 @@ void MainWindow::on_pushButton_run_clicked()
         outputDir += '/';
     }
     
-    m_outputFilePath = outputDir + "Dark.tif";  // 输出文件固定名为Dark.tif
+    // 构建输出文件名：原始文件名 + _Darked.tif
+    QFileInfo inputFileInfo(m_inputFilePath);
+    QString baseName = inputFileInfo.baseName();  // 去除扩展名的文件名
+    QString outputFileName = baseName + "_Darked.tif";
+    m_outputFilePath = outputDir + outputFileName;  // 输出文件名为：原始文件名_Darked.tif
     
     // 第4步：获取帧数信息（从darkSectioning的成员变量读取）
     totalOriginalFrames = darkSectioning->imageStack.size();
