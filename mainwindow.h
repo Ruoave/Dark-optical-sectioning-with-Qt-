@@ -120,6 +120,9 @@ private:
     
     // OpenCV Mat转QImage格式转换辅助函数
     QImage matToQImage(const cv::Mat& mat);
+    
+    // 预加载图像预览辅助函数
+    void preloadImagePreview(const QString& filePath);
 };
 
 #endif // MAINWINDOW_H

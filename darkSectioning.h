@@ -17,6 +17,10 @@ public:
     
     void process();
     
+    // 公共数据成员：供MainWindow访问处理前后的图像数据
+    std::vector<cv::Mat> imageStack;              // 处理前图像栈（OpenCV Mat数据）
+    std::vector<cv::Mat> final_images;            // 处理后图像栈（OpenCV Mat数据）
+    
 private:
     Ui::MainWindow *ui;
     

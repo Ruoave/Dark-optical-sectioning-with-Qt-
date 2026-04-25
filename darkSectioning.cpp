@@ -1,5 +1,6 @@
 #include "darkSectioning.h"
 #include <QStandardPaths>
+#include <QApplication>  // 添加：用于保持UI响应
 
 // 外部函数声明
 void separateHiLo(cv::Mat image, Params params, double deg, double divide, cv::Mat& Hi, cv::Mat& Lo, cv::Mat& lp, cv::Mat& EL);
@@ -34,9 +35,11 @@ void DarkSectioning::process()
     auto start = std::chrono::high_resolution_clock::now();
 
     // 预处理：多通道图像栈读取和处理
-    // 读取图像栈
-    std::vector<cv::Mat> imageStack;
-
+    // 清空之前的图像数据
+    imageStack.clear();
+    final_images.clear();
+    
+    // 读取图像栈（直接使用成员变量，供MainWindow访问）
     QString inputPathQt = ui->lineEdit_inputPath->text();
     if (inputPathQt.isEmpty()) {
         ui->textEdit_log->append("Error: 请先选择输入图片路径");
@@ -88,6 +91,9 @@ void DarkSectioning::process()
                          QString::number(Ny0) + "x" + QString::number(Nz) +
                          " (channels: " + QString::number(Nc) + ")");
 
+    // 保持UI响应：处理事件循环
+    QApplication::processEvents();
+
     // 数据类型转换和归一化（对每一帧和每一通道）- 通道独立归一化
     // 彩色图片分别对B、G、R通道取最小最大值，分别归一化
     std::vector<std::vector<cv::Mat>> imageStack_processed(Nc, std::vector<cv::Mat>(Nz));
@@ -119,6 +125,9 @@ void DarkSectioning::process()
             }
         }
     }
+
+    // 保持UI响应：归一化完成后刷新界面
+    QApplication::processEvents();
 
     // 维度校准（补0对齐）- 对每一帧和每一通道进行处理
     std::vector<std::vector<cv::Mat>> image0Stack = imageStack_processed;
@@ -253,6 +262,9 @@ void DarkSectioning::process()
                 result_stack[c][z] = result.clone();
                 Lo_process_stack[c][z] = Lo_process.clone();
                 Hi_stack[c][z] = Hi.clone();
+                
+                // 保持UI响应：每处理完一帧刷新一次界面
+                QApplication::processEvents();
             }
         }
 
@@ -324,8 +336,7 @@ void DarkSectioning::process()
     }
 
     // 后处理优化：动态范围归一化和最终结果输出
-    // 保存结果（多页TIFF）
-    std::vector<cv::Mat> final_images;
+    // 保存结果（多页TIFF）- 使用成员变量final_images供MainWindow访问
     for (int z = 0; z < Nz; z++) {
         if (Nc == 1) {
             // 单通道灰度图像

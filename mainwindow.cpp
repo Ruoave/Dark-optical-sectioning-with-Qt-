@@ -1,6 +1,6 @@
 // Dark Sectioning 主程序
-// https://github.com/sjtrny/Dark-Channel-Haze-Removal
 // 基于Material Design风格UI改造版本
+// 完整实现图像嵌入显示、Material组件集成、UI响应保持
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -17,6 +17,7 @@
 #include <QImage>
 #include <QPixmap>
 #include <QLayout>
+#include <QApplication>
 
 using namespace cv;
 using namespace std;
@@ -110,26 +111,36 @@ void MainWindow::initMaterialComponents()
     
     // ---------- 橙色区：双图显示区和控制条的Material组件 ----------
     
-    // 创建左侧区域箭头按钮（控制处理前图片帧）
-    m_prevLeftButton = new QtMaterialIconButton(QIcon(":/icons/arrow_left.png"));
-    m_nextLeftButton = new QtMaterialIconButton(QIcon(":/icons/arrow_right.png"));
+    // 创建左侧区域箭头按钮（控制处理前图片帧）- 使用空图标+文本方式
+    m_prevLeftButton = new QtMaterialIconButton(QIcon());
+    m_prevLeftButton->setText("◀");
+    m_prevLeftButton->setMinimumSize(40, 30);
+    
+    m_nextLeftButton = new QtMaterialIconButton(QIcon());
+    m_nextLeftButton->setText("▶");
+    m_nextLeftButton->setMinimumSize(40, 30);
     
     // 创建右侧区域箭头按钮（控制处理后图片帧）
-    m_prevRightButton = new QtMaterialIconButton(QIcon(":/icons/arrow_left.png"));
-    m_nextRightButton = new QtMaterialIconButton(QIcon(":/icons/arrow_right.png"));
+    m_prevRightButton = new QtMaterialIconButton(QIcon());
+    m_prevRightButton->setText("◀");
+    m_prevRightButton->setMinimumSize(40, 30);
+    
+    m_nextRightButton = new QtMaterialIconButton(QIcon());
+    m_nextRightButton->setText("▶");
+    m_nextRightButton->setMinimumSize(40, 30);
     
     // 创建处理进度条
     m_progressBar = new QtMaterialProgress();
     m_progressBar->setRange(0, 100);           // 设置进度条范围0-100
     m_progressBar->setValue(0);                 // 初始值为0
     
-    // 创建处理前图片帧滑块
+    // 创建处理前图片帧滑块（初始隐藏，处理完成后显示）
     m_sliderOriginal = new QtMaterialSlider();
     m_sliderOriginal->setRange(0, 0);          // 初始范围（无数据时为0-0）
     m_sliderOriginal->setValue(0);
     m_sliderOriginal->hide();                  // 处理完成前隐藏
     
-    // 创建处理后图片帧滑块
+    // 创建处理后图片帧滑块（初始隐藏，处理完成后显示）
     m_sliderProcessed = new QtMaterialSlider();
     m_sliderProcessed->setRange(0, 0);         // 初始范围（无数据时为0-0）
     m_sliderProcessed->setValue(0);
@@ -199,10 +210,11 @@ void MainWindow::setupMaterialWidgetsInLayout()
         ui->lineEdit_param10, ui->lineEdit_param11
     };
     
+    // 直接使用UI文件中的网格布局对象
+    QGridLayout *gridLayout = ui->gridLayout_params;
+    
     for (int i = 0; i < 11 && i < paramLineEdits.size() && i < m_paramTextFields.size(); i++) {
         QLineEdit *oldLineEdit = paramLineEdits[i];
-        QWidget *parentWidget = oldLineEdit->parentWidget();
-        QGridLayout *gridLayout = qobject_cast<QGridLayout*>(parentWidget ? parentWidget->layout() : nullptr);
         
         if (gridLayout) {
             int row, col, rowSpan, colSpan;
@@ -217,7 +229,7 @@ void MainWindow::setupMaterialWidgetsInLayout()
     
     // ---------- 橙色区：替换控制条中的箭头按钮和进度条 ----------
     
-    // 替换左侧箭头按钮
+    // 替换左侧箭头按钮（处理前图片切帧）
     QHBoxLayout *leftArrowsLayout = qobject_cast<QHBoxLayout*>(ui->horizontalLayout_leftArrows);
     if (leftArrowsLayout) {
         // 替换左箭头
@@ -237,7 +249,7 @@ void MainWindow::setupMaterialWidgetsInLayout()
         }
     }
     
-    // 替换右侧箭头按钮
+    // 替换右侧箭头按钮（处理后图片切帧）
     QHBoxLayout *rightArrowsLayout = qobject_cast<QHBoxLayout*>(ui->horizontalLayout_rightArrows);
     if (rightArrowsLayout) {
         // 替换左箭头
@@ -268,14 +280,13 @@ void MainWindow::setupMaterialWidgetsInLayout()
         }
     }
     
-    // 替换同步帧按钮
-    QVBoxLayout *rightLayout = qobject_cast<QVBoxLayout*>(ui->verticalLayout_right);
-    if (rightLayout) {
-        int syncIndex = rightLayout->indexOf(ui->pushButton_syncFrames);
+    // 替换同步帧按钮（在进度条左侧位置）
+    if (controlBarLayout) {
+        int syncIndex = controlBarLayout->indexOf(ui->pushButton_syncFrames);
         if (syncIndex >= 0) {
-            rightLayout->removeWidget(ui->pushButton_syncFrames);
+            controlBarLayout->removeWidget(ui->pushButton_syncFrames);
             ui->pushButton_syncFrames->deleteLater();
-            rightLayout->insertWidget(syncIndex, m_syncButton);
+            controlBarLayout->insertWidget(syncIndex, m_syncButton);
         }
     }
 }
@@ -367,7 +378,6 @@ void MainWindow::connectSignalsAndSlots()
     connect(m_sliderOriginal, &QtMaterialSlider::valueChanged, [this](int value) {
         currentOriginalFrame = value;
         if (isSyncMode) {
-            // 同步模式下，同时更新处理后图片的帧
             currentProcessedFrame = value;
             m_sliderProcessed->blockSignals(true);
             m_sliderProcessed->setValue(value);
@@ -380,7 +390,6 @@ void MainWindow::connectSignalsAndSlots()
     connect(m_sliderProcessed, &QtMaterialSlider::valueChanged, [this](int value) {
         currentProcessedFrame = value;
         if (isSyncMode) {
-            // 同步模式下，同时更新处理前图片的帧
             currentOriginalFrame = value;
             m_sliderOriginal->blockSignals(true);
             m_sliderOriginal->setValue(value);
@@ -391,19 +400,50 @@ void MainWindow::connectSignalsAndSlots()
 }
 
 
-// ==================== Qt原生公共槽函数：运行处理 ====================
+// ==================== Qt原生公共槽函数：运行处理（解决UI冻结问题）====================
 // 信号源：m_runButton clicked信号
-// 功能：调用DarkSectioning处理逻辑（保持原有业务代码不变）
+// 功能：调用DarkSectioning处理逻辑，使用processEvents保持UI响应
 void MainWindow::on_pushButton_run_clicked()
 {
     // 在日志区输出开始信息
     ui->textEdit_log->append("开始图像处理...");
     
+    // 禁用Run按钮防止重复点击
+    m_runButton->setEnabled(false);
+    
+    // 显示进度条，隐藏滑块
+    m_progressBar->show();
+    m_progressBar->setValue(0);
+    m_sliderOriginal->hide();
+    m_sliderProcessed->hide();
+    
+    // 强制刷新UI
+    QApplication::processEvents();
+    
+    // 更新进度条到10%
+    m_progressBar->setValue(10);
+    QApplication::processEvents();
+    
     // 调用原有的DarkSectioning处理函数（不修改任何业务逻辑）
+    // darkSectioning->process() 内部会：
+    // 1. 读取imageStack到darkSectioning->imageStack成员变量
+    // 2. 执行处理算法，结果保存到darkSectioning->final_images成员变量
+    // 3. 定期调用QApplication::processEvents()保持UI响应
     darkSectioning->process();
     
-    // 在日志区输出完成信息
+    // 处理完成后，从darkSectioning获取数据到MainWindow成员变量
+    imageStack = darkSectioning->imageStack;
+    final_images = darkSectioning->final_images;
+    
+    // 更新进度条到90%
+    m_progressBar->setValue(90);
+    QApplication::processEvents();
+    
+    // 在日志中记录完成信息
     ui->textEdit_log->append("图像处理完成!");
+    ui->textEdit_log->append(QString("处理前帧数: %1, 处理后帧数: %2")
+                             .arg(imageStack.size())
+                             .arg(final_images.size()));
     
     // ---------- 处理完成后：更新界面状态 ----------
     
@@ -412,24 +452,29 @@ void MainWindow::on_pushButton_run_clicked()
     m_sliderOriginal->show();
     m_sliderProcessed->show();
     
-    // 从DarkSectioning获取处理后的图像数据（假设darkSectioning类有这些成员）
-    // 注意：这里需要根据实际项目结构调整访问方式
-    
-    // 如果imageStack和final_images有数据，则更新滑块范围
+    // 如果imageStack有数据，更新处理前图片的滑块范围
     if (!imageStack.empty()) {
         m_sliderOriginal->setRange(0, imageStack.size() - 1);
         m_sliderOriginal->setValue(0);
         currentOriginalFrame = 0;
     }
     
+    // 更新处理后图片的滑块范围
     if (!final_images.empty()) {
         m_sliderProcessed->setRange(0, final_images.size() - 1);
         m_sliderProcessed->setValue(0);
         currentProcessedFrame = 0;
     }
     
-    // 立即更新图像显示
+    // 进度条完成
+    m_progressBar->setValue(100);
+    QApplication::processEvents();
+    
+    // 立即更新图像显示（在QLabel中嵌入显示，不是弹出窗口）
     updateImageDisplay();
+    
+    // 恢复Run按钮
+    m_runButton->setEnabled(true);
 }
 
 
@@ -468,6 +513,32 @@ void MainWindow::on_pushButton_browse_clicked()
         
         // 在日志中记录选择的文件
         ui->textEdit_log->append("已选择文件: " + filePath);
+        
+        // 预加载图像预览（不等待处理）
+        preloadImagePreview(filePath);
+    }
+}
+
+
+// ==================== 预加载图像预览 ====================
+// 功能：在选择文件后立即显示第一帧预览
+void MainWindow::preloadImagePreview(const QString& filePath)
+{
+    std::string path = filePath.toStdString();
+    
+    // 尝试读取多帧图像
+    std::vector<cv::Mat> tempStack;
+    bool success = cv::imreadmulti(path, tempStack, cv::IMREAD_UNCHANGED);
+    
+    if (success && !tempStack.empty()) {
+        // 保存到成员变量
+        imageStack = tempStack;
+        
+        // 显示第一帧到左侧QLabel
+        currentOriginalFrame = 0;
+        updateImageDisplay();
+        
+        ui->textEdit_log->append("已预加载 " + QString::number(imageStack.size()) + " 帧");
     }
 }
 
@@ -666,12 +737,8 @@ void MainWindow::updateImageDisplay()
             Qt::SmoothTransformation
         );
         
-        // 显示在左侧QLabel上
+        // 显示在左侧QLabel上（嵌入橙色区，不是弹出窗口）
         ui->label_originalImage->setPixmap(scaledOriginal);
-        
-        // 更新状态栏或标签文字（可选）
-        // ui->statusBar->showMessage(QString("处理前 - 帧 %1/%2")
-        //     .arg(currentOriginalFrame + 1).arg(imageStack.size()));
     }
     
     
@@ -695,7 +762,7 @@ void MainWindow::updateImageDisplay()
             Qt::SmoothTransformation
         );
         
-        // 显示在右侧QLabel上
+        // 显示在右侧QLabel上（嵌入橙色区，不是弹出窗口）
         ui->label_processedImage->setPixmap(scaledProcessed);
     }
 }

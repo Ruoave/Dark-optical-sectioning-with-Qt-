@@ -13,9 +13,12 @@
   <property name="windowTitle">
    <string>Dark Sectioning</string>
   </property>
+  
+  <!-- 中央部件 -->
   <widget class="QWidget" name="centralWidget">
-   <layout class="QVBoxLayout" name="verticalLayout_main" stretch="0,0,3,7">
-    <!-- 蓝色区：路径与操作按钮 -->
+   <layout class="QVBoxLayout" name="verticalLayout_main" stretch="0,1,3,7">
+    
+    <!-- ========== 蓝色区：路径与操作按钮 ========== -->
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_path" stretch="4,1">
       <!-- 左侧：路径输入区域 -->
@@ -99,7 +102,7 @@
         </property>
         <property name="maximumSize">
          <size>
-          <width>300</width>
+          <width>16777215</width>
           <height>16777215</height>
          </size>
         </property>
@@ -113,13 +116,16 @@
       </item>
      </layout>
     </item>
+
     <!-- 主内容区：左侧参数+日志，右侧图像显示 -->
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_content" stretch="3,7">
+      
       <!-- 左侧：参数区和日志区 -->
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_left" stretch="6,4">
-        <!-- 绿色区：参数设置面板（一行3个控件） -->
+        
+        <!-- 绿色区：参数设置面板 -->
         <item>
          <widget class="QGroupBox" name="groupBox_params">
           <property name="title">
@@ -128,11 +134,12 @@
           <property name="minimumSize">
            <size>
             <width>350</width>
-            <height>200</height>
+            <height>250</height>
            </size>
           </property>
           <layout class="QGridLayout" name="gridLayout_params">
-           <!-- 第1行：Toggle + Checkbox + TextField1 -->
+           
+           <!-- 第1行：Toggle + Checkbox + TextField(参数3) -->
            <item row="0" column="0">
             <widget class="QLabel" name="label_param1">
              <property name="text">
@@ -141,7 +148,14 @@
             </widget>
            </item>
            <item row="0" column="1">
-            <widget class="QWidget" name="widget_toggleContainer"/>
+            <widget class="QWidget" name="widget_toggleContainer">
+             <property name="minimumSize">
+              <size>
+               <width>60</width>
+               <height>30</height>
+              </size>
+             </property>
+            </widget>
            </item>
            <item row="0" column="2">
             <widget class="QLabel" name="label_param2">
@@ -151,7 +165,14 @@
             </widget>
            </item>
            <item row="0" column="3">
-            <widget class="QWidget" name="widget_checkboxContainer"/>
+            <widget class="QWidget" name="widget_checkboxContainer">
+             <property name="minimumSize">
+              <size>
+               <width>80</width>
+               <height>30</height>
+              </size>
+             </property>
+            </widget>
            </item>
            <item row="0" column="4">
             <widget class="QLabel" name="label_param3">
@@ -163,7 +184,8 @@
            <item row="0" column="5">
             <widget class="QLineEdit" name="lineEdit_param1"/>
            </item>
-           <!-- 第2行：TextField2-4 -->
+           
+           <!-- 第2行：TextField(参数4-5) -->
            <item row="1" column="0">
             <widget class="QLabel" name="label_param4">
              <property name="text">
@@ -184,7 +206,8 @@
            <item row="1" column="4" colspan="2">
             <widget class="QLineEdit" name="lineEdit_param3"/>
            </item>
-           <!-- 第3行：TextField5-7 -->
+           
+           <!-- 第3行：TextField(参数6-7) -->
            <item row="2" column="0">
             <widget class="QLabel" name="label_param6">
              <property name="text">
@@ -205,7 +228,8 @@
            <item row="2" column="4" colspan="2">
             <widget class="QLineEdit" name="lineEdit_param5"/>
            </item>
-           <!-- 第4行：TextField8-10 -->
+           
+           <!-- 第4行：TextField(参数8-9) -->
            <item row="3" column="0">
             <widget class="QLabel" name="label_param8">
              <property name="text">
@@ -226,7 +250,8 @@
            <item row="3" column="4" colspan="2">
             <widget class="QLineEdit" name="lineEdit_param7"/>
            </item>
-           <!-- 第5行：TextField11-13 -->
+           
+           <!-- 第5行：TextField(参数10-11) -->
            <item row="4" column="0">
             <widget class="QLabel" name="label_param10">
              <property name="text">
@@ -247,7 +272,8 @@
            <item row="4" column="4" colspan="2">
             <widget class="QLineEdit" name="lineEdit_param9"/>
            </item>
-           <!-- 第6行：TextField10-11 -->
+           
+           <!-- 第6行：TextField(参数12-13) -->
            <item row="5" column="0">
             <widget class="QLabel" name="label_param12">
              <property name="text">
@@ -268,9 +294,11 @@
            <item row="5" column="4" colspan="2">
             <widget class="QLineEdit" name="lineEdit_param11"/>
            </item>
+          
           </layout>
          </widget>
         </item>
+        
         <!-- 紫色区：运行日志面板 -->
         <item>
          <widget class="QTextEdit" name="textEdit_log">
@@ -282,11 +310,14 @@
           </property>
          </widget>
         </item>
+       
        </layout>
       </item>
-      <!-- 右侧：双图显示区 -->
+      
+      <!-- 右侧：双图显示区 + 控制条 -->
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_right" stretch="9,0,1">
+        
         <!-- 橙色区：双图像显示区 -->
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_images" stretch="1,1">
@@ -305,6 +336,12 @@
 	background-color: #f0f0f0;
 }</string>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>300</width>
+              <height>300</height>
+             </size>
+            </property>
            </widget>
           </item>
           <!-- 右侧：处理后图片 -->
@@ -322,34 +359,28 @@
 	background-color: #f0f0f0;
 }</string>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>300</width>
+              <height>300</height>
+             </size>
+            </property>
            </widget>
           </item>
          </layout>
         </item>
-        <!-- 同步帧按钮（在图片下方，进度条上方） -->
+        
+        <!-- 控制条区域：同步帧按钮 + 切帧按钮 + 进度条/滑块 -->
         <item>
-         <widget class="QPushButton" name="pushButton_syncFrames">
-          <property name="text">
-           <string>同步帧</string>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>100</width>
-            <height>30</height>
-           </size>
-          </property>
-         </widget>
-        </item>
-        <!-- 底部控制条 -->
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_controlBar" stretch="1,3,1">
-          <!-- 最左侧：一对左右箭头按钮 -->
+         <layout class="QHBoxLayout" name="horizontalLayout_controlBar" stretch="1,0,3,0,1">
+          
+          <!-- 最左侧：一对左右箭头按钮（处理前图片切帧）-->
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_leftArrows">
             <item>
              <widget class="QPushButton" name="pushButton_prevLeft">
               <property name="text">
-               <string>←</string>
+               <string>◀</string>
               </property>
               <property name="minimumSize">
                <size>
@@ -362,7 +393,7 @@
             <item>
              <widget class="QPushButton" name="pushButton_nextLeft">
               <property name="text">
-               <string>→</string>
+               <string>▶</string>
               </property>
               <property name="minimumSize">
                <size>
@@ -374,6 +405,22 @@
             </item>
            </layout>
           </item>
+          
+          <!-- 同步帧按钮（缩小宽度）-->
+          <item>
+           <widget class="QPushButton" name="pushButton_syncFrames">
+            <property name="text">
+             <string>同步帧</string>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>80</width>
+              <height>30</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          
           <!-- 中间：进度条/滑块 -->
           <item>
            <widget class="QProgressBar" name="progressBar_processing">
@@ -385,13 +432,14 @@
             </property>
            </widget>
           </item>
-          <!-- 最右侧：一对左右箭头按钮 -->
+          
+          <!-- 切帧按钮（处理后图片切帧）-->
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_rightArrows">
             <item>
              <widget class="QPushButton" name="pushButton_prevRight">
               <property name="text">
-               <string>←</string>
+               <string>◀</string>
               </property>
               <property name="minimumSize">
                <size>
@@ -404,7 +452,7 @@
             <item>
              <widget class="QPushButton" name="pushButton_nextRight">
               <property name="text">
-               <string>→</string>
+               <string>▶</string>
               </property>
               <property name="minimumSize">
                <size>
@@ -416,14 +464,20 @@
             </item>
            </layout>
           </item>
+         
          </layout>
         </item>
+       
        </layout>
       </item>
+     
      </layout>
     </item>
+   
    </layout>
   </widget>
+  
+  <!-- 菜单栏 -->
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
@@ -465,6 +519,8 @@
    <addaction name="menuSettings"/>
    <addaction name="menuHelp"/>
   </widget>
+  
+  <!-- 菜单动作 -->
   <action name="actionSave_Image">
    <property name="text">
     <string>保存图片</string>
@@ -490,7 +546,10 @@
     <string>批量处理</string>
    </property>
   </action>
+  
+  <!-- 状态栏 -->
   <widget class="QStatusBar" name="statusBar"/>
+ 
  </widget>
  <resources/>
  <connections/>
