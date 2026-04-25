@@ -111,23 +111,23 @@ void MainWindow::initMaterialComponents()
     
     // ---------- 橙色区：双图显示区和控制条的Material组件 ----------
     
-    // 创建左侧区域箭头按钮（控制处理前图片帧）- 使用空图标+文本方式
-    m_prevLeftButton = new QtMaterialIconButton(QIcon());
-    m_prevLeftButton->setText("◀");
+    // 创建左侧区域箭头按钮（控制处理前图片帧）- 使用扁平按钮显示文本
+    m_prevLeftButton = new QtMaterialFlatButton("◀");
     m_prevLeftButton->setMinimumSize(40, 30);
+    m_prevLeftButton->setMaximumSize(40, 30);
     
-    m_nextLeftButton = new QtMaterialIconButton(QIcon());
-    m_nextLeftButton->setText("▶");
+    m_nextLeftButton = new QtMaterialFlatButton("▶");
     m_nextLeftButton->setMinimumSize(40, 30);
+    m_nextLeftButton->setMaximumSize(40, 30);
     
     // 创建右侧区域箭头按钮（控制处理后图片帧）
-    m_prevRightButton = new QtMaterialIconButton(QIcon());
-    m_prevRightButton->setText("◀");
+    m_prevRightButton = new QtMaterialFlatButton("◀");
     m_prevRightButton->setMinimumSize(40, 30);
+    m_prevRightButton->setMaximumSize(40, 30);
     
-    m_nextRightButton = new QtMaterialIconButton(QIcon());
-    m_nextRightButton->setText("▶");
+    m_nextRightButton = new QtMaterialFlatButton("▶");
     m_nextRightButton->setMinimumSize(40, 30);
+    m_nextRightButton->setMaximumSize(40, 30);
     
     // 创建处理进度条
     m_progressBar = new QtMaterialProgress();
@@ -305,15 +305,17 @@ void MainWindow::applyMaterialTheme()
     
     m_toggleParam->setTrackColor(themeColor);
     m_checkboxParam->setCheckedColor(themeColor);
+    m_checkboxParam->setTextColor(QColor(51, 51, 51));  // 设置Checkbox文字颜色为深灰色
     
     foreach (QtMaterialTextField *textField, m_paramTextFields) {
         textField->setInkColor(themeColor);
     }
     
-    m_prevLeftButton->setColor(themeColor);
-    m_nextLeftButton->setColor(themeColor);
-    m_prevRightButton->setColor(themeColor);
-    m_nextRightButton->setColor(themeColor);
+    // 设置箭头按钮的前景色（文字颜色）
+    m_prevLeftButton->setForegroundColor(themeColor);
+    m_nextLeftButton->setForegroundColor(themeColor);
+    m_prevRightButton->setForegroundColor(themeColor);
+    m_nextRightButton->setForegroundColor(themeColor);
     
     m_progressBar->setProgressColor(themeColor);
     m_sliderOriginal->setTrackColor(themeColor);
@@ -359,15 +361,15 @@ void MainWindow::connectSignalsAndSlots()
     // ---------- 橙色区：控制条的信号槽 ----------
     
     // 左侧箭头按钮 -> 控制imageStack（处理前图片）帧切换
-    connect(m_prevLeftButton, &QtMaterialIconButton::clicked,
+    connect(m_prevLeftButton, &QtMaterialFlatButton::clicked,
             this, &MainWindow::onPrevFrameLeft);
-    connect(m_nextLeftButton, &QtMaterialIconButton::clicked,
+    connect(m_nextLeftButton, &QtMaterialFlatButton::clicked,
             this, &MainWindow::onNextFrameLeft);
     
     // 右侧箭头按钮 -> 控制final_images（处理后图片）帧切换
-    connect(m_prevRightButton, &QtMaterialIconButton::clicked,
+    connect(m_prevRightButton, &QtMaterialFlatButton::clicked,
             this, &MainWindow::onPrevFrameRight);
-    connect(m_nextRightButton, &QtMaterialIconButton::clicked,
+    connect(m_nextRightButton, &QtMaterialFlatButton::clicked,
             this, &MainWindow::onNextFrameRight);
     
     // 同步帧按钮点击 -> 切换同步模式
@@ -729,12 +731,12 @@ void MainWindow::updateImageDisplay()
         // 转换为QImage格式
         QImage qOriginalImg = matToQImage(originalImg);
         
-        // 缩放以适应QLabel大小，保持宽高比
+        // 缩放以适应QLabel大小，使用IgnoreAspectRatio让图片填满整个区域
         QPixmap pixmapOriginal = QPixmap::fromImage(qOriginalImg);
         QPixmap scaledOriginal = pixmapOriginal.scaled(
             ui->label_originalImage->size(),
-            Qt::KeepAspectRatio,
-            Qt::SmoothTransformation
+            Qt::IgnoreAspectRatio,           // 忽略宽高比，填满整个区域
+            Qt::SmoothTransformation         // 平滑缩放
         );
         
         // 显示在左侧QLabel上（嵌入橙色区，不是弹出窗口）
@@ -754,12 +756,12 @@ void MainWindow::updateImageDisplay()
         // 转换为QImage格式
         QImage qProcessedImg = matToQImage(processedImg);
         
-        // 缩放以适应QLabel大小，保持宽高比
+        // 缩放以适应QLabel大小，使用IgnoreAspectRatio让图片填满整个区域
         QPixmap pixmapProcessed = QPixmap::fromImage(qProcessedImg);
         QPixmap scaledProcessed = pixmapProcessed.scaled(
             ui->label_processedImage->size(),
-            Qt::KeepAspectRatio,
-            Qt::SmoothTransformation
+            Qt::IgnoreAspectRatio,           // 忽略宽高比，填满整个区域
+            Qt::SmoothTransformation         // 平滑缩放
         );
         
         // 显示在右侧QLabel上（嵌入橙色区，不是弹出窗口）

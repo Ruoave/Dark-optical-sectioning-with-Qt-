@@ -85,10 +85,10 @@ private:
     QList<QtMaterialTextField*> m_paramTextFields; // 文本输入框列表（参数3-13，共11个）
     
     // 橙色区：双图显示区和控制条的Material组件
-    QtMaterialIconButton *m_prevLeftButton;       // 左侧区域左箭头图标按钮
-    QtMaterialIconButton *m_nextLeftButton;       // 左侧区域右箭头图标按钮
-    QtMaterialIconButton *m_prevRightButton;      // 右侧区域左箭头图标按钮
-    QtMaterialIconButton *m_nextRightButton;      // 右侧区域右箭头图标按钮
+    QtMaterialFlatButton *m_prevLeftButton;       // 左侧区域左箭头扁平按钮
+    QtMaterialFlatButton *m_nextLeftButton;       // 左侧区域右箭头扁平按钮
+    QtMaterialFlatButton *m_prevRightButton;      // 右侧区域左箭头扁平按钮
+    QtMaterialFlatButton *m_nextRightButton;      // 右侧区域右箭头扁平按钮
     QtMaterialProgress *m_progressBar;            // 处理进度条
     QtMaterialSlider *m_sliderOriginal;           // 处理前图片帧滑块
     QtMaterialSlider *m_sliderProcessed;          // 处理后图片帧滑块
