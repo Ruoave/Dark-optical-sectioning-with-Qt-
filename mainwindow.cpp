@@ -140,14 +140,19 @@ void MainWindow::initMaterialComponents()
     m_progressBar->setRange(0, 100);           // 设置进度条范围0-100
     m_progressBar->setValue(0);                 // 初始值为0
     
+    // 创建进度数值显示标签
+    m_progressValueLabel = new QLabel("100%");
+    m_progressValueLabel->setAlignment(Qt::AlignCenter);
+    m_progressValueLabel->setStyleSheet("QLabel { color: #55aaff; font-family: 'Microsoft YaHei'; font-weight: bold; font-size: 12px; }");
+    
     // 创建处理前图片帧滑块（初始隐藏，处理完成后显示）
-    m_sliderOriginal = new QtMaterialSlider();
+    m_sliderOriginal = new QtMaterialSlider(ui->widget_sliderOriginal);
     m_sliderOriginal->setRange(0, 0);          // 初始范围（无数据时为0-0）
     m_sliderOriginal->setValue(0);
     m_sliderOriginal->hide();                  // 处理完成前隐藏
     
     // 创建处理后图片帧滑块（初始隐藏，处理完成后显示）
-    m_sliderProcessed = new QtMaterialSlider();
+    m_sliderProcessed = new QtMaterialSlider(ui->widget_sliderProcessed);
     m_sliderProcessed->setRange(0, 0);         // 初始范围（无数据时为0-0）
     m_sliderProcessed->setValue(0);
     m_sliderProcessed->hide();                 // 处理完成前隐藏
@@ -275,18 +280,30 @@ void MainWindow::setupMaterialWidgetsInLayout()
         }
     }
     
-    // 替换进度条
-    QHBoxLayout *controlBarLayout = qobject_cast<QHBoxLayout*>(ui->horizontalLayout_controlBar);
-    if (controlBarLayout) {
-        int progressIndex = controlBarLayout->indexOf(ui->progressBar_processing);
-        if (progressIndex >= 0) {
-            controlBarLayout->removeWidget(ui->progressBar_processing);
+    // 替换进度条（移到顶部控制条）
+    QHBoxLayout *topControlBarLayout = qobject_cast<QHBoxLayout*>(ui->horizontalLayout_topControlBar);
+    if (topControlBarLayout) {
+        // 移除原始进度条
+        QLayoutItem *progressItem = topControlBarLayout->itemAt(1);
+        if (progressItem && progressItem->widget() == ui->progressBar_processing) {
+            topControlBarLayout->removeWidget(ui->progressBar_processing);
             ui->progressBar_processing->deleteLater();
-            controlBarLayout->insertWidget(progressIndex, m_progressBar);
+            // 添加Material进度条
+            topControlBarLayout->insertWidget(1, m_progressBar);
+        }
+        
+        // 添加进度数值显示标签
+        QLayoutItem *progressValueItem = topControlBarLayout->itemAt(2);
+        if (progressValueItem && progressValueItem->widget() == ui->widget_progressValue) {
+            // 创建布局并添加标签
+            QVBoxLayout *progressValueLayout = new QVBoxLayout(ui->widget_progressValue);
+            progressValueLayout->setContentsMargins(0, 0, 0, 0);
+            progressValueLayout->addWidget(m_progressValueLabel);
         }
     }
     
-    // 替换同步帧按钮（在进度条左侧位置）
+    // 替换同步帧按钮（在底部控制条）
+    QHBoxLayout *controlBarLayout = qobject_cast<QHBoxLayout*>(ui->horizontalLayout_controlBar);
     if (controlBarLayout) {
         int syncIndex = controlBarLayout->indexOf(ui->pushButton_syncFrames);
         if (syncIndex >= 0) {

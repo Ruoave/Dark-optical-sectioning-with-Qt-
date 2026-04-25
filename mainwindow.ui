@@ -370,6 +370,77 @@
          </layout>
         </item>
         
+        <!-- 新增：顶部控制条（双滑块 + 进度条 + 进度数值）-->
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_topControlBar">
+          <!-- 左侧：处理前图片滑块 -->
+          <item>
+           <widget class="QWidget" name="widget_sliderOriginal" native="true">
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>150</width>
+              <height>40</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          
+          <!-- 中间：进度条 -->
+          <item>
+           <widget class="QProgressBar" name="progressBar_processing">
+            <property name="value">
+             <number>0</number>
+            </property>
+            <property name="visible">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          
+          <!-- 进度数值显示 -->
+          <item>
+           <widget class="QWidget" name="widget_progressValue" native="true">
+            <property name="minimumSize">
+             <size>
+              <width>80</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>80</width>
+              <height>40</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          
+          <!-- 右侧：处理后图片滑块 -->
+          <item>
+           <widget class="QWidget" name="widget_sliderProcessed" native="true">
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>150</width>
+              <height>40</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        
         <!-- 控制条区域：同步帧按钮 + 切帧按钮 + 进度条/滑块 -->
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_controlBar" stretch="1,0,3,0,1">
@@ -423,14 +494,17 @@
           
           <!-- 中间：进度条/滑块 -->
           <item>
-           <widget class="QProgressBar" name="progressBar_processing">
-            <property name="value">
-             <number>0</number>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
             </property>
-            <property name="visible">
-             <bool>true</bool>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
             </property>
-           </widget>
+           </spacer>
           </item>
           
           <!-- 切帧按钮（处理后图片切帧）-->
@@ -464,7 +538,6 @@
             </item>
            </layout>
           </item>
-         
          </layout>
         </item>
        

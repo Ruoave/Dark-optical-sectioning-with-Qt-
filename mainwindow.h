@@ -99,6 +99,7 @@ private:
     QtMaterialSlider *m_sliderOriginal;           // 处理前图片帧滑块
     QtMaterialSlider *m_sliderProcessed;          // 处理后图片帧滑块
     QtMaterialRaisedButton *m_syncButton;         // 同步帧凸起按钮
+    QLabel *m_progressValueLabel;                 // 进度数值显示标签
     
     // ==================== 图像文件路径（方案B：从文件读取显示）====================
     QString m_inputFilePath;                      // 输入图片文件路径
