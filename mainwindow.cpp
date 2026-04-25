@@ -560,25 +560,47 @@ void MainWindow::preloadImagePreview(const QString& filePath)
     // 保存输入文件路径
     m_inputFilePath = filePath;
     
-    std::string path = filePath.toStdString();
+    // 使用Qt原生QImageReader获取帧数信息（不加载图像数据，只读取元数据）
+    QImageReader reader(filePath);
     
-    // 尝试读取多帧图像以获取帧数信息
-    std::vector<cv::Mat> tempStack;
-    bool success = cv::imreadmulti(path, tempStack, cv::IMREAD_UNCHANGED);
-    
-    if (success && !tempStack.empty()) {
-        // 保存总帧数（方案B：只保存帧数，不保存Mat数据）
-        totalOriginalFrames = tempStack.size();
-        
-        // 显示第一帧到左侧QLabel
-        currentOriginalFrame = 0;
-        updateImageDisplay();
-        
-        ui->textEdit_log->append("已预加载 " + QString::number(totalOriginalFrames) + " 帧");
-        
-        // 更新滑块范围
-        m_sliderOriginal->setRange(0, totalOriginalFrames - 1);
+    // 检查文件是否可以读取
+    if (!reader.canRead()) {
+        ui->textEdit_log->append("错误: 无法读取文件 " + filePath);
+        return;
     }
+    
+    // 获取总帧数
+    int frameCount = reader.imageCount();
+    
+    if (frameCount <= 0) {
+        // 单帧图像或无法确定帧数（某些TIFF格式可能返回-1或0）
+        // 尝试读取第一帧来验证文件有效性
+        QImage testImage = reader.read();
+        if (!testImage.isNull()) {
+            // 单帧图像
+            totalOriginalFrames = 1;
+            currentOriginalFrame = 0;
+            updateImageDisplay();
+            
+            ui->textEdit_log->append("已预加载单帧图像");
+            m_sliderOriginal->setRange(0, 0);
+        } else {
+            ui->textEdit_log->append("错误: 无法读取图像数据");
+        }
+        return;
+    }
+    
+    // 多帧图像：保存总帧数（方案B：只保存帧数，不保存Mat数据）
+    totalOriginalFrames = frameCount;
+    
+    // 显示第一帧到左侧QLabel
+    currentOriginalFrame = 0;
+    updateImageDisplay();
+    
+    ui->textEdit_log->append("已预加载 " + QString::number(totalOriginalFrames) + " 帧");
+    
+    // 更新滑块范围
+    m_sliderOriginal->setRange(0, totalOriginalFrames - 1);
 }
 
 
@@ -843,8 +865,16 @@ QImage MainWindow::readTiffFrame(const QString& filePath, int frameIndex)
     int totalFrames = reader.imageCount();
     
     if (totalFrames <= 0) {
-        // 单帧图像或无法确定帧数，直接读取第一帧
-        return reader.read();
+        // 单帧图像或无法确定帧数（某些TIFF格式可能返回-1或0）
+        // 直接读取第一帧并返回
+        QImage image = reader.read();
+        
+        if (frameIndex == 0 || frameIndex < 0) {
+            return image;
+        } else {
+            ui->textEdit_log->append(QString("警告: 请求帧 %1 但图像为单帧").arg(frameIndex));
+            return image;
+        }
     }
     
     // 边界检查：确保帧索引在有效范围内
@@ -855,17 +885,28 @@ QImage MainWindow::readTiffFrame(const QString& filePath, int frameIndex)
         return QImage();
     }
     
-    // 跳转到指定帧并读取
-    if (!reader.jumpToImage(frameIndex)) {
-        ui->textEdit_log->append(QString("错误: 无法跳转到帧 %1").arg(frameIndex));
-        return QImage();
+    // 跳转到指定帧
+    bool jumpSuccess = reader.jumpToImage(frameIndex);
+    
+    if (!jumpSuccess) {
+        // 某些TIFF格式可能不支持随机访问，尝试顺序读取
+        reader.setFileName(filePath);  // 重置读取器
+        
+        for (int i = 0; i < frameIndex; i++) {
+            if (!reader.jumpToNextImage()) {
+                ui->textEdit_log->append(QString("错误: 无法跳转到帧 %1 (在第 %2 帧失败)")
+                                         .arg(frameIndex).arg(i));
+                return QImage();
+            }
+        }
     }
     
     // 读取指定帧并返回（Qt自动处理颜色空间转换）
     QImage image = reader.read();
     
     if (image.isNull()) {
-        ui->textEdit_log->append(QString("错误: 读取帧 %1 失败").arg(frameIndex));
+        ui->textEdit_log->append(QString("错误: 读取帧 %1 失败 (可能是TIFF格式问题)")
+                                 .arg(frameIndex));
     }
     
     return image;
