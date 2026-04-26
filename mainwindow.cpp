@@ -46,20 +46,15 @@ MainWindow::MainWindow(QWidget *parent) :
     setupBlueAreaInLayout();
     connectBlueAreaSignals();
     
-    // 第4步：【绿区】参数设置面板 - Material组件初始化+布局嵌入+信号槽
-    initGreenAreaComponents();
-    setupGreenAreaInLayout();
-    connectGreenAreaSignals();
-    
-    // 第5步：【紫区】运行日志栏 - 使用原生QTextEdit，无需Material组件
+    // 第4步：【紫区】运行日志栏 - 使用原生QTextEdit，无需Material组件
     // 紫区包含：textEdit_log日志显示框
     // 此处无需额外代码，Qt Designer已配置完成
     
-    // 第6步：【橙区】将OrangeWidget嵌入主窗口指定位置
+    // 第5步：【橙区】将OrangeWidget嵌入主窗口指定位置
     // 橙区所有功能已封装在OrangeWidget自定义控件中，此处只需创建并嵌入即可
     embedOrangeWidget();
     
-    // 第7步：应用Material主题颜色#55aaff（全局统一应用，仅非橙区组件）
+    // 第6步：应用Material主题颜色#55aaff（全局统一应用，仅非橙区组件）
     applyMaterialTheme();
 }
 
@@ -74,11 +69,6 @@ MainWindow::~MainWindow()
     
     // 释放UI对象
     delete ui;
-    
-    // 释放【绿区】Material组件内存
-    delete m_toggleParam;
-    delete m_checkboxParam;
-    qDeleteAll(m_paramTextFields);
     
     // 释放【橙区】OrangeWidget对象内存
     // 注意：OrangeWidget内部会自动清理其所有子控件（包括Material组件）
@@ -190,76 +180,6 @@ void MainWindow::on_pushButton_browseOutput_clicked()
         // 在日志区记录用户操作
         ui->textEdit_log->append("已选择输出目录: " + dirPath);
     }
-}
-
-
-// ============================================================================
-// 【绿区】参数设置面板
-// 功能：提供13个参数输入控件（1个Toggle + 1个Checkbox + 11个TextField）
-// 包含组件：m_toggleParam, m_checkboxParam, m_paramTextFields[11]
-// ============================================================================
-
-// ---------- 【绿区】Material组件初始化 ----------
-void MainWindow::initGreenAreaComponents()
-{
-    // 创建开关控件（Toggle）- 参数1
-    m_toggleParam = new QtMaterialToggle();
-    
-    // 创建复选框控件（CheckBox）- 参数2
-    m_checkboxParam = new QtMaterialCheckBox();
-    m_checkboxParam->setText("启用选项");
-    
-    // 创建11个文本输入框（TextField）- 参数3至13
-    for (int i = 0; i < 11; i++) {
-        QtMaterialTextField *textField = new QtMaterialTextField();
-        textField->setPlaceholderText(QString("参数%1").arg(i + 3));
-        m_paramTextFields.append(textField);
-    }
-}
-
-// ---------- 【绿区】将Material组件嵌入UI布局 ----------
-void MainWindow::setupGreenAreaInLayout()
-{
-    // 将Toggle控件嵌入widget_toggleContainer容器
-    QVBoxLayout *toggleContainerLayout = new QVBoxLayout(ui->widget_toggleContainer);
-    toggleContainerLayout->addWidget(m_toggleParam);
-    toggleContainerLayout->setContentsMargins(0, 0, 0, 0);
-    
-    // 将Checkbox控件嵌入widget_checkboxContainer容器
-    QVBoxLayout *checkboxContainerLayout = new QVBoxLayout(ui->widget_checkboxContainer);
-    checkboxContainerLayout->addWidget(m_checkboxParam);
-    checkboxContainerLayout->setContentsMargins(0, 0, 0, 0);
-    
-    // 将11个TextField替换原有的QLineEdit
-    QList<QLineEdit*> paramLineEdits = {
-        ui->lineEdit_param1, ui->lineEdit_param2, ui->lineEdit_param3,
-        ui->lineEdit_param4, ui->lineEdit_param5, ui->lineEdit_param6,
-        ui->lineEdit_param7, ui->lineEdit_param8, ui->lineEdit_param9,
-        ui->lineEdit_param10, ui->lineEdit_param11
-    };
-    
-    // 直接使用UI文件中的网格布局对象
-    QGridLayout *gridLayout = ui->gridLayout_params;
-    
-    for (int i = 0; i < 11 && i < paramLineEdits.size() && i < m_paramTextFields.size(); i++) {
-        QLineEdit *oldLineEdit = paramLineEdits[i];
-        
-        if (gridLayout) {
-            int row, col, rowSpan, colSpan;
-            gridLayout->getItemPosition(gridLayout->indexOf(oldLineEdit), &row, &col, &rowSpan, &colSpan);
-            
-            gridLayout->removeWidget(oldLineEdit);
-            oldLineEdit->deleteLater();
-            gridLayout->addWidget(m_paramTextFields[i], row, col, rowSpan, colSpan);
-        }
-    }
-}
-
-// ---------- 【绿区】绑定信号槽连接 ----------
-void MainWindow::connectGreenAreaSignals()
-{
-    // 绿区参数控件的信号槽连接（可根据业务需求扩展）
-    // 当前版本：参数值在点击"Run"时统一读取，无需实时监听
 }
 
 
@@ -458,21 +378,13 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 // ============================================================================
 // 【应用Material主题颜色】
 // 功能：统一设置所有Material组件的主题色为#55aaff（天蓝色）
-// 说明：仅对蓝区和绿区组件应用主题色，橙区组件已在OrangeWidget内部自行设置
+// 说明：仅对蓝区组件应用主题色，橙区组件已在OrangeWidget内部自行设置
+//       绿区参数面板已清空，无需设置主题色
 // ============================================================================
 void MainWindow::applyMaterialTheme()
 {
     // 设置主题主色调为#55aaff（RGB: 85, 170, 255）
     QColor themeColor(85, 170, 255);
-    
-    // 为【绿区】组件应用主题色
-    m_toggleParam->setTrackColor(themeColor);
-    m_checkboxParam->setCheckedColor(themeColor);
-    m_checkboxParam->setTextColor(QColor(51, 51, 51));  // 设置Checkbox文字颜色为深灰色
-    
-    foreach (QtMaterialTextField *textField, m_paramTextFields) {
-        textField->setInkColor(themeColor);
-    }
     
     // 注意：橙区组件的主题色已在OrangeWidget::applyMaterialTheme()中设置
     // 无需在此处重复设置

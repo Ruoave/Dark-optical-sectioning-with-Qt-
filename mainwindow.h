@@ -14,11 +14,9 @@
 #include <vector>
 
 // Material组件头文件引入（严格使用libs文件夹下的公共接口头文件）
-// 仅包含非橙区使用的Material组件（橙区组件已迁移到OrangeWidget）
-#include "qtmaterialtoggle.h"
-#include "qtmaterialcheckbox.h"
-#include "qtmaterialtextfield.h"
-#include "qtmaterialiconbutton.h"
+// 仅包含蓝区使用的Material组件（绿区和橙区组件已移除/迁移）
+#include "qtmaterialraisedbutton.h"
+#include "qtmaterialflatbutton.h"
 
 // 引入橙区自定义控件头文件（用于在主窗口中嵌入OrangeWidget）
 #include "orangewidget.h"
@@ -67,12 +65,7 @@ private:
     // 主窗口通过此指针调用橙区的公共接口（如setInputFilePath、startProcessing等）
     OrangeWidget *m_orangeWidget;                // 橙区双图显示+控制条组件
     
-    // ==================== Material组件声明 ====================
-    
-    // 绿色区：参数设置面板的Material组件
-    QtMaterialToggle *m_toggleParam;              // 开关控件（参数1）
-    QtMaterialCheckBox *m_checkboxParam;           // 复选框控件（参数2）
-    QList<QtMaterialTextField*> m_paramTextFields; // 文本输入框列表（参数3-13，共11个）
+    // ==================== Material组件声明 ===
     
     // ==================== 辅助函数声明（按区域分块）====================
     
@@ -85,11 +78,6 @@ private:
     void initBlueAreaComponents();                // 蓝区Material组件初始化
     void setupBlueAreaInLayout();                 // 蓝区组件嵌入UI布局
     void connectBlueAreaSignals();                // 蓝区信号槽连接
-    
-    // ---------- 【绿区】参数设置面板 ----------
-    void initGreenAreaComponents();               // 绿区Material组件初始化
-    void setupGreenAreaInLayout();                // 绿区组件嵌入UI布局
-    void connectGreenAreaSignals();               // 绿区信号槽连接
     
     // ---------- 【紫区】运行日志栏 ----------
     void initPurpleAreaComponents();              // 紫区Material组件初始化
