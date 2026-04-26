@@ -22,6 +22,7 @@ INCLUDEPATH += $$PWD/libs/Include
 PRE_TARGETDEPS += $$PWD/libs/libcomponents.a
 
 SOURCES += \
+    greenwidget.cpp \
     main.cpp \
     mainwindow.cpp \
     darkSectioning.cpp \
@@ -45,6 +46,7 @@ SOURCES += \
     ViewMat.cpp \
     port_matlab2opencv.cpp
 HEADERS += \
+    greenwidget.h \
     mainwindow.h \
     darkSectioning.h \
     orangewidget.h \
@@ -52,6 +54,7 @@ HEADERS += \
     ViewMat.h \
     port_matlab2opencv.h
 FORMS += \
+    greenwidget.ui \
     mainwindow.ui \
     orangewidget.ui
 
