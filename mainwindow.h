@@ -110,31 +110,39 @@ private:
     int totalProcessedFrames;                     // 处理后图片总帧数
     bool isSyncMode;                              // 同步模式标志位
     
-    // ==================== 辅助函数声明 ====================
+    // ==================== 辅助函数声明（按区域分块）====================
     
-    // 初始化所有Material组件并设置样式
-    void initMaterialComponents();
+    // ---------- 【红区】菜单栏区域 ----------
+    void initRedAreaComponents();                 // 红区Material组件初始化
+    void setupRedAreaInLayout();                  // 红区组件嵌入UI布局
+    void connectRedAreaSignals();                 // 红区信号槽连接
     
-    // 设置Material主题颜色为#55aaff
-    void applyMaterialTheme();
+    // ---------- 【蓝区】路径与操作按钮区 ----------
+    void initBlueAreaComponents();                // 蓝区Material组件初始化
+    void setupBlueAreaInLayout();                 // 蓝区组件嵌入UI布局
+    void connectBlueAreaSignals();                // 蓝区信号槽连接
     
-    // 将Material组件嵌入到UI容器中
-    void setupMaterialWidgetsInLayout();
+    // ---------- 【绿区】参数设置面板 ----------
+    void initGreenAreaComponents();               // 绿区Material组件初始化
+    void setupGreenAreaInLayout();                // 绿区组件嵌入UI布局
+    void connectGreenAreaSignals();               // 绿区信号槽连接
     
-    // 绑定所有信号槽连接
-    void connectSignalsAndSlots();
+    // ---------- 【紫区】运行日志栏 ----------
+    void initPurpleAreaComponents();              // 紫区Material组件初始化
+    void setupPurpleAreaInLayout();               // 紫区组件嵌入UI布局
+    void connectPurpleAreaSignals();              // 紫区信号槽连接
     
-    // 更新图像显示（方案B：从文件路径直接读取显示）
-    void updateImageDisplay();
+    // ---------- 【橙区】双图显示区和控制条 ----------
+    void initOrangeAreaComponents();              // 橙区Material组件初始化
+    void setupOrangeAreaInLayout();               // 橙区组件嵌入UI布局
+    void connectOrangeAreaSignals();              // 橙区信号槽连接
     
-    // 从多帧TIFF文件中读取指定帧并转换为QImage（核心函数）
-    QImage readTiffFrame(const QString& filePath, int frameIndex);
-    
-    // 应用标准色调映射（模拟Windows照片查看器的显示效果）
-    QImage applyStandardToneMapping(const cv::Mat& mat);
-    
-    // 预加载图像预览辅助函数
-    void preloadImagePreview(const QString& filePath);
+    // ---------- 全局功能函数 ----------
+    void applyMaterialTheme();                    // 应用Material主题颜色#55aaff
+    void updateImageDisplay();                    // 更新图像显示（方案B核心实现）
+    QImage readTiffFrame(const QString& filePath, int frameIndex);  // 从TIFF读取指定帧
+    QImage applyStandardToneMapping(const cv::Mat& mat);            // 色调映射函数
+    void preloadImagePreview(const QString& filePath);              // 预加载图像预览
 };
 
 #endif // MAINWINDOW_H
