@@ -125,7 +125,7 @@
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,5,1">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1,0">
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_leftArrows">
        <property name="spacing">
@@ -134,14 +134,20 @@
        <item>
         <widget class="QPushButton" name="pushButton_prevLeft">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
          <property name="minimumSize">
           <size>
-           <width>48</width>
+           <width>40</width>
+           <height>36</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
            <height>36</height>
           </size>
          </property>
@@ -153,14 +159,20 @@
        <item>
         <widget class="QPushButton" name="pushButton_nextLeft">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
          <property name="minimumSize">
           <size>
-           <width>48</width>
+           <width>40</width>
+           <height>36</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
            <height>36</height>
           </size>
          </property>
@@ -181,7 +193,7 @@
        </property>
        <property name="minimumSize">
         <size>
-         <width>360</width>
+         <width>0</width>
          <height>36</height>
         </size>
        </property>
@@ -204,14 +216,20 @@
        <item>
         <widget class="QPushButton" name="pushButton_prevRight">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
          <property name="minimumSize">
           <size>
-           <width>48</width>
+           <width>40</width>
+           <height>36</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
            <height>36</height>
           </size>
          </property>
@@ -226,14 +244,20 @@
        <item>
         <widget class="QPushButton" name="pushButton_nextRight">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
          <property name="minimumSize">
           <size>
-           <width>48</width>
+           <width>40</width>
+           <height>36</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
            <height>36</height>
           </size>
          </property>

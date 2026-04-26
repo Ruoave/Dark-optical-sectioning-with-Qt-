@@ -80,6 +80,13 @@ void OrangeWidget::initOrangeAreaComponents()
     m_syncButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_syncButton->setMinimumHeight(30);         // 最小高度30像素
 
+    // ---------- Material特性设置 ----------
+    // 设置涟漪效果为CenteredRipple（点击时涟漪从按钮中心向外扩散，而非点击位置扩散）
+    m_syncButton->setRippleStyle(Material::CenteredRipple);
+    // 设置按钮为可选中模式（checkable）
+    // 选中后按钮背景色自动变深（Material框架自带效果），再次点击取消选中恢复原色
+    // 这与"同步帧/取消同步"的切换语义完美匹配：未选中=不同步，选中=已开启同步
+    m_syncButton->setCheckable(true);
     // ---------- 创建处理进度条 ----------
 
     // Material风格的进度条控件（用于显示Dark Sectioning算法的处理进度）
@@ -155,8 +162,21 @@ void OrangeWidget::setupOrangeAreaInLayout()
             controlBarLayout->removeWidget(ui->pushButton_syncFrames);   // 从布局中移除原按钮
             ui->pushButton_syncFrames->deleteLater();                    // 延迟删除原按钮（安全释放）
             controlBarLayout->insertWidget(syncIndex, m_syncButton);     // 在原位置插入Material按钮
+            // 关键：insertWidget后stretch因子会被重置为0，必须手动重新设置
+            // stretch=0表示左箭头组不分配额外空间，stretch=1表示m_syncButton独占所有额外空间，stretch=0表示右箭头组不分配额外空间
+            controlBarLayout->setStretch(0, 0);   // 左箭头按钮组：不拉伸
+            controlBarLayout->setStretch(1, 1);   // m_syncButton：独占所有额外空间
+            controlBarLayout->setStretch(2, 0);   // 右箭头按钮组：不拉伸
         }
     }
+
+    // ---------- 约束箭头按钮布局容器：防止窗口放大时箭头按钮区域膨胀 ----------
+
+    // 设置左侧箭头按钮布局的sizeConstraint为SetFixedSize
+    // 这样布局容器只会占据内部按钮所需的最小空间，不会随窗口放大而膨胀
+    ui->horizontalLayout_leftArrows->setSizeConstraint(QLayout::SetFixedSize);
+    // 设置右侧箭头按钮布局的sizeConstraint为SetFixedSize
+    ui->horizontalLayout_rightArrows->setSizeConstraint(QLayout::SetFixedSize);
 }
 
 
