@@ -125,7 +125,7 @@
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_controlBar" stretch="0,0,0">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,5,1">
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_leftArrows">
        <property name="spacing">
@@ -133,10 +133,16 @@
        </property>
        <item>
         <widget class="QPushButton" name="pushButton_prevLeft">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="minimumSize">
           <size>
-           <width>40</width>
-           <height>30</height>
+           <width>48</width>
+           <height>36</height>
           </size>
          </property>
          <property name="text">
@@ -146,10 +152,16 @@
        </item>
        <item>
         <widget class="QPushButton" name="pushButton_nextLeft">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="minimumSize">
           <size>
-           <width>40</width>
-           <height>30</height>
+           <width>48</width>
+           <height>36</height>
           </size>
          </property>
          <property name="text">
@@ -161,10 +173,16 @@
      </item>
      <item>
       <widget class="QPushButton" name="pushButton_syncFrames">
-       <property name="maximumSize">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
         <size>
-         <width>80</width>
-         <height>30</height>
+         <width>360</width>
+         <height>36</height>
         </size>
        </property>
        <property name="text">
@@ -185,23 +203,38 @@
       <layout class="QHBoxLayout" name="horizontalLayout_rightArrows">
        <item>
         <widget class="QPushButton" name="pushButton_prevRight">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="minimumSize">
           <size>
-           <width>40</width>
-           <height>30</height>
+           <width>48</width>
+           <height>36</height>
           </size>
          </property>
          <property name="text">
           <string>◀</string>
          </property>
+         <property name="autoRepeatDelay">
+          <number>300</number>
+         </property>
         </widget>
        </item>
        <item>
         <widget class="QPushButton" name="pushButton_nextRight">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="minimumSize">
           <size>
-           <width>40</width>
-           <height>30</height>
+           <width>48</width>
+           <height>36</height>
           </size>
          </property>
          <property name="text">
