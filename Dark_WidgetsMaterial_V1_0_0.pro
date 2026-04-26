@@ -39,6 +39,7 @@ SOURCES += \
     guided_filter.cpp \
     guidedfilter.cpp \
     kmeans.cpp \
+    orangewidget.cpp \
     separateHiLo.cpp \
     window_sum_filter.cpp \
     ViewMat.cpp \
@@ -46,11 +47,13 @@ SOURCES += \
 HEADERS += \
     mainwindow.h \
     darkSectioning.h \
+    orangewidget.h \
     params.h \
     ViewMat.h \
     port_matlab2opencv.h
 FORMS += \
-    mainwindow.ui
+    mainwindow.ui \
+    orangewidget.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
