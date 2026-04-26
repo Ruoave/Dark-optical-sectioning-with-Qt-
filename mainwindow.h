@@ -14,14 +14,16 @@
 #include <vector>
 
 // Material组件头文件引入（严格使用libs文件夹下的公共接口头文件）
+// 仅包含非橙区使用的Material组件（橙区组件已迁移到OrangeWidget）
 #include "qtmaterialtoggle.h"
 #include "qtmaterialcheckbox.h"
 #include "qtmaterialtextfield.h"
 #include "qtmaterialraisedbutton.h"
 #include "qtmaterialflatbutton.h"
 #include "qtmaterialiconbutton.h"
-#include "qtmaterialprogress.h"
-#include "qtmaterialslider.h"
+
+// 引入橙区自定义控件头文件（用于在主窗口中嵌入OrangeWidget）
+#include "orangewidget.h"
 
 namespace Ui {
 class MainWindow;
@@ -51,23 +53,6 @@ private slots:
     // 功能：打开文件夹选择对话框选择输出目录
     void on_pushButton_browseOutput_clicked();
     
-    // 项目自定义槽函数：处理左侧箭头按钮点击（控制imageStack帧切换）
-    // 信号源：左侧箭头按钮clicked()信号
-    // 功能：切换到上一帧/下一帧（处理前图片）
-    void onPrevFrameLeft();
-    void onNextFrameLeft();
-    
-    // 项目自定义槽函数：处理右侧箭头按钮点击（控制final_images帧切换）
-    // 信号源：右侧箭头按钮clicked()信号
-    // 功能：切换到上一帧/下一帧（处理后图片）
-    void onPrevFrameRight();
-    void onNextFrameRight();
-    
-    // 项目自定义槽函数：处理同步帧按钮点击
-    // 信号源：ui->pushButton_syncFrames clicked信号
-    // 功能：同步处理前后图片的显示帧数，按下后两边帧数同步改变
-    void onSyncFramesClicked();
-    
 protected:
     // Qt原生事件重载：窗口大小改变时自动调用
     // 信号源：系统resizeEvent
@@ -77,6 +62,12 @@ protected:
 private:
     Ui::MainWindow *ui;
     DarkSectioning *darkSectioning;
+    
+    // ==================== 橙区自定义控件指针 ====================
+    
+    // OrangeWidget对象指针（橙区所有功能已封装在此自定义控件中）
+    // 主窗口通过此指针调用橙区的公共接口（如setInputFilePath、startProcessing等）
+    OrangeWidget *m_orangeWidget;                // 橙区双图显示+控制条组件
     
     // ==================== Material组件声明 ====================
     
@@ -89,26 +80,6 @@ private:
     QtMaterialToggle *m_toggleParam;              // 开关控件（参数1）
     QtMaterialCheckBox *m_checkboxParam;           // 复选框控件（参数2）
     QList<QtMaterialTextField*> m_paramTextFields; // 文本输入框列表（参数3-13，共11个）
-    
-    // 橙色区：双图显示区和控制条的Material组件
-    QtMaterialFlatButton *m_prevLeftButton;       // 左侧区域左箭头扁平按钮
-    QtMaterialFlatButton *m_nextLeftButton;       // 左侧区域右箭头扁平按钮
-    QtMaterialFlatButton *m_prevRightButton;      // 右侧区域左箭头扁平按钮
-    QtMaterialFlatButton *m_nextRightButton;      // 右侧区域右箭头扁平按钮
-    QtMaterialProgress *m_progressBar;            // 处理进度条
-    QtMaterialSlider *m_sliderOriginal;           // 处理前图片帧滑块
-    QtMaterialSlider *m_sliderProcessed;          // 处理后图片帧滑块
-    QtMaterialRaisedButton *m_syncButton;         // 同步帧凸起按钮
-    QLabel *m_progressValueLabel;                 // 进度数值显示标签
-    
-    // ==================== 图像文件路径（方案B：从文件读取显示）====================
-    QString m_inputFilePath;                      // 输入图片文件路径
-    QString m_outputFilePath;                     // 输出图片文件路径（处理后）
-    int currentOriginalFrame;                     // 当前处理前图片帧索引
-    int currentProcessedFrame;                    // 当前处理后图片帧索引
-    int totalOriginalFrames;                      // 处理前图片总帧数
-    int totalProcessedFrames;                     // 处理后图片总帧数
-    bool isSyncMode;                              // 同步模式标志位
     
     // ==================== 辅助函数声明（按区域分块）====================
     
@@ -132,17 +103,12 @@ private:
     void setupPurpleAreaInLayout();               // 紫区组件嵌入UI布局
     void connectPurpleAreaSignals();              // 紫区信号槽连接
     
-    // ---------- 【橙区】双图显示区和控制条 ----------
-    void initOrangeAreaComponents();              // 橙区Material组件初始化
-    void setupOrangeAreaInLayout();               // 橙区组件嵌入UI布局
-    void connectOrangeAreaSignals();              // 橙区信号槽连接
-    
     // ---------- 全局功能函数 ----------
     void applyMaterialTheme();                    // 应用Material主题颜色#55aaff
-    void updateImageDisplay();                    // 更新图像显示（方案B核心实现）
-    QImage readTiffFrame(const QString& filePath, int frameIndex);  // 从TIFF读取指定帧
     QImage applyStandardToneMapping(const cv::Mat& mat);            // 色调映射函数
-    void preloadImagePreview(const QString& filePath);              // 预加载图像预览
+    
+    // ---------- 【新增】橙区嵌入与管理函数 ----------
+    void embedOrangeWidget();                     // 将OrangeWidget嵌入主窗口指定位置
 };
 
 #endif // MAINWINDOW_H

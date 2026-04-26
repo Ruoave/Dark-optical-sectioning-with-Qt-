@@ -1,6 +1,6 @@
-// Dark Sectioning 主程序
+// Dark Sectioning 主程序（精简版）
 // 基于Material Design风格UI改造版本
-// 完整实现图像嵌入显示、Material组件集成、UI响应保持
+// 橙区功能已完全迁移到OrangeWidget自定义控件中
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -16,7 +16,6 @@
 #include <QStandardPaths>
 #include <QImage>
 #include <QPixmap>
-#include <QImageReader>
 #include <QLayout>
 #include <QApplication>
 #include <QTimer>
@@ -33,13 +32,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     darkSectioning(new DarkSectioning(ui)),
-    m_inputFilePath(""),                        // 初始化输入文件路径为空
-    m_outputFilePath(""),                       // 初始化输出文件路径为空
-    currentOriginalFrame(0),                    // 当前处理前图片帧索引=0
-    currentProcessedFrame(0),                   // 当前处理后图片帧索引=0
-    totalOriginalFrames(0),                     // 处理前总帧数=0
-    totalProcessedFrames(0),                    // 处理后总帧数=0
-    isSyncMode(false)                           // 同步模式默认关闭
+    m_orangeWidget(nullptr)                      // 初始化橙区控件指针为空（稍后创建）
 {
     // 第1步：调用Qt Designer生成的UI设置
     ui->setupUi(this);
@@ -62,12 +55,11 @@ MainWindow::MainWindow(QWidget *parent) :
     // 紫区包含：textEdit_log日志显示框
     // 此处无需额外代码，Qt Designer已配置完成
     
-    // 第6步：【橙区】双图显示区和控制条 - Material组件初始化+布局嵌入+信号槽
-    initOrangeAreaComponents();
-    setupOrangeAreaInLayout();
-    connectOrangeAreaSignals();
+    // 第6步：【橙区】将OrangeWidget嵌入主窗口指定位置
+    // 橙区所有功能已封装在OrangeWidget自定义控件中，此处只需创建并嵌入即可
+    embedOrangeWidget();
     
-    // 第7步：应用Material主题颜色#55aaff（全局统一应用）
+    // 第7步：应用Material主题颜色#55aaff（全局统一应用，仅非橙区组件）
     applyMaterialTheme();
 }
 
@@ -93,41 +85,31 @@ MainWindow::~MainWindow()
     delete m_checkboxParam;
     qDeleteAll(m_paramTextFields);
     
-    // 释放【橙区】Material组件内存
-    delete m_prevLeftButton;
-    delete m_nextLeftButton;
-    delete m_prevRightButton;
-    delete m_nextRightButton;
-    delete m_progressBar;
-    delete m_sliderOriginal;
-    delete m_sliderProcessed;
-    delete m_syncButton;
+    // 释放【橙区】OrangeWidget对象内存
+    // 注意：OrangeWidget内部会自动清理其所有子控件（包括Material组件）
+    delete m_orangeWidget;
 }
 
 
 // ============================================================================
 // 【红区】菜单栏区域
 // 功能：提供文件、分析、设置、帮助等顶层菜单
-// 说明：使用Qt原生QMenuBar，无需Material组件替换
+// 说明：使用Qt原生QMenuBar，无需Material组件
 // ============================================================================
 
 // 【红区】Material组件初始化
-// 说明：红区使用Qt原生菜单栏，无需创建Material组件
-// 如果未来需要美化菜单栏，可在此处添加QtMaterialMenu相关代码
 void MainWindow::initRedAreaComponents()
 {
     // 当前版本：红区保持Qt原生样式，无需Material组件
 }
 
 // 【红区】将Material组件嵌入UI布局
-// 说明：菜单栏已在Qt Designer中配置完成
 void MainWindow::setupRedAreaInLayout()
 {
     // 当前版本：红区布局由Qt Designer管理，无需额外代码
 }
 
 // 【红区】绑定信号槽连接
-// 说明：菜单项的信号槽连接可在需要时添加
 void MainWindow::connectRedAreaSignals()
 {
     // 当前版本：红区无自定义信号槽连接需求
@@ -211,7 +193,7 @@ void MainWindow::connectBlueAreaSignals()
 
 // Qt原生公共槽函数：输入路径浏览
 // 信号源：m_browseInputButton clicked()信号
-// 流程：打开文件选择对话框 -> 用户选择文件 -> 更新输入路径显示 -> 预加载图像信息
+// 流程：打开文件选择对话框 -> 用户选择文件 -> 更新输入路径显示 -> 预加载图像信息到橙区
 // 功能：让用户选择输入的图像文件路径
 void MainWindow::on_pushButton_browse_clicked()
 {
@@ -231,48 +213,10 @@ void MainWindow::on_pushButton_browse_clicked()
         // 在日志区记录用户操作
         ui->textEdit_log->append("已选择输入文件: " + filePath);
         
-        // 预加载图像预览（方案B：仅获取帧数信息，不读取全部像素数据）
-        preloadImagePreview(filePath);
+        // 预加载图像预览信息到橙区（调用OrangeWidget的公共接口）
+        // OrangeWidget会自动获取帧数信息并保存文件路径
+        m_orangeWidget->preloadImagePreview(filePath);
     }
-}
-
-// 项目自定义辅助函数：预加载图像预览（方案B：仅获取帧数信息）
-// 功能：快速获取多帧TIFF文件的帧数信息，用于初始化滑块范围
-//       不读取实际像素数据，因此速度极快（毫秒级）
-// 参数：filePath - 图像文件路径
-void MainWindow::preloadImagePreview(const QString& filePath)
-{
-    // 使用Qt的QImageReader获取图像基本信息（不读取像素数据）
-    QImageReader reader(filePath);
-    
-    // 检查文件是否可以正常读取
-    if (!reader.canRead()) {
-        ui->textEdit_log->append("警告: 无法读取文件 " + filePath);
-        return;
-    }
-    
-    // 获取图像总帧数（对于单帧图像返回1，多帧TIFF返回实际帧数）
-    int frameCount = reader.imageCount();
-    
-    // 处理某些特殊格式返回-1或0的情况（视为单帧图像）
-    if (frameCount <= 0) {
-        frameCount = 1;
-    }
-    
-    // 更新处理前图片的总帧数（用于滑块范围设置）
-    totalOriginalFrames = frameCount;
-    
-    // 保存输入文件路径（后续运行处理时使用）
-    m_inputFilePath = filePath;
-    
-    // 重置当前帧索引到第一帧
-    currentOriginalFrame = 0;
-    
-    // 在日志中记录预加载结果
-    ui->textEdit_log->append(QString("预加载完成: %1 帧图像").arg(frameCount));
-    
-    // 注意：此处不调用updateImageDisplay()，因为只是预加载帧数信息
-    // 实际的图像显示将在用户点击"Run"按钮后进行
 }
 
 // Qt原生公共槽函数：输出目录浏览
@@ -366,12 +310,7 @@ void MainWindow::setupGreenAreaInLayout()
 void MainWindow::connectGreenAreaSignals()
 {
     // 绿区参数控件的信号槽连接（可根据业务需求扩展）
-    // 例如：参数改变时实时更新预览、参数验证等
-    
     // 当前版本：参数值在点击"Run"时统一读取，无需实时监听
-    // 如需实时响应，可在此处添加类似以下代码：
-    // connect(m_toggleParam, &QtMaterialToggle::toggled, this, &MainWindow::onParamChanged);
-    // connect(m_checkboxParam, &QtMaterialCheckBox::toggled, this, &MainWindow::onParamChanged);
 }
 
 
@@ -383,21 +322,18 @@ void MainWindow::connectGreenAreaSignals()
 // ============================================================================
 
 // 【紫区】Material组件初始化
-// 说明：紫区使用Qt原生QTextEdit，无需创建Material组件
 void MainWindow::initPurpleAreaComponents()
 {
     // 当前版本：紫区保持Qt原生样式，无需Material组件
 }
 
 // 【紫区】将Material组件嵌入UI布局
-// 说明：日志栏已在Qt Designer中配置完成
 void MainWindow::setupPurpleAreaInLayout()
 {
     // 当前版本：紫区布局由Qt Designer管理，无需额外代码
 }
 
 // 【紫区】绑定信号槽连接
-// 说明：日志栏为被动显示组件，无主动信号槽需求
 void MainWindow::connectPurpleAreaSignals()
 {
     // 当前版本：紫区通过其他区域的槽函数被动更新，无自定义信号槽
@@ -405,374 +341,33 @@ void MainWindow::connectPurpleAreaSignals()
 
 
 // ============================================================================
-// 【橙区】双图显示区和控制条
-// 功能：显示处理前/后对比图，提供帧切换控制和进度显示
-// 包含组件：箭头按钮(4)、进度条、滑块(2)、同步帧按钮、进度标签
+// 【橙区嵌入与管理】
+// 功能：创建OrangeWidget并将其嵌入主窗口右侧区域（原橙区位置）
+// 说明：橙区所有UI和逻辑已完全封装在OrangeWidget中，主窗口只需管理其生命周期
 // ============================================================================
 
-// ---------- 【橙区】Material组件初始化 ----------
-void MainWindow::initOrangeAreaComponents()
+// 将OrangeWidget嵌入主窗口指定位置
+// 流程：创建OrangeWidget对象 -> 从布局中移除原橙区占位容器 -> 在相同位置插入OrangeWidget
+// 功能：在主窗口右侧区域（verticalLayout_right的第1个位置）显示橙区的双图显示+控制条界面
+void MainWindow::embedOrangeWidget()
 {
-    // 创建左侧区域箭头按钮（控制处理前图片帧）- 使用扁平按钮显示文本
-    m_prevLeftButton = new QtMaterialFlatButton("◀");
-    m_prevLeftButton->setMinimumSize(40, 30);
-    m_prevLeftButton->setMaximumSize(40, 30);
+    // 第1步：创建OrangeWidget对象（传入this作为父窗口，确保自动内存管理）
+    m_orangeWidget = new OrangeWidget(this);
     
-    m_nextLeftButton = new QtMaterialFlatButton("▶");
-    m_nextLeftButton->setMinimumSize(40, 30);
-    m_nextLeftButton->setMaximumSize(40, 30);
+    // 第2步：获取右侧区域的垂直布局对象（verticalLayout_right是mainwindow.ui中定义的布局名称）
+    // 右侧区域包含3个子项：双图显示区(stretch=9)、顶部控制条(stretch=0)、底部控制条(stretch=1)
+    QVBoxLayout *rightLayout = qobject_cast<QVBoxLayout*>(ui->verticalLayout_right);
     
-    // 创建右侧区域箭头按钮（控制处理后图片帧）
-    m_prevRightButton = new QtMaterialFlatButton("◀");
-    m_prevRightButton->setMinimumSize(40, 30);
-    m_prevRightButton->setMaximumSize(40, 30);
-    
-    m_nextRightButton = new QtMaterialFlatButton("▶");
-    m_nextRightButton->setMinimumSize(40, 30);
-    m_nextRightButton->setMaximumSize(40, 30);
-    
-    // 创建处理进度条
-    m_progressBar = new QtMaterialProgress();
-    m_progressBar->setRange(0, 100);           // 设置进度条范围0-100
-    m_progressBar->setValue(0);                 // 初始值为0
-    
-    // 创建进度数值显示标签
-    m_progressValueLabel = new QLabel("100%");
-    m_progressValueLabel->setAlignment(Qt::AlignCenter);
-    m_progressValueLabel->setStyleSheet("QLabel { color: #55aaff; font-family: 'Microsoft YaHei'; font-weight: bold; font-size: 12px; }");
-    
-    // 创建处理前图片帧滑块（初始隐藏，处理完成后显示）
-    m_sliderOriginal = new QtMaterialSlider(ui->widget_sliderOriginal);
-    m_sliderOriginal->setRange(0, 0);          // 初始范围（无数据时为0-0）
-    m_sliderOriginal->setValue(0);
-    m_sliderOriginal->hide();                  // 处理完成前隐藏
-    
-    // 创建处理后图片帧滑块（初始隐藏，处理完成后显示）
-    m_sliderProcessed = new QtMaterialSlider(ui->widget_sliderProcessed);
-    m_sliderProcessed->setRange(0, 0);         // 初始范围（无数据时为0-0）
-    m_sliderProcessed->setValue(0);
-    m_sliderProcessed->hide();                 // 处理完成前隐藏
-    
-    // 创建同步帧按钮
-    m_syncButton = new QtMaterialRaisedButton("同步帧");
-    // 设置同步帧按钮的大小策略，使其能够拉伸填充空间
-    m_syncButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    m_syncButton->setMinimumHeight(30);
-}
-
-// ---------- 【橙区】将Material组件嵌入UI布局 ----------
-void MainWindow::setupOrangeAreaInLayout()
-{
-    // 替换左侧箭头按钮（处理前图片切帧）
-    QHBoxLayout *leftArrowsLayout = qobject_cast<QHBoxLayout*>(ui->horizontalLayout_leftArrows);
-    if (leftArrowsLayout) {
-        // 替换左箭头
-        int prevIndex = leftArrowsLayout->indexOf(ui->pushButton_prevLeft);
-        if (prevIndex >= 0) {
-            leftArrowsLayout->removeWidget(ui->pushButton_prevLeft);
-            ui->pushButton_prevLeft->deleteLater();
-            leftArrowsLayout->insertWidget(prevIndex, m_prevLeftButton);
-        }
+    if (rightLayout) {
+        // 第3步：在布局的第一个位置（索引0）插入OrangeWidget
+        // 这会将OrangeWidget放置在右侧区域的顶部位置（占据主要空间）
+        rightLayout->insertWidget(0, m_orangeWidget, 9);  // stretch=9表示占据大部分空间
         
-        // 替换右箭头
-        int nextIndex = leftArrowsLayout->indexOf(ui->pushButton_nextLeft);
-        if (nextIndex >= 0) {
-            leftArrowsLayout->removeWidget(ui->pushButton_nextLeft);
-            ui->pushButton_nextLeft->deleteLater();
-            leftArrowsLayout->insertWidget(nextIndex, m_nextLeftButton);
-        }
-    }
-    
-    // 替换右侧箭头按钮（处理后图片切帧）
-    QHBoxLayout *rightArrowsLayout = qobject_cast<QHBoxLayout*>(ui->horizontalLayout_rightArrows);
-    if (rightArrowsLayout) {
-        // 替换左箭头
-        int prevIndex = rightArrowsLayout->indexOf(ui->pushButton_prevRight);
-        if (prevIndex >= 0) {
-            rightArrowsLayout->removeWidget(ui->pushButton_prevRight);
-            ui->pushButton_prevRight->deleteLater();
-            rightArrowsLayout->insertWidget(prevIndex, m_prevRightButton);
-        }
-        
-        // 替换右箭头
-        int nextIndex = rightArrowsLayout->indexOf(ui->pushButton_nextRight);
-        if (nextIndex >= 0) {
-            rightArrowsLayout->removeWidget(ui->pushButton_nextRight);
-            ui->pushButton_nextRight->deleteLater();
-            rightArrowsLayout->insertWidget(nextIndex, m_nextRightButton);
-        }
-    }
-    
-    // 替换进度条（移到顶部控制条）
-    QHBoxLayout *topControlBarLayout = qobject_cast<QHBoxLayout*>(ui->horizontalLayout_topControlBar);
-    if (topControlBarLayout) {
-        // 移除原始进度条
-        QLayoutItem *progressItem = topControlBarLayout->itemAt(1);
-        if (progressItem && progressItem->widget() == ui->progressBar_processing) {
-            topControlBarLayout->removeWidget(ui->progressBar_processing);
-            ui->progressBar_processing->deleteLater();
-            // 添加Material进度条
-            topControlBarLayout->insertWidget(1, m_progressBar);
-        }
-        
-        // 添加进度数值显示标签
-        QLayoutItem *progressValueItem = topControlBarLayout->itemAt(2);
-        if (progressValueItem && progressValueItem->widget() == ui->widget_progressValue) {
-            // 创建布局并添加标签
-            QVBoxLayout *progressValueLayout = new QVBoxLayout(ui->widget_progressValue);
-            progressValueLayout->setContentsMargins(0, 0, 0, 0);
-            progressValueLayout->addWidget(m_progressValueLabel);
-        }
-    }
-    
-    // 替换同步帧按钮（在底部控制条）
-    QHBoxLayout *controlBarLayout = qobject_cast<QHBoxLayout*>(ui->horizontalLayout_controlBar);
-    if (controlBarLayout) {
-        int syncIndex = controlBarLayout->indexOf(ui->pushButton_syncFrames);
-        if (syncIndex >= 0) {
-            controlBarLayout->removeWidget(ui->pushButton_syncFrames);
-            ui->pushButton_syncFrames->deleteLater();
-            controlBarLayout->insertWidget(syncIndex, m_syncButton);
-        }
-    }
-}
-
-// ---------- 【橙区】绑定信号槽连接 ----------
-void MainWindow::connectOrangeAreaSignals()
-{
-    // 左侧箭头按钮 -> 控制imageStack（处理前图片）帧切换
-    connect(m_prevLeftButton, &QtMaterialFlatButton::clicked,
-            this, &MainWindow::onPrevFrameLeft);
-    connect(m_nextLeftButton, &QtMaterialFlatButton::clicked,
-            this, &MainWindow::onNextFrameLeft);
-    
-    // 右侧箭头按钮 -> 控制final_images（处理后图片）帧切换
-    connect(m_prevRightButton, &QtMaterialFlatButton::clicked,
-            this, &MainWindow::onPrevFrameRight);
-    connect(m_nextRightButton, &QtMaterialFlatButton::clicked,
-            this, &MainWindow::onNextFrameRight);
-    
-    // 同步帧按钮点击 -> 切换同步模式
-    connect(m_syncButton, &QtMaterialRaisedButton::clicked,
-            this, &MainWindow::onSyncFramesClicked);
-    
-    // 处理前图片滑块值改变 -> 更新当前帧并刷新显示
-    connect(m_sliderOriginal, &QtMaterialSlider::valueChanged, [this](int value) {
-        currentOriginalFrame = value;
-        if (isSyncMode) {
-            currentProcessedFrame = value;
-            m_sliderProcessed->blockSignals(true);
-            m_sliderProcessed->setValue(value);
-            m_sliderProcessed->blockSignals(false);
-        }
-        updateImageDisplay();
-    });
-    
-    // 处理后图片滑块值改变 -> 更新当前帧并刷新显示
-    connect(m_sliderProcessed, &QtMaterialSlider::valueChanged, [this](int value) {
-        currentProcessedFrame = value;
-        if (isSyncMode) {
-            currentOriginalFrame = value;
-            m_sliderOriginal->blockSignals(true);
-            m_sliderOriginal->setValue(value);
-            m_sliderOriginal->blockSignals(false);
-        }
-        updateImageDisplay();
-    });
-}
-
-
-// ==================== 【橙区】槽函数实现：双图显示与帧控制 ====================
-
-// 项目自定义槽函数：左侧上一帧
-// 信号源：m_prevLeftButton clicked()信号
-// 流程：检查边界 -> 帧索引减1 -> 更新滑块位置 -> 刷新图像显示
-// 功能：切换到处理前图片的上一帧（如果不在第一帧）
-void MainWindow::onPrevFrameLeft()
-{
-    // 边界检查：确保不会超出第一帧（索引<0）
-    if (currentOriginalFrame > 0) {
-        // 帧索引减1（切换到上一帧）
-        currentOriginalFrame--;
-        
-        // 同步模式下，处理后图片也跟着切换
-        if (isSyncMode) {
-            currentProcessedFrame = currentOriginalFrame;
-            // 阻止右侧滑块的信号发射（避免循环触发）
-            m_sliderProcessed->blockSignals(true);
-            m_sliderProcessed->setValue(currentProcessedFrame);
-            m_sliderProcessed->blockSignals(false);
-        }
-        
-        // 更新左侧滑块位置（会触发valueChanged信号刷新显示）
-        m_sliderOriginal->setValue(currentOriginalFrame);
-    }
-}
-
-// 项目自定义槽函数：左侧下一帧
-// 信号源：m_nextLeftButton clicked()信号
-// 流程：检查边界 -> 帧索引加1 -> 更新滑块位置 -> 刷新图像显示
-// 功能：切换到处理前图片的下一帧（如果不在最后一帧）
-void MainWindow::onNextFrameLeft()
-{
-    // 边界检查：确保不会超出最后一帧
-    if (currentOriginalFrame < totalOriginalFrames - 1) {
-        // 帧索引加1（切换到下一帧）
-        currentOriginalFrame++;
-        
-        // 同步模式下，处理后图片也跟着切换
-        if (isSyncMode) {
-            currentProcessedFrame = currentOriginalFrame;
-            m_sliderProcessed->blockSignals(true);
-            m_sliderProcessed->setValue(currentProcessedFrame);
-            m_sliderProcessed->blockSignals(false);
-        }
-        
-        // 更新左侧滑块位置
-        m_sliderOriginal->setValue(currentOriginalFrame);
-    }
-}
-
-// 项目自定义槽函数：右侧上一帧
-// 信号源：m_prevRightButton clicked()信号
-// 流程：检查边界 -> 帧索引减1 -> 更新滑块位置 -> 刷新图像显示
-// 功能：切换到处理后图片的上一帧（如果不在第一帧）
-void MainWindow::onPrevFrameRight()
-{
-    // 边界检查：确保不会超出第一帧
-    if (currentProcessedFrame > 0) {
-        // 帧索引减1
-        currentProcessedFrame--;
-        
-        // 同步模式下，处理前图片也跟着切换
-        if (isSyncMode) {
-            currentOriginalFrame = currentProcessedFrame;
-            m_sliderOriginal->blockSignals(true);
-            m_sliderOriginal->setValue(currentOriginalFrame);
-            m_sliderOriginal->blockSignals(false);
-        }
-        
-        // 更新右侧滑块位置
-        m_sliderProcessed->setValue(currentProcessedFrame);
-    }
-}
-
-// 项目自定义槽函数：右侧下一帧
-// 信号源：m_nextRightButton clicked()信号
-// 流程：检查边界 -> 帧索引加1 -> 更新滑块位置 -> 刷新图像显示
-// 功能：切换到处理后图片的下一帧（如果不在最后一帧）
-void MainWindow::onNextFrameRight()
-{
-    // 边界检查：确保不会超出最后一帧
-    if (currentProcessedFrame < totalProcessedFrames - 1) {
-        // 帧索引加1
-        currentProcessedFrame++;
-        
-        // 同步模式下，处理前图片也跟着切换
-        if (isSyncMode) {
-            currentOriginalFrame = currentProcessedFrame;
-            m_sliderOriginal->blockSignals(true);
-            m_sliderOriginal->setValue(currentOriginalFrame);
-            m_sliderOriginal->blockSignals(false);
-        }
-        
-        // 更新右侧滑块位置
-        m_sliderProcessed->setValue(currentProcessedFrame);
-    }
-}
-
-// 项目自定义槽函数：同步帧切换
-// 信号源：m_syncButton clicked()信号
-// 流程：切换同步模式标志位 -> 更新按钮文字提示 -> 记录日志
-// 功能：开启/关闭前后图片帧同步模式
-//       开启后：操作一侧会自动同步另一侧
-//       关闭后：两侧可独立切帧
-void MainWindow::onSyncFramesClicked()
-{
-    // 切换同步模式标志位（true <-> false取反）
-    isSyncMode = !isSyncMode;
-    
-    // 根据新模式状态更新按钮文字和日志提示
-    if (isSyncMode) {
-        // 开启同步模式
-        m_syncButton->setText("取消同步");           // 按钮文字改为"取消同步"
-        ui->textEdit_log->append("同步模式已开启: 前后图片帧数将联动");  // 日志提示
-        
-        // 立即同步两侧到同一帧（以左侧为准）
-        currentProcessedFrame = currentOriginalFrame;
-        m_sliderProcessed->blockSignals(true);
-        m_sliderProcessed->setValue(currentProcessedFrame);
-        m_sliderProcessed->blockSignals(false);
-    } else {
-        // 关闭同步模式
-        m_syncButton->setText("同步帧");              // 按钮文字恢复为"同步帧"
-        ui->textEdit_log->append("同步模式已关闭: 前后图片帧数独立控制");  // 日志提示
-    }
-    
-    // 无论是否同步，都刷新一次图像显示
-    updateImageDisplay();
-}
-
-// 辅助函数：更新图像显示（方案B核心实现）
-// 功能：根据当前帧索引，从文件中读取对应帧并显示到两个QLabel上
-//       自动计算缩放比例以适应显示区域大小
-void MainWindow::updateImageDisplay()
-{
-    // ========== 显示处理前图片（左侧区域） ==========
-
-    // 检查是否有有效的输入文件路径
-    if (!m_inputFilePath.isEmpty()) {
-        // 从TIFF文件中读取当前帧（核心函数调用）
-        QImage qOriginalImg = readTiffFrame(m_inputFilePath, currentOriginalFrame);
-
-        // 检查读取是否成功
-        if (!qOriginalImg.isNull()) {
-            // 获取左侧显示区域（label_originalImage）的实际尺寸
-            QSize labelSize = ui->label_originalImage->size();
-
-            // 计算缩放比例：保持宽高比，适应显示区域（等比缩放）
-            QPixmap pixmapOriginal = QPixmap::fromImage(qOriginalImg);
-            QPixmap scaledPixmapOriginal = pixmapOriginal.scaled(
-                labelSize,                            // 目标尺寸（ QLabel的大小）
-                Qt::KeepAspectRatio,                 // 保持宽高比
-                Qt::SmoothTransformation             // 平滑转换（高质量缩放算法）
-            );
-
-            // 将缩放后的图像显示到左侧QLabel
-            ui->label_originalImage->setPixmap(scaledPixmapOriginal);
-        } else {
-            // 读取失败时显示占位文字
-            ui->label_originalImage->setText("处理前图片\n(帧 " + QString::number(currentOriginalFrame + 1) + "/" + QString::number(totalOriginalFrames) + ")");
-        }
-    }
-
-
-    // ========== 显示处理后图片（右侧区域） ==========
-
-    // 检查是否有有效的输出文件路径（处理完成后才会设置）
-    if (!m_outputFilePath.isEmpty()) {
-        // 从输出TIFF文件中读取当前帧
-        QImage qProcessedImg = readTiffFrame(m_outputFilePath, currentProcessedFrame);
-
-        // 检查读取是否成功
-        if (!qProcessedImg.isNull()) {
-            // 获取右侧显示区域（label_processedImage）的实际尺寸
-            QSize labelSize = ui->label_processedImage->size();
-
-            // 计算缩放比例：保持宽高比，适应显示区域
-            QPixmap pixmapProcessed = QPixmap::fromImage(qProcessedImg);
-            QPixmap scaledPixmapProcessed = pixmapProcessed.scaled(
-                labelSize,
-                Qt::KeepAspectRatio,
-                Qt::SmoothTransformation
-            );
-
-            // 将缩放后的图像显示到右侧QLabel
-            ui->label_processedImage->setPixmap(scaledPixmapProcessed);
-        } else {
-            // 读取失败时显示占位文字
-            ui->label_processedImage->setText("处理后图片\n(帧 " + QString::number(currentProcessedFrame + 1) + "/" + QString::number(totalProcessedFrames) + ")");
-        }
+        // 连接OrangeWidget的日志消息信号到主窗口的日志显示槽
+        // 当橙区产生日志消息时，会自动显示在紫区的日志栏中
+        connect(m_orangeWidget, &OrangeWidget::logMessage, [this](const QString &message) {
+            ui->textEdit_log->append(message);  // 将消息追加到日志文本框
+        });
     }
 }
 
@@ -781,6 +376,7 @@ void MainWindow::updateImageDisplay()
 // 【Qt原生公共槽函数：运行处理（解决UI冻结问题）】
 // 信号源：m_runButton clicked信号
 // 功能：调用DarkSectioning处理逻辑，使用processEvents保持UI响应
+//         处理完成后通知橙区显示结果图像
 // ============================================================================
 void MainWindow::on_pushButton_run_clicked()
 {
@@ -790,101 +386,91 @@ void MainWindow::on_pushButton_run_clicked()
     // 禁用Run按钮防止重复点击
     m_runButton->setEnabled(false);
     
-    // 显示进度条，隐藏滑块
-    m_progressBar->show();
-    m_progressBar->setValue(0);
-    m_sliderOriginal->hide();
-    m_sliderProcessed->hide();
+    // ========== 第1步：获取并验证输入文件路径 ==========
     
-    // 强制刷新UI
-    QApplication::processEvents();
-    
-    // ========== 方案B：保存文件路径而非Mat数据 ==========
-    
-    // 第1步：获取并保存输入文件路径
-    m_inputFilePath = ui->lineEdit_inputPath->text();
-    if (m_inputFilePath.isEmpty()) {
+    QString inputFilePath = ui->lineEdit_inputPath->text();  // 从输入框获取路径
+    if (inputFilePath.isEmpty()) {
         ui->textEdit_log->append("错误: 请先选择输入图片路径");
-        m_runButton->setEnabled(true);
-        return;
+        m_runButton->setEnabled(true);  // 重新启用按钮
+        return;  // 提前返回，不继续执行
     }
     
-    // 更新进度条到10%
-    m_progressBar->setValue(10);
+    // 将输入文件路径传递给橙区（橙区需要此路径来显示处理前图片）
+    m_orangeWidget->setInputFilePath(inputFilePath);
+    
+    // ========== 第2步：通知橙区开始处理（显示进度条、隐藏滑块） ==========
+    
+    // 调用OrangeWidget的startProcessing()接口
+    // 橙区会自动显示进度条、隐藏帧滑块、重置进度值为0%
+    m_orangeWidget->startProcessing();
+    
+    // 强制刷新UI（确保进度条立刻显示）
     QApplication::processEvents();
     
-    // 第2步：调用原有的DarkSectioning处理函数（不修改任何业务逻辑）
+    // 更新进度条到10%（表示开始处理）
+    m_orangeWidget->updateProgress(10);
+    QApplication::processEvents();
+    
+    // ========== 第3步：调用原有的DarkSectioning处理函数（保持原有业务逻辑不变） ==========
+    
     // darkSectioning->process() 内部会：
-    // 1. 读取输入文件并处理
-    // 2. 将结果保存到输出目录的Dark.tif文件
+    // 1. 读取输入文件并执行Dark Sectioning算法
+    // 2. 将结果保存到输出目录的xxx_Darked.tif文件
     // 3. 定期调用QApplication::processEvents()保持UI响应
     darkSectioning->process();
     
-    // 更新进度条到90%
-    m_progressBar->setValue(90);
+    // 更新进度条到90%（表示算法处理完成）
+    m_orangeWidget->updateProgress(90);
     QApplication::processEvents();
     
-    // 第3步：设置输出文件路径（方案B：从文件路径读取显示）
-    QString outputDir = ui->lineEdit_outputPath->text();
+    // ========== 第4步：构建输出文件路径并传递给橙区 ==========
+    
+    QString outputDir = ui->lineEdit_outputPath->text();  // 获取输出目录
     if (outputDir.isEmpty()) {
+        // 如果用户未选择输出目录，默认保存到桌面
         outputDir = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
     }
     
-    // 确保路径以斜杠结尾
+    // 确保路径以斜杠结尾（Windows兼容/和\两种分隔符）
     if (!outputDir.endsWith('/') && !outputDir.endsWith('\\')) {
         outputDir += '/';
     }
     
     // 构建输出文件名：原始文件名 + _Darked.tif
-    QFileInfo inputFileInfo(m_inputFilePath);
-    QString baseName = inputFileInfo.baseName();  // 去除扩展名的文件名
-    QString outputFileName = baseName + "_Darked.tif";
-    m_outputFilePath = outputDir + outputFileName;  // 输出文件名为：原始文件名_Darked.tif
+    QFileInfo inputFileInfo(inputFilePath);
+    QString baseName = inputFileInfo.baseName();  // 去除扩展名的文件名（如"image"）
+    QString outputFileName = baseName + "_Darked.tif";  // 输出文件名（如"image_Darked.tif"）
+    QString outputFilePath = outputDir + outputFileName;  // 完整输出路径
     
-    // 第4步：获取帧数信息（从darkSectioning的成员变量读取）
-    totalOriginalFrames = darkSectioning->imageStack.size();
-    totalProcessedFrames = darkSectioning->final_images.size();
+    // 将输出文件路径传递给橙区（橙区需要此路径来显示处理后图片）
+    m_orangeWidget->setOutputFilePath(outputFilePath);
+    
+    // ========== 第5步：获取帧数信息并通知橙区处理完成 ==========
+    
+    // 从darkSectioning的业务对象中读取帧数统计信息
+    int totalOriginalFrames = darkSectioning->imageStack.size();      // 处理前总帧数
+    int totalProcessedFrames = darkSectioning->final_images.size();   // 处理后总帧数
     
     // 在日志中记录完成信息
     ui->textEdit_log->append("图像处理完成!");
-    ui->textEdit_log->append(QString("输入文件: %1").arg(m_inputFilePath));
-    ui->textEdit_log->append(QString("输出文件: %1").arg(m_outputFilePath));
+    ui->textEdit_log->append(QString("输入文件: %1").arg(inputFilePath));
+    ui->textEdit_log->append(QString("输出文件: %1").arg(outputFilePath));
     ui->textEdit_log->append(QString("处理前帧数: %1, 处理后帧数: %2")
                              .arg(totalOriginalFrames)
                              .arg(totalProcessedFrames));
     
-    // 第5步：配置滑块范围（如果有有效帧数）
-    if (totalOriginalFrames > 0) {
-        // 设置处理前图片滑块的范围（0 到 总帧数-1）
-        m_sliderOriginal->setRange(0, totalOriginalFrames - 1);
-        m_sliderOriginal->setValue(0);              // 重置到第一帧
-        m_sliderOriginal->show();                  // 显示滑块
-    }
+    // 调用OrangeWidget的finishProcessing()接口通知处理完成
+    // 橙区会自动：
+    // 1. 配置两个滑块的有效范围（0 到 总帧数-1）
+    // 2. 显示滑块（之前被startProcessing隐藏了）
+    // 3. 更新进度条到100%
+    // 4. 显示第一帧的处理前/后对比图像
+    m_orangeWidget->finishProcessing(totalOriginalFrames, totalProcessedFrames);
     
-    if (totalProcessedFrames > 0) {
-        // 设置处理后图片滑块的范围
-        m_sliderProcessed->setRange(0, totalProcessedFrames - 1);
-        m_sliderProcessed->setValue(0);            // 重置到第一帧
-        m_sliderProcessed->show();                 // 显示滑块
-    }
-    
-    // 第6步：重置帧索引并显示第一帧图像
-    currentOriginalFrame = 0;
-    currentProcessedFrame = 0;
-    
-    // 更新进度条到100%（表示全部完成）
-    m_progressBar->setValue(100);
-    
-    // 更新进度数值显示标签
-    m_progressValueLabel->setText("100%");
-    
-    // 刷新图像显示（调用辅助函数显示第一帧）
-    updateImageDisplay();
-    
-    // 重新启用Run按钮（允许再次处理）
+    // 重新启用Run按钮（允许再次处理其他图片）
     m_runButton->setEnabled(true);
     
-    // 强制最终UI刷新
+    // 强制最终UI刷新（确保所有变更都立刻呈现给用户）
     QApplication::processEvents();
 }
 
@@ -894,16 +480,23 @@ void MainWindow::on_pushButton_run_clicked()
 // ============================================================================
 // Qt原生事件重载：窗口大小改变时自动调用
 // 信号源：系统resizeEvent
-// 功能：窗口缩放时自动重新计算图片大小并更新显示（无需手动点击"同步帧"）
+// 功能：窗口缩放时自动通知橙区重新计算图片大小并更新显示
+//       （无需手动点击"同步帧"按钮）
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
-    // 调用父类的resizeEvent处理（确保正常的布局更新）
+    // 调用父类的resizeEvent处理（这一步必须要有！）
+    // 确保Qt框架正常的布局更新、子控件位置调整等基础功能正常工作
     QMainWindow::resizeEvent(event);
     
-    // 延迟调用图片更新，等待布局完成后再重新计算大小
-    // 使用单次定时器延迟50ms，确保QLabel的新尺寸已经计算完成
+    // 使用单次定时器延迟50毫秒后再通知橙区更新图像显示
+    // 原因：resize事件发生后，布局系统需要一定时间重新计算所有子控件的新尺寸
+    //       如果立即调用updateImageDisplay()，此时QLabel可能还没有更新到最终大小，
+    //       导致图片缩放尺寸不准确。延迟50ms可以确保布局已经稳定。
     QTimer::singleShot(50, this, [this]() {
-        updateImageDisplay();
+        // 通知橙区更新图像显示（OrangeWidget内部会自动重新计算缩放比例）
+        if (m_orangeWidget) {
+            m_orangeWidget->updateImageDisplay();
+        }
     });
 }
 
@@ -911,6 +504,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 // ============================================================================
 // 【应用Material主题颜色】
 // 功能：统一设置所有Material组件的主题色为#55aaff（天蓝色）
+// 说明：仅对蓝区和绿区组件应用主题色，橙区组件已在OrangeWidget内部自行设置
 // ============================================================================
 void MainWindow::applyMaterialTheme()
 {
@@ -931,20 +525,8 @@ void MainWindow::applyMaterialTheme()
         textField->setInkColor(themeColor);
     }
     
-    // 为【橙区】组件应用主题色
-    // 设置箭头按钮的前景色（文字颜色）
-    m_prevLeftButton->setForegroundColor(themeColor);
-    m_nextLeftButton->setForegroundColor(themeColor);
-    m_prevRightButton->setForegroundColor(themeColor);
-    m_nextRightButton->setForegroundColor(themeColor);
-    
-    m_progressBar->setProgressColor(themeColor);
-    m_sliderOriginal->setTrackColor(themeColor);
-    m_sliderProcessed->setTrackColor(themeColor);
-    m_sliderOriginal->setThumbColor(themeColor);
-    m_sliderProcessed->setThumbColor(themeColor);
-    
-    m_syncButton->setForegroundColor(themeColor);
+    // 注意：橙区组件的主题色已在OrangeWidget::applyMaterialTheme()中设置
+    // 无需在此处重复设置
     
     // 设置窗口整体样式表（全局UI风格）
     this->setStyleSheet(
@@ -958,76 +540,6 @@ void MainWindow::applyMaterialTheme()
         "QMenu { background-color: #ffffff; border: 1px solid #cccccc; }"
         "QMenu::item:selected { background-color: #e6f2ff; color: #55aaff; }"
     );
-}
-
-
-// ============================================================================
-// 核心函数：从多帧TIFF文件中读取指定帧（Qt原生方式）
-// 功能：使用Qt原生QImageReader读取TIFF文件的特定帧
-//       直接返回QImage，无需OpenCV转换，显示效果与Windows照片查看器一致
-// 参数：filePath - TIFF文件路径，frameIndex - 帧索引（从0开始）
-// 返回：QImage对象（如果读取失败返回空QImage）
-// ============================================================================
-QImage MainWindow::readTiffFrame(const QString& filePath, int frameIndex)
-{
-    // 使用Qt的QImageReader直接读取图像文件（支持TIFF多帧）
-    QImageReader reader(filePath);
-    
-    // 检查文件是否可以读取
-    if (!reader.canRead()) {
-        ui->textEdit_log->append("错误: 无法读取文件 " + filePath);
-        return QImage();
-    }
-    
-    // 获取总帧数（用于边界检查）
-    int totalFrames = reader.imageCount();
-    
-    if (totalFrames <= 0) {
-        // 单帧图像或无法确定帧数（某些TIFF格式可能返回-1或0）
-        // 直接读取第一帧并返回
-        QImage image = reader.read();
-        
-        if (frameIndex == 0 || frameIndex < 0) {
-            return image;
-        } else {
-            ui->textEdit_log->append(QString("警告: 请求帧 %1 但图像为单帧").arg(frameIndex));
-            return image;
-        }
-    }
-    
-    // 边界检查：确保帧索引在有效范围内
-    if (frameIndex < 0 || frameIndex >= totalFrames) {
-        ui->textEdit_log->append(QString("错误: 帧索引 %1 超出范围 (总帧数: %2)")
-                                 .arg(frameIndex)
-                                 .arg(totalFrames));
-        return QImage();
-    }
-    
-    // 跳转到指定帧
-    bool jumpSuccess = reader.jumpToImage(frameIndex);
-    
-    if (!jumpSuccess) {
-        // 某些TIFF格式可能不支持随机访问，尝试顺序读取
-        reader.setFileName(filePath);  // 重置读取器
-        
-        for (int i = 0; i < frameIndex; i++) {
-            if (!reader.jumpToNextImage()) {
-                ui->textEdit_log->append(QString("错误: 无法跳转到帧 %1 (在第 %2 帧失败)")
-                                         .arg(frameIndex).arg(i));
-                return QImage();
-            }
-        }
-    }
-    
-    // 读取指定帧并返回（Qt自动处理颜色空间转换）
-    QImage image = reader.read();
-    
-    if (image.isNull()) {
-        ui->textEdit_log->append(QString("错误: 读取帧 %1 失败 (可能是TIFF格式问题)")
-                                 .arg(frameIndex));
-    }
-    
-    return image;
 }
 
 
