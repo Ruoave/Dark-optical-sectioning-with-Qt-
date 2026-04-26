@@ -87,6 +87,10 @@ void OrangeWidget::initOrangeAreaComponents()
     // 选中后按钮背景色自动变深（Material框架自带效果），再次点击取消选中恢复原色
     // 这与"同步帧/取消同步"的切换语义完美匹配：未选中=不同步，选中=已开启同步
     m_syncButton->setCheckable(true);
+
+
+
+
     // ---------- 创建处理进度条 ----------
 
     // Material风格的进度条控件（用于显示Dark Sectioning算法的处理进度）
@@ -396,7 +400,7 @@ void OrangeWidget::onSyncFramesClicked()
     // 根据新的模式状态执行不同的UI更新逻辑
     if (isSyncMode) {
         // ========== 开启同步模式 ==========
-        m_syncButton->setText("取消同步");           // 按钮文字改为"取消同步"（提示用户再次点击可取消）
+        m_syncButton->setText("同步中");           // 按钮文字改为"取消同步"（提示用户再次点击可取消）
 
         // 发射日志消息信号（主窗口会接收到并在紫区日志栏显示）
         emit logMessage("同步模式已开启: 前后图片帧数将联动");
