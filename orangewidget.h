@@ -9,7 +9,6 @@
 
 // Material组件头文件引入（严格使用libs文件夹下的公共接口头文件）
 // 仅包含橙区实际使用的Material组件，不包含其他区域组件
-#include "qtmaterialflatbutton.h"
 #include "qtmaterialprogress.h"
 #include "qtmaterialslider.h"
 
@@ -36,24 +35,24 @@ signals:
 
 private slots:
     // 项目自定义槽函数：左侧上一帧（处理前图片）
-    // 信号源：m_prevLeftButton clicked()信号
+    // 信号源：ui->pushButton_prevLeft clicked()信号
     // 流程：检查边界 -> 帧索引减1 -> 更新滑块位置 -> 刷新图像显示
     // 功能：切换到处理前图片的上一帧（如果不在第一帧）
     void onPrevFrameLeft();
     
     // 项目自定义槽函数：左侧下一帧（处理前图片）
-    // 信号源：m_nextLeftButton clicked()信号
+    // 信号源：ui->pushButton_nextLeft clicked()信号
     // 流程：检查边界 -> 帧索引加1 -> 更新滑块位置 -> 刷新图像显示
     // 功能：切换到处理前图片的下一帧（如果不在最后一帧）
     void onNextFrameLeft();
     
     // 项目自定义槽函数：右侧上一帧（处理后图片）
-    // 信号源：m_prevRightButton clicked()信号
+    // 信号源：ui->pushButton_prevRight clicked()信号
     // 功能：切换到处理后图片的上一帧（如果不在第一帧）
     void onPrevFrameRight();
     
     // 项目自定义槽函数：右侧下一帧（处理后图片）
-    // 信号源：m_nextRightButton clicked()信号
+    // 信号源：ui->pushButton_nextRight clicked()信号
     // 功能：切换到处理后图片的下一帧（如果不在最后一帧）
     void onNextFrameRight();
     
@@ -72,12 +71,6 @@ private:
     Ui::OrangeWidget *ui;                        // UI界面指针（来自Qt Designer生成的ui_orangewidget.h）
 
     // ==================== 橙区Material组件声明 ====================
-    
-    // 箭头按钮组（4个）：用于控制处理前/后图片的帧切换
-    QtMaterialFlatButton *m_prevLeftButton;       // 左侧区域左箭头扁平按钮（处理前图片上一帧）
-    QtMaterialFlatButton *m_nextLeftButton;       // 左侧区域右箭头扁平按钮（处理前图片下一帧）
-    QtMaterialFlatButton *m_prevRightButton;      // 右侧区域左箭头扁平按钮（处理后图片上一帧）
-    QtMaterialFlatButton *m_nextRightButton;      // 右侧区域右箭头扁平按钮（处理后图片下一帧）
     
     // 进度条组件：显示Dark Sectioning处理进度
     QtMaterialProgress *m_progressBar;            // 处理进度条（Material风格）

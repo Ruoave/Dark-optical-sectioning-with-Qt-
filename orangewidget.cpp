@@ -58,10 +58,6 @@ OrangeWidget::~OrangeWidget()
     delete ui;
 
     // 释放【橙区】Material组件内存（防止内存泄漏）
-    delete m_prevLeftButton;                    // 释放左侧左箭头按钮
-    delete m_nextLeftButton;                    // 释放左侧右箭头按钮
-    delete m_prevRightButton;                   // 释放右侧左箭头按钮
-    delete m_nextRightButton;                   // 释放右侧右箭头按钮
     delete m_progressBar;                       // 释放进度条控件
     delete m_sliderOriginal;                    // 释放处理前图片滑块
     delete m_sliderProcessed;                   // 释放处理后图片滑块
@@ -75,30 +71,6 @@ OrangeWidget::~OrangeWidget()
 // ============================================================================
 void OrangeWidget::initOrangeAreaComponents()
 {
-    // ---------- 创建左侧区域箭头按钮（控制处理前图片帧切换） ----------
-
-    // 左箭头按钮：点击后切换到上一帧（◀符号表示向左/向前）
-    m_prevLeftButton = new QtMaterialFlatButton("◀");
-    m_prevLeftButton->setMinimumSize(40, 30);   // 设置最小尺寸40x30像素
-    m_prevLeftButton->setMaximumSize(40, 30);   // 设置最大尺寸40x30像素（固定大小）
-
-    // 右箭头按钮：点击后切换到下一帧（▶符号表示向右/向后）
-    m_nextLeftButton = new QtMaterialFlatButton("▶");
-    m_nextLeftButton->setMinimumSize(40, 30);   // 设置最小尺寸40x30像素
-    m_nextLeftButton->setMaximumSize(40, 30);   // 设置最大尺寸40x30像素
-
-    // ---------- 创建右侧区域箭头按钮（控制处理后图片帧切换） ----------
-
-    // 左箭头按钮：点击后切换到处理后图片的上一帧
-    m_prevRightButton = new QtMaterialFlatButton("◀");
-    m_prevRightButton->setMinimumSize(40, 30);  // 设置最小尺寸40x30像素
-    m_prevRightButton->setMaximumSize(40, 30);  // 设置最大尺寸40x30像素
-
-    // 右箭头按钮：点击后切换到处理后图片的下一帧
-    m_nextRightButton = new QtMaterialFlatButton("▶");
-    m_nextRightButton->setMinimumSize(40, 30);  // 设置最小尺寸40x30像素
-    m_nextRightButton->setMaximumSize(40, 30);  // 设置最大尺寸40x30像素
-
     // ---------- 创建处理进度条 ----------
 
     // Material风格的进度条控件（用于显示Dark Sectioning算法的处理进度）
@@ -140,50 +112,6 @@ void OrangeWidget::initOrangeAreaComponents()
 // ============================================================================
 void OrangeWidget::setupOrangeAreaInLayout()
 {
-    // ---------- 替换左侧箭头按钮（处理前图片切帧控制） ----------
-
-    // 获取左侧箭头按钮的水平布局对象（horizontalLayout_leftArrows）
-    QHBoxLayout *leftArrowsLayout = qobject_cast<QHBoxLayout*>(ui->horizontalLayout_leftArrows);
-    if (leftArrowsLayout) {
-        // 替换左箭头按钮（pushButton_prevLeft -> m_prevLeftButton）
-        int prevIndex = leftArrowsLayout->indexOf(ui->pushButton_prevLeft);  // 获取原按钮在布局中的位置索引
-        if (prevIndex >= 0) {
-            leftArrowsLayout->removeWidget(ui->pushButton_prevLeft);         // 从布局中移除原按钮
-            ui->pushButton_prevLeft->deleteLater();                          // 延迟删除原按钮（安全释放）
-            leftArrowsLayout->insertWidget(prevIndex, m_prevLeftButton);     // 在原位置插入Material按钮
-        }
-
-        // 替换右箭头按钮（pushButton_nextLeft -> m_nextLeftButton）
-        int nextIndex = leftArrowsLayout->indexOf(ui->pushButton_nextLeft);  // 获取原按钮位置索引
-        if (nextIndex >= 0) {
-            leftArrowsLayout->removeWidget(ui->pushButton_nextLeft);         // 从布局中移除
-            ui->pushButton_nextLeft->deleteLater();                          // 延迟删除
-            leftArrowsLayout->insertWidget(nextIndex, m_nextLeftButton);     // 插入Material按钮
-        }
-    }
-
-    // ---------- 替换右侧箭头按钮（处理后图片切帧控制） ----------
-
-    // 获取右侧箭头按钮的水平布局对象（horizontalLayout_rightArrows）
-    QHBoxLayout *rightArrowsLayout = qobject_cast<QHBoxLayout*>(ui->horizontalLayout_rightArrows);
-    if (rightArrowsLayout) {
-        // 替换左箭头按钮（pushButton_prevRight -> m_prevRightButton）
-        int prevIndex = rightArrowsLayout->indexOf(ui->pushButton_prevRight);
-        if (prevIndex >= 0) {
-            rightArrowsLayout->removeWidget(ui->pushButton_prevRight);
-            ui->pushButton_prevRight->deleteLater();
-            rightArrowsLayout->insertWidget(prevIndex, m_prevRightButton);
-        }
-
-        // 替换右箭头按钮（pushButton_nextRight -> m_nextRightButton）
-        int nextIndex = rightArrowsLayout->indexOf(ui->pushButton_nextRight);
-        if (nextIndex >= 0) {
-            rightArrowsLayout->removeWidget(ui->pushButton_nextRight);
-            ui->pushButton_nextRight->deleteLater();
-            rightArrowsLayout->insertWidget(nextIndex, m_nextRightButton);
-        }
-    }
-
     // ---------- 替换进度条（移到顶部控制条 horizontalLayout_topControlBar） ----------
 
     // 获取顶部控制条的水平布局对象
@@ -219,21 +147,21 @@ void OrangeWidget::connectOrangeAreaSignals()
     // ---------- 左侧箭头按钮信号槽连接（控制处理前图片帧） ----------
 
     // 左箭头按钮点击 -> 执行onPrevFrameLeft()槽函数（切换到上一帧）
-    connect(m_prevLeftButton, &QtMaterialFlatButton::clicked,
+    connect(ui->pushButton_prevLeft, &QPushButton::clicked,
             this, &OrangeWidget::onPrevFrameLeft);
 
     // 右箭头按钮点击 -> 执行onNextFrameLeft()槽函数（切换到下一帧）
-    connect(m_nextLeftButton, &QtMaterialFlatButton::clicked,
+    connect(ui->pushButton_nextLeft, &QPushButton::clicked,
             this, &OrangeWidget::onNextFrameLeft);
 
     // ---------- 右侧箭头按钮信号槽连接（控制处理后图片帧） ----------
 
     // 左箭头按钮点击 -> 执行onPrevFrameRight()槽函数（切换到上一帧）
-    connect(m_prevRightButton, &QtMaterialFlatButton::clicked,
+    connect(ui->pushButton_prevRight, &QPushButton::clicked,
             this, &OrangeWidget::onPrevFrameRight);
 
     // 右箭头按钮点击 -> 执行onNextFrameRight()槽函数（切换到下一帧）
-    connect(m_nextRightButton, &QtMaterialFlatButton::clicked,
+    connect(ui->pushButton_nextRight, &QPushButton::clicked,
             this, &OrangeWidget::onNextFrameRight);
 
     // ---------- 同步帧按钮信号槽连接 ----------
@@ -293,13 +221,6 @@ void OrangeWidget::applyMaterialTheme()
     // 定义主题主色调常量（#55aaff天蓝色）
     QColor themeColor(85, 170, 255);
 
-    // ---------- 为箭头按钮组应用主题色 ----------
-    // 设置前景色（即按钮文字/图标的颜色）
-    m_prevLeftButton->setForegroundColor(themeColor);
-    m_nextLeftButton->setForegroundColor(themeColor);
-    m_prevRightButton->setForegroundColor(themeColor);
-    m_nextRightButton->setForegroundColor(themeColor);
-
     // ---------- 为进度条应用主题色 ----------
     m_progressBar->setProgressColor(themeColor);   // 设置进度条的填充颜色
 
@@ -315,7 +236,7 @@ void OrangeWidget::applyMaterialTheme()
 
 
 // 项目自定义槽函数：左侧上一帧（处理前图片）
-// 信号源：m_prevLeftButton clicked()信号
+// 信号源：ui->pushButton_prevLeft clicked()信号
 // 流程：检查边界条件 -> 帧索引减1 -> 同步模式下更新右侧 -> 更新滑块 -> 刷新显示
 // 功能：切换到处理前图片的上一帧（如果当前不在第一帧）
 void OrangeWidget::onPrevFrameLeft()
@@ -343,7 +264,7 @@ void OrangeWidget::onPrevFrameLeft()
 
 
 // 项目自定义槽函数：左侧下一帧（处理前图片）
-// 信号源：m_nextLeftButton clicked()信号
+// 信号源：ui->pushButton_nextLeft clicked()信号
 // 流程：检查边界条件 -> 帧索引加1 -> 同步模式下更新右侧 -> 更新滑块 -> 刷新显示
 // 功能：切换到处理前图片的下一帧（如果当前不在最后一帧）
 void OrangeWidget::onNextFrameLeft()
@@ -368,7 +289,7 @@ void OrangeWidget::onNextFrameLeft()
 
 
 // 项目自定义槽函数：右侧上一帧（处理后图片）
-// 信号源：m_prevRightButton clicked()信号
+// 信号源：ui->pushButton_prevRight clicked()信号
 // 功能：切换到处理后图片的上一帧（如果当前不在第一帧）
 void OrangeWidget::onPrevFrameRight()
 {
@@ -392,7 +313,7 @@ void OrangeWidget::onPrevFrameRight()
 
 
 // 项目自定义槽函数：右侧下一帧（处理后图片）
-// 信号源：m_nextRightButton clicked()信号
+// 信号源：ui->pushButton_nextRight clicked()信号
 // 功能：切换到处理后图片的下一帧（如果当前不在最后一帧）
 void OrangeWidget::onNextFrameRight()
 {
