@@ -110,15 +110,27 @@
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_content" stretch="3,7">
+     <layout class="QHBoxLayout" name="horizontalLayout_content" stretch="0,1">
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_left" stretch="6,4">
+       <layout class="QVBoxLayout" name="verticalLayout_left" stretch="1,1">
         <item>
          <widget class="QGroupBox" name="groupBox_params">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="minimumSize">
            <size>
             <width>350</width>
-            <height>250</height>
+            <height>360</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>350</width>
+            <height>360</height>
            </size>
           </property>
           <property name="title">

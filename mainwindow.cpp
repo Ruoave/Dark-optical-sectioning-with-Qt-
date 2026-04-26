@@ -222,22 +222,43 @@ void MainWindow::embedOrangeWidget()
 {
     // 第1步：创建OrangeWidget对象（传入this作为父窗口，确保自动内存管理）
     m_orangeWidget = new OrangeWidget(this);
-    
-    // 第2步：获取右侧区域的垂直布局对象（verticalLayout_right是mainwindow.ui中定义的布局名称）
-    // 右侧区域包含3个子项：双图显示区(stretch=9)、顶部控制条(stretch=0)、底部控制条(stretch=1)
-    QVBoxLayout *rightLayout = qobject_cast<QVBoxLayout*>(ui->verticalLayout_right);
-    
-    if (rightLayout) {
-        // 第3步：在布局的第一个位置（索引0）插入OrangeWidget
-        // 这会将OrangeWidget放置在右侧区域的顶部位置（占据主要空间）
-        rightLayout->insertWidget(0, m_orangeWidget, 9);  // stretch=9表示占据大部分空间
-        
-        // 连接OrangeWidget的日志消息信号到主窗口的日志显示槽
-        // 当橙区产生日志消息时，会自动显示在紫区的日志栏中
-        connect(m_orangeWidget, &OrangeWidget::logMessage, [this](const QString &message) {
-            ui->textEdit_log->append(message);  // 将消息追加到日志文本框
-        });
+
+    // 第2步：获取右侧区域的垂直布局对象
+    QVBoxLayout *rightLayout = ui->verticalLayout_right;
+
+    // 第3步：移除.ui中的橙区占位容器（widget_orangePlaceholder），避免占用多余空间
+    int placeholderIndex = rightLayout->indexOf(ui->widget_orangePlaceholder);
+    if (placeholderIndex >= 0) {
+        rightLayout->removeWidget(ui->widget_orangePlaceholder);
+        ui->widget_orangePlaceholder->deleteLater();
     }
+
+    if (rightLayout) {
+        // 第4步：在原位置插入OrangeWidget
+        rightLayout->insertWidget(placeholderIndex >= 0 ? placeholderIndex : 0, m_orangeWidget);
+    }
+
+    // ========== 关键：在代码中强制设置布局属性（.ui属性可能被动态操作覆盖）==========
+
+    // 设置内容区水平布局的stretch因子：左列固定宽度(0)，橙区填充所有额外宽度(1)
+    QHBoxLayout *contentLayout = ui->horizontalLayout_content;
+    contentLayout->setStretch(0, 0);   // 左列（绿区+紫区）：不分配额外宽度
+    contentLayout->setStretch(1, 1);   // 右列（橙区）：独占所有额外宽度
+
+    // 设置左列垂直布局的stretch因子：绿区和紫区初始高度比例
+    QVBoxLayout *leftLayout = ui->verticalLayout_left;
+    leftLayout->setStretch(0, 1);   // 绿区groupBox_params（Fixed 350×360）：占1份高度
+    leftLayout->setStretch(1, 1);   // 紫区textEdit_log：占1份高度（实际会吸收所有剩余空间）
+
+    // 设置绿区GroupBox为Fixed大小策略，固定尺寸350×360（窗口放大时保持不变）
+    ui->groupBox_params->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    ui->groupBox_params->setMinimumSize(350, 360);
+    ui->groupBox_params->setMaximumSize(350, 360);
+
+    // 连接OrangeWidget的日志消息信号到主窗口的日志显示槽
+    connect(m_orangeWidget, &OrangeWidget::logMessage, [this](const QString &message) {
+        ui->textEdit_log->append(message);
+    });
 }
 
 
