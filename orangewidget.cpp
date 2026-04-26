@@ -65,7 +65,6 @@ OrangeWidget::~OrangeWidget()
     delete m_progressBar;                       // 释放进度条控件
     delete m_sliderOriginal;                    // 释放处理前图片滑块
     delete m_sliderProcessed;                   // 释放处理后图片滑块
-    delete m_syncButton;                        // 释放同步帧按钮
 }
 
 
@@ -131,14 +130,6 @@ void OrangeWidget::initOrangeAreaComponents()
     m_sliderProcessed->setRange(0, 0);          // 初始范围设为0-0（无数据时无效状态）
     m_sliderProcessed->setValue(0);             // 初始值设为0（第一帧）
     m_sliderProcessed->hide();                  // 初始隐藏（处理完成前不显示滑块）
-
-    // ---------- 创建同步帧按钮 ----------
-
-    // Material风格的凸起按钮（用于开启/关闭前后图片帧同步模式）
-    m_syncButton = new QtMaterialRaisedButton("同步帧");  // 默认文字为"同步帧"
-    // 设置大小策略：水平方向可拉伸填充空间，垂直方向固定高度
-    m_syncButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    m_syncButton->setMinimumHeight(30);         // 最小高度30像素
 }
 
 
@@ -215,20 +206,6 @@ void OrangeWidget::setupOrangeAreaInLayout()
             progressValueLayout->addWidget(m_progressValueLabel);          // 将标签添加到布局中
         }
     }
-
-    // ---------- 替换同步帧按钮（在底部控制条 horizontalLayout_controlBar） ----------
-
-    // 获取底部控制条的水平布局对象
-    QHBoxLayout *controlBarLayout = qobject_cast<QHBoxLayout*>(ui->horizontalLayout_controlBar);
-    if (controlBarLayout) {
-        // 替换同步帧按钮（pushButton_syncFrames -> m_syncButton）
-        int syncIndex = controlBarLayout->indexOf(ui->pushButton_syncFrames);
-        if (syncIndex >= 0) {
-            controlBarLayout->removeWidget(ui->pushButton_syncFrames);
-            ui->pushButton_syncFrames->deleteLater();
-            controlBarLayout->insertWidget(syncIndex, m_syncButton);
-        }
-    }
 }
 
 
@@ -262,7 +239,7 @@ void OrangeWidget::connectOrangeAreaSignals()
     // ---------- 同步帧按钮信号槽连接 ----------
 
     // 同步帧按钮点击 -> 执行onSyncFramesClicked()槽函数（切换同步模式）
-    connect(m_syncButton, &QtMaterialRaisedButton::clicked,
+    connect(ui->pushButton_syncFrames, &QPushButton::clicked,
             this, &OrangeWidget::onSyncFramesClicked);
 
     // ---------- 处理前图片滑块信号槽连接 ----------
@@ -331,9 +308,6 @@ void OrangeWidget::applyMaterialTheme()
     m_sliderProcessed->setTrackColor(themeColor);
     m_sliderOriginal->setThumbColor(themeColor);   // 设置滑块滑块头（圆形把手）颜色
     m_sliderProcessed->setThumbColor(themeColor);
-
-    // ---------- 为同步帧按钮应用主题色 ----------
-    m_syncButton->setForegroundColor(themeColor);  // 设置按钮文字颜色
 }
 
 
@@ -442,7 +416,7 @@ void OrangeWidget::onNextFrameRight()
 
 
 // 项目自定义槽函数：同步帧按钮点击处理
-// 信号源：m_syncButton clicked()信号
+// 信号源：ui->pushButton_syncFrames clicked()信号
 // 流程：切换同步模式标志位 -> 更新按钮文字提示 -> 发射日志信号 -> 可选地同步两侧帧
 // 功能：开启或关闭前后图片帧的同步模式
 //       开启同步模式后：操作一侧（如点击左箭头），另一侧会自动跟随切换到相同帧
@@ -455,7 +429,7 @@ void OrangeWidget::onSyncFramesClicked()
     // 根据新的模式状态执行不同的UI更新逻辑
     if (isSyncMode) {
         // ========== 开启同步模式 ==========
-        m_syncButton->setText("取消同步");           // 按钮文字改为"取消同步"（提示用户再次点击可取消）
+        ui->pushButton_syncFrames->setText("取消同步");           // 按钮文字改为"取消同步"（提示用户再次点击可取消）
 
         // 发射日志消息信号（主窗口会接收到并在紫区日志栏显示）
         emit logMessage("同步模式已开启: 前后图片帧数将联动");
@@ -468,7 +442,7 @@ void OrangeWidget::onSyncFramesClicked()
         m_sliderProcessed->blockSignals(false);
     } else {
         // ========== 关闭同步模式 ==========
-        m_syncButton->setText("同步帧");              // 按钮文字恢复为"同步帧"（初始状态）
+        ui->pushButton_syncFrames->setText("同步帧");              // 按钮文字恢复为"同步帧"（初始状态）
 
         // 发射日志消息信号
         emit logMessage("同步模式已关闭: 前后图片帧数独立控制");

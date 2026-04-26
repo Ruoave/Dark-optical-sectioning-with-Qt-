@@ -10,7 +10,6 @@
 // Material组件头文件引入（严格使用libs文件夹下的公共接口头文件）
 // 仅包含橙区实际使用的Material组件，不包含其他区域组件
 #include "qtmaterialflatbutton.h"
-#include "qtmaterialraisedbutton.h"
 #include "qtmaterialprogress.h"
 #include "qtmaterialslider.h"
 
@@ -59,7 +58,7 @@ private slots:
     void onNextFrameRight();
     
     // 项目自定义槽函数：同步帧按钮点击
-    // 信号源：m_syncButton clicked()信号
+    // 信号源：ui->pushButton_syncFrames clicked()信号
     // 功能：开启/关闭前后图片帧同步模式
     void onSyncFramesClicked();
 
@@ -86,9 +85,6 @@ private:
     // 帧滑块组件（2个）：用于快速跳转到指定帧
     QtMaterialSlider *m_sliderOriginal;           // 处理前图片帧滑块（拖动可切换帧）
     QtMaterialSlider *m_sliderProcessed;          // 处理后图片帧滑块（拖动可切换帧）
-    
-    // 同步帧按钮：控制两侧图片是否同步切帧
-    QtMaterialRaisedButton *m_syncButton;         // 同步帧凸起按钮
     
     // 进度数值显示标签：显示当前进度百分比
     QLabel *m_progressValueLabel;                 // 进度数值显示标签（#55aaff颜色，微软雅黑加粗）
