@@ -9,6 +9,7 @@
 
 // Material组件头文件引入（严格使用libs文件夹下的公共接口头文件）
 // 仅包含橙区实际使用的Material组件，不包含其他区域组件
+#include "qtmaterialflatbutton.h"
 #include "qtmaterialprogress.h"
 #include "qtmaterialslider.h"
 
@@ -57,7 +58,7 @@ private slots:
     void onNextFrameRight();
     
     // 项目自定义槽函数：同步帧按钮点击
-    // 信号源：ui->pushButton_syncFrames clicked()信号
+    // 信号源：m_syncButton clicked()信号
     // 功能：开启/关闭前后图片帧同步模式
     void onSyncFramesClicked();
 
@@ -71,6 +72,9 @@ private:
     Ui::OrangeWidget *ui;                        // UI界面指针（来自Qt Designer生成的ui_orangewidget.h）
 
     // ==================== 橙区Material组件声明 ====================
+    
+    // 同步帧按钮：控制两侧图片是否同步切帧
+    QtMaterialFlatButton *m_syncButton;           // 同步帧扁平按钮（Material风格）
     
     // 进度条组件：显示Dark Sectioning处理进度
     QtMaterialProgress *m_progressBar;            // 处理进度条（Material风格）
