@@ -75,11 +75,6 @@ MainWindow::~MainWindow()
     // 释放UI对象
     delete ui;
     
-    // 释放【蓝区】Material组件内存
-    delete m_runButton;
-    delete m_browseInputButton;
-    delete m_browseOutputButton;
-    
     // 释放【绿区】Material组件内存
     delete m_toggleParam;
     delete m_checkboxParam;
@@ -119,80 +114,34 @@ void MainWindow::connectRedAreaSignals()
 // ============================================================================
 // 【蓝区】路径与操作按钮区
 // 功能：输入/输出路径选择、Run主操作按钮
-// 包含组件：m_runButton, m_browseInputButton, m_browseOutputButton
+// 说明：蓝区按钮使用Qt原生QPushButton（ui->pushButton_run等），无需Material组件初始化
 // ============================================================================
 
 // ---------- 【蓝区】Material组件初始化 ----------
 void MainWindow::initBlueAreaComponents()
 {
-    // 创建Run Dark Sectioning凸起按钮（主操作按钮）
-    m_runButton = new QtMaterialRaisedButton("Run Dark Sectioning");
-    
-    // 创建输入路径浏览扁平按钮
-    m_browseInputButton = new QtMaterialFlatButton("浏览");
-    
-    // 创建输出目录浏览扁平按钮
-    m_browseOutputButton = new QtMaterialFlatButton("浏览");
+    // 蓝区按钮使用Qt原生QPushButton，无需创建Material组件
 }
 
 // ---------- 【蓝区】将Material组件嵌入UI布局 ----------
 void MainWindow::setupBlueAreaInLayout()
 {
-    // 替换Run按钮：从父布局移除原QPushButton，添加MaterialRaisedButton
-    QHBoxLayout *runButtonLayout = qobject_cast<QHBoxLayout*>(ui->pushButton_run->parentWidget()->layout());
-    if (runButtonLayout) {
-        int index = runButtonLayout->indexOf(ui->pushButton_run);
-        if (index >= 0) {
-            runButtonLayout->removeWidget(ui->pushButton_run);
-            ui->pushButton_run->deleteLater();
-            runButtonLayout->insertWidget(index, m_runButton);
-        }
-    }
-    
-    // 替换输入路径浏览按钮
-    QHBoxLayout *browseInputLayout = qobject_cast<QHBoxLayout*>(ui->pushButton_browse->parentWidget()->layout());
-    if (browseInputLayout) {
-        int index = browseInputLayout->indexOf(ui->pushButton_browse);
-        if (index >= 0) {
-            browseInputLayout->removeWidget(ui->pushButton_browse);
-            ui->pushButton_browse->deleteLater();
-            browseInputLayout->insertWidget(index, m_browseInputButton);
-        }
-    }
-    
-    // 替换输出目录浏览按钮
-    QHBoxLayout *browseOutputLayout = qobject_cast<QHBoxLayout*>(ui->pushButton_browseOutput->parentWidget()->layout());
-    if (browseOutputLayout) {
-        int index = browseOutputLayout->indexOf(ui->pushButton_browseOutput);
-        if (index >= 0) {
-            browseOutputLayout->removeWidget(ui->pushButton_browseOutput);
-            ui->pushButton_browseOutput->deleteLater();
-            browseOutputLayout->insertWidget(index, m_browseOutputButton);
-        }
-    }
+    // 蓝区按钮使用Qt原生QPushButton，无需替换布局中的组件
 }
 
 // ---------- 【蓝区】绑定信号槽连接 ----------
 void MainWindow::connectBlueAreaSignals()
 {
-    // Run按钮点击 -> 运行Dark Sectioning处理
-    connect(m_runButton, &QtMaterialRaisedButton::clicked,
-            this, &MainWindow::on_pushButton_run_clicked);
-    
-    // 输入路径浏览按钮点击 -> 打开文件选择对话框
-    connect(m_browseInputButton, &QtMaterialFlatButton::clicked,
-            this, &MainWindow::on_pushButton_browse_clicked);
-    
-    // 输出目录浏览按钮点击 -> 打开文件夹选择对话框
-    connect(m_browseOutputButton, &QtMaterialFlatButton::clicked,
-            this, &MainWindow::on_pushButton_browseOutput_clicked);
+    // 蓝区按钮使用Qt原生QPushButton，槽函数采用on_objectName_signal命名规范
+    // Qt的setupUi()内部会调用QMetaObject::connectSlotsByName()自动连接
+    // 因此无需手动connect，否则槽函数会被调用两次（如浏览对话框弹出两次）
 }
 
 
 // ==================== 【蓝区】槽函数实现：路径与操作按钮 ====================
 
 // Qt原生公共槽函数：输入路径浏览
-// 信号源：m_browseInputButton clicked()信号
+// 信号源：ui->pushButton_browse clicked()信号
 // 流程：打开文件选择对话框 -> 用户选择文件 -> 更新输入路径显示 -> 预加载图像信息到橙区
 // 功能：让用户选择输入的图像文件路径
 void MainWindow::on_pushButton_browse_clicked()
@@ -220,7 +169,7 @@ void MainWindow::on_pushButton_browse_clicked()
 }
 
 // Qt原生公共槽函数：输出目录浏览
-// 信号源：m_browseOutputButton clicked()信号
+// 信号源：ui->pushButton_browseOutput clicked()信号
 // 流程：打开文件夹选择对话框 -> 用户选择目录 -> 更新输出路径显示
 // 功能：让用户选择处理后图像的保存目录
 void MainWindow::on_pushButton_browseOutput_clicked()
@@ -374,7 +323,7 @@ void MainWindow::embedOrangeWidget()
 
 // ============================================================================
 // 【Qt原生公共槽函数：运行处理（解决UI冻结问题）】
-// 信号源：m_runButton clicked信号
+// 信号源：ui->pushButton_run clicked信号
 // 功能：调用DarkSectioning处理逻辑，使用processEvents保持UI响应
 //         处理完成后通知橙区显示结果图像
 // ============================================================================
@@ -384,14 +333,17 @@ void MainWindow::on_pushButton_run_clicked()
     ui->textEdit_log->append("开始图像处理...");
     
     // 禁用Run按钮防止重复点击
-    m_runButton->setEnabled(false);
+    ui->pushButton_run->setEnabled(false);
+    // 将按钮文本改为"运行中.."，提示用户处理正在进行
+    ui->pushButton_run->setText("运行中..");
     
     // ========== 第1步：获取并验证输入文件路径 ==========
     
     QString inputFilePath = ui->lineEdit_inputPath->text();  // 从输入框获取路径
     if (inputFilePath.isEmpty()) {
         ui->textEdit_log->append("错误: 请先选择输入图片路径");
-        m_runButton->setEnabled(true);  // 重新启用按钮
+        ui->pushButton_run->setEnabled(true);  // 重新启用按钮
+        ui->pushButton_run->setText("运行");    // 恢复按钮文本
         return;  // 提前返回，不继续执行
     }
     
@@ -468,7 +420,9 @@ void MainWindow::on_pushButton_run_clicked()
     m_orangeWidget->finishProcessing(totalOriginalFrames, totalProcessedFrames);
     
     // 重新启用Run按钮（允许再次处理其他图片）
-    m_runButton->setEnabled(true);
+    ui->pushButton_run->setEnabled(true);
+    // 将按钮文本恢复为"Run"
+    ui->pushButton_run->setText("运行");
     
     // 强制最终UI刷新（确保所有变更都立刻呈现给用户）
     QApplication::processEvents();
@@ -510,11 +464,6 @@ void MainWindow::applyMaterialTheme()
 {
     // 设置主题主色调为#55aaff（RGB: 85, 170, 255）
     QColor themeColor(85, 170, 255);
-    
-    // 为【蓝区】组件应用主题色
-    m_runButton->setForegroundColor(themeColor);
-    m_browseInputButton->setForegroundColor(themeColor);
-    m_browseOutputButton->setForegroundColor(themeColor);
     
     // 为【绿区】组件应用主题色
     m_toggleParam->setTrackColor(themeColor);

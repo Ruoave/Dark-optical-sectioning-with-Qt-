@@ -18,8 +18,6 @@
 #include "qtmaterialtoggle.h"
 #include "qtmaterialcheckbox.h"
 #include "qtmaterialtextfield.h"
-#include "qtmaterialraisedbutton.h"
-#include "qtmaterialflatbutton.h"
 #include "qtmaterialiconbutton.h"
 
 // 引入橙区自定义控件头文件（用于在主窗口中嵌入OrangeWidget）
@@ -70,11 +68,6 @@ private:
     OrangeWidget *m_orangeWidget;                // 橙区双图显示+控制条组件
     
     // ==================== Material组件声明 ====================
-    
-    // 蓝色区：路径与操作按钮区的Material组件
-    QtMaterialRaisedButton *m_runButton;          // Run Dark Sectioning凸起按钮
-    QtMaterialFlatButton *m_browseInputButton;     // 输入路径浏览扁平按钮
-    QtMaterialFlatButton *m_browseOutputButton;    // 输出目录浏览扁平按钮
     
     // 绿色区：参数设置面板的Material组件
     QtMaterialToggle *m_toggleParam;              // 开关控件（参数1）
