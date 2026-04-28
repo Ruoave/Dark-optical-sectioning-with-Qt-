@@ -45,9 +45,6 @@ OrangeWidget::OrangeWidget(QWidget *parent) :
 
     // 第4步：绑定所有信号槽连接（箭头按钮、滑块、同步按钮的交互逻辑）
     connectOrangeAreaSignals();
-
-    // 第5步：应用Material主题颜色（统一设置为#55aaff天蓝色）
-    applyMaterialTheme();
 }
 
 
@@ -261,27 +258,10 @@ void OrangeWidget::connectOrangeAreaSignals()
 
 
 // ============================================================================
-// 【应用Material主题颜色】
-// 功能：统一设置所有Material组件的主题色为#55aaff（天蓝色RGB: 85, 170, 255）
-// 说明：确保橙区所有控件的颜色风格与蓝区、绿区保持一致
+// 【橙区全局风格】已移除
+// 原applyMaterialTheme()函数中的全局主题色设定已删除
+// 各组件样式由各自内部管理
 // ============================================================================
-void OrangeWidget::applyMaterialTheme()
-{
-    // 定义主题主色调常量（#55aaff天蓝色）
-    QColor themeColor(85, 170, 255);
-
-    // ---------- 为进度条应用主题色 ----------
-    m_progressBar->setProgressColor(themeColor);   // 设置进度条的填充颜色
-
-    // ---------- 为滑块组应用主题色 ----------
-    m_sliderOriginal->setTrackColor(themeColor);   // 设置滑块轨道颜色
-    m_sliderProcessed->setTrackColor(themeColor);
-    m_sliderOriginal->setThumbColor(themeColor);   // 设置滑块滑块头（圆形把手）颜色
-    m_sliderProcessed->setThumbColor(themeColor);
-
-    // ---------- 为同步帧按钮应用主题色 ----------
-    m_syncButton->setForegroundColor(themeColor);  // 设置按钮文字颜色为天蓝色
-}
 
 
 // ==================== 【橙区槽函数实现：双图显示与帧控制】 ====================

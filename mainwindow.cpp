@@ -295,9 +295,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
     // 设置主题主色调为#55aaff（RGB: 85, 170, 255）
 //    QColor themeColor(85, 170, 255);
-    
-//    // 注意：橙区组件的主题色已在OrangeWidget::applyMaterialTheme()中设置
-//    // 无需在此处重复设置
+
     
 //    // 设置窗口整体样式表（全局UI风格）
 //    this->setStyleSheet(

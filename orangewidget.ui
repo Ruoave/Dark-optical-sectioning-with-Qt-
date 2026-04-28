@@ -42,6 +42,7 @@
        <property name="styleSheet">
         <string notr="true">QLabel {
 	border: 2px solid #55aaff;
+	border-radius: 8px;
 	background-color: #f0f0f0;
 }</string>
        </property>
@@ -70,6 +71,7 @@
        <property name="styleSheet">
         <string notr="true">QLabel {
 	border: 2px solid #55aaff;
+	border-radius: 8px;
 	background-color: #f0f0f0;
 }</string>
        </property>

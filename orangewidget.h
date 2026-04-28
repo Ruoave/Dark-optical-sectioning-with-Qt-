@@ -106,9 +106,6 @@ private:
     
     // 绑定所有信号槽连接（箭头按钮、滑块、同步按钮等）
     void connectOrangeAreaSignals();
-    
-    // 应用Material主题颜色（统一设置为#55aaff天蓝色）
-    void applyMaterialTheme();
 
     // ==================== 橙区对外公共接口 ====================
 public:
