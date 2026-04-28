@@ -150,7 +150,7 @@
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_right">
         <item>
-         <widget class="QWidget" name="widget_orangePlaceholder" native="true"/>
+         <widget class="OrangeWidget" name="widget_orangePlaceholder" native="true"/>
         </item>
        </layout>
       </item>
@@ -238,6 +238,12 @@
    <class>GreenWidget</class>
    <extends>QWidget</extends>
    <header location="global">greenwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>OrangeWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">orangewidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

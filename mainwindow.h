@@ -59,11 +59,9 @@ private:
     Ui::MainWindow *ui;
     DarkSectioning *darkSectioning;
     
-    // ==================== 橙区自定义控件指针 ====================
+    // ==================== 橙区自定义控件 ====================
     
-    // OrangeWidget对象指针（橙区所有功能已封装在此自定义控件中）
-    // 主窗口通过此指针调用橙区的公共接口（如setInputFilePath、startProcessing等）
-    OrangeWidget *m_orangeWidget;                // 橙区双图显示+控制条组件
+    // 橙区已通过方法B（容器提升法）在.ui中将widget_orangePlaceholder提升为OrangeWidget
     
     // ==================== Material组件声明 ===
     
@@ -87,9 +85,6 @@ private:
     // ---------- 全局功能函数 ----------
     void applyMaterialTheme();                    // 应用Material主题颜色#55aaff
     QImage applyStandardToneMapping(const cv::Mat& mat);            // 色调映射函数
-    
-    // ---------- 【新增】橙区嵌入与管理函数 ----------
-    void embedOrangeWidget();                     // 将OrangeWidget嵌入主窗口指定位置
 };
 
 #endif // MAINWINDOW_H

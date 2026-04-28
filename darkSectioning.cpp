@@ -69,13 +69,7 @@ void DarkSectioning::process()
         ui->textEdit_log->append("Error: Could not read input image stack");
         ui->textEdit_log->append(QString::fromStdString("Please make sure the input file exists: " + inputPath));
         return;
-    } else {
-        // 获取第一帧的通道数以判断彩色/灰度
-        int channels = imageStack[0].channels();
-        int frameCount = imageStack.size();
-        std::string colorType = (channels == 1) ? "grayscale" : "color";
-        std::cout << "Image loaded successfully: " << frameCount << " frames, " << colorType << " image" << std::endl;
-    }
+    } 
 
     // 获取图像栈信息
     int Nz = imageStack.size();
@@ -85,16 +79,16 @@ void DarkSectioning::process()
     // 检查图像尺寸是否有效
     if (Nx0 <= 0 || Ny0 <= 0 || Nc <= 0) {
         std::cout << "图像尺寸无效" << std::endl;
-        ui->textEdit_log->append("Error: Invalid image dimensions");
+        ui->textEdit_log->append("Error: 图片尺寸无效");
         return;
     }
 
     int Nx = Nx0;
     int Ny = Ny0;
 
-    ui->textEdit_log->append("Loaded image stack: " + QString::number(Nx0) + "x" +
-                         QString::number(Ny0) + "x" + QString::number(Nz) +
-                         " (channels: " + QString::number(Nc) + ")");
+    ui->textEdit_log->append("Dark-based optical Sectioning算法已成功接收到图像: " + QString::number(Nx0) + "x" +
+                         QString::number(Ny0) + ", " + QString::number(Nz) + " 帧" +
+                         " (通道数: " + QString::number(Nc) + ")");
 
     // 保持UI响应：处理事件循环
     QApplication::processEvents();
@@ -103,6 +97,7 @@ void DarkSectioning::process()
     // 彩色图片分别对B、G、R通道取最小最大值，分别归一化
     std::vector<std::vector<cv::Mat>> imageStack_processed(Nc, std::vector<cv::Mat>(Nz));
     for (int z = 0; z < Nz; z++) {
+        // 单通道图像，直接归一化
         if (Nc == 1) {
             // 单通道图像，直接归一化
             cv::Mat result;
@@ -131,6 +126,8 @@ void DarkSectioning::process()
         }
     }
 
+    //进度提示，后面可据此更新progressBar
+    ui->textEdit_log->append("归一化完成..." );
     // 保持UI响应：归一化完成后刷新界面
     QApplication::processEvents();
 
@@ -165,6 +162,10 @@ void DarkSectioning::process()
         }
     }
 
+    ui->textEdit_log->append("维度校准完成..." );
+    // 保持UI响应：维度校准完成后刷新界面
+    QApplication::processEvents();
+
     //重建参数
     int background = 1; // 0-middle,1-severve
     int pad = 1;        //1-sysemtic对称填充,0-pad0零填充
@@ -195,6 +196,11 @@ void DarkSectioning::process()
             }
         }
     }
+
+    // 进度提示，后面可据此更新progressBar
+    ui->textEdit_log->append("边缘填充完成..." );
+    // 保持UI响应：边缘填充完成后刷新界面
+    QApplication::processEvents();
 
     // 高低频分离：参数初始化
     Params params;
@@ -234,9 +240,19 @@ void DarkSectioning::process()
         double dep = dep_matrix[time];   // 0.7-2，去雾阈值
         double hl = hl_matrix[maxtime - 1];    // 3-8，加权因子，用于低通滤波器的权重计算
 
+        // 进度提示，后面可据此更新progressBar
+        ui->textEdit_log->append("正在第 " + QString::number(time + 1) + "/" + QString::number(maxtime) + " 次处理..."); 
+        QApplication::processEvents();
+
         // 对每个通道和每一帧进行处理
         for (int c = 0; c < Nc; c++) {
+            // 进度提示，后面可据此更新progressBar
+            ui->textEdit_log->append("正在处理第 " + QString::number(c + 1) + "/" + QString::number(Nc) + " 个通道..."); 
+            QApplication::processEvents();
             for (int z = 0; z < Nz; z++) {
+                // 进度提示，后面可据此更新progressBar
+                ui->textEdit_log->append("正在处理第 " + QString::number(z + 1) + "/" + QString::number(Nz) + " 帧..."); 
+                QApplication::processEvents();
                 // 高低频分离：分离频谱
                 cv::Mat Hi, Lo, lp, EL;
                 separateHiLo(imageStack_padded[c][z], params, deg, divide, Hi, Lo, lp, EL);
@@ -369,7 +385,7 @@ void DarkSectioning::process()
     }
 
     // 获取用户选择的输出目录
-    std::string outputPath = outputPathQt.isEmpty() ? "D:/QtWorkSpace/DarkQt_V_3_8_2/output" : outputPathQt.toStdString();
+    std::string outputPath = outputPathQt.toStdString();
 
     // 确保路径以斜杠结尾
     if (!outputPath.empty() && outputPath.back() != '/' && outputPath.back() != '\\') {
@@ -385,16 +401,21 @@ void DarkSectioning::process()
     if (Nz == 1) {
         // 单帧图像，使用imwrite
         std::string savePath = outputPath + outputFileNameStd;
-        cv::imwrite(savePath, final_images[0]);
+        bool success = cv::imwrite(savePath, final_images[0]);
+        if (success) {
+            ui->textEdit_log->append("成功保存单帧TIFF图像");
+        } else {
+            ui->textEdit_log->append("保存单帧TIFF图像失败");
+        }
         //暂时先默认存为tif，imwrite还可以存png，jpg文件，后面再加功能
     } else {
         // 多帧图像，使用imwritemulti，多帧只能存tif或tiff图像
         std::string savePath = outputPath + outputFileNameStd;
         bool success = cv::imwritemulti(savePath, final_images);
         if (success) {
-            ui->textEdit_log->append("Successfully saved multi-frame TIFF");
+            ui->textEdit_log->append("成功保存多帧TIFF图像");
         } else {
-            ui->textEdit_log->append("Failed to save multi-frame TIFF, saving as individual files");
+            ui->textEdit_log->append("保存多帧TIFF图像失败，已保存为单帧图像");
             // 保存失败时的备用方案
             std::string savePathFirst = outputPath + outputFileNameStd;
             cv::imwrite(savePathFirst, final_images[0]);
@@ -406,7 +427,8 @@ void DarkSectioning::process()
     }
 
     // 输出保存路径信息
-    ui->textEdit_log->append("Output directory: " + QString::fromStdString(outputPath));
+    ui->textEdit_log->append("输出路径： " + QString::fromStdString(outputPath));
+    ui->textEdit_log->append("图像处理完成!");
 
     // 计时结束
     auto end = std::chrono::high_resolution_clock::now();
