@@ -1,14 +1,14 @@
 #include "greenwidget.h"
 #include "ui_greenwidget.h"
 
-greenwidget::greenwidget(QWidget *parent) :
+GreenWidget::GreenWidget(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::greenwidget)
+    ui(new Ui::GreenWidget)
 {
     ui->setupUi(this);
 }
 
-greenwidget::~greenwidget()
+GreenWidget::~GreenWidget()
 {
     delete ui;
 }

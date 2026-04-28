@@ -4,19 +4,19 @@
 #include <QWidget>
 
 namespace Ui {
-class greenwidget;
+class GreenWidget;
 }
 
-class greenwidget : public QWidget
+class GreenWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit greenwidget(QWidget *parent = nullptr);
-    ~greenwidget();
+    explicit GreenWidget(QWidget *parent = nullptr);
+    ~GreenWidget();
 
 private:
-    Ui::greenwidget *ui;
+    Ui::GreenWidget *ui;
 };
 
 #endif // GREENWIDGET_H

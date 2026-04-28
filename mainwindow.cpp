@@ -250,10 +250,10 @@ void MainWindow::embedOrangeWidget()
     leftLayout->setStretch(0, 1);   // 绿区groupBox_params（Fixed 350×360）：占1份高度
     leftLayout->setStretch(1, 1);   // 紫区textEdit_log：占1份高度（实际会吸收所有剩余空间）
 
-    // 设置绿区GroupBox为Fixed大小策略，固定尺寸350×360（窗口放大时保持不变）
-    ui->groupBox_params->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    ui->groupBox_params->setMinimumSize(350, 360);
-    ui->groupBox_params->setMaximumSize(350, 360);
+    // 设置绿区为Fixed大小策略，固定尺寸350×360（窗口放大时保持不变）
+    ui->widget_greenPlaceholder->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    ui->widget_greenPlaceholder->setMinimumSize(350, 360);
+    ui->widget_greenPlaceholder->setMaximumSize(350, 360);
 
     // 连接OrangeWidget的日志消息信号到主窗口的日志显示槽
     connect(m_orangeWidget, &OrangeWidget::logMessage, [this](const QString &message) {

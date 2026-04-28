@@ -112,9 +112,9 @@
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_content" stretch="0,1">
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_left" stretch="1,1">
+       <layout class="QVBoxLayout" name="verticalLayout_left" stretch="0,1">
         <item>
-         <widget class="QGroupBox" name="groupBox_params">
+         <widget class="GreenWidget" name="widget_greenPlaceholder" native="true">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -133,17 +133,6 @@
             <height>360</height>
            </size>
           </property>
-          <property name="title">
-           <string>参数设置</string>
-          </property>
-          <property name="flat">
-           <bool>false</bool>
-          </property>
-          <property name="checkable">
-           <bool>false</bool>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_params">
-          </layout>
          </widget>
         </item>
         <item>
@@ -244,6 +233,14 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>GreenWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">greenwidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
