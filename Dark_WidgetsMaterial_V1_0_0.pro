@@ -17,9 +17,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 #MATERIAL-SDK
-LIBS += $$PWD/libs/libcomponents.a
-INCLUDEPATH += $$PWD/libs/Include
-PRE_TARGETDEPS += $$PWD/libs/libcomponents.a
+LIBS += $$PWD/SDK/Material/staticlib/libcomponents.a
+INCLUDEPATH += $$PWD/SDK/Material/components
+PRE_TARGETDEPS += $$PWD/SDK/Material/staticlib/libcomponents.a
+RESOURCES += $$PWD/SDK/Material/components/resources.qrc
+
 
 SOURCES += \
     greenwidget.cpp \

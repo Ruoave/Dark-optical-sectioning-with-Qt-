@@ -55,12 +55,9 @@ MainWindow::MainWindow(QWidget *parent) :
     // ui->widget_orangePlaceholder 的类型已是 OrangeWidget*，由uic在setupUi时自动创建
     // 连接橙区日志信号即可
     connect(ui->widget_orangePlaceholder, &OrangeWidget::logMessage, [this](const QString &message) {
-        ui->textEdit_log->append(message);
-    });
+        ui->textEdit_log->append(message);  }   );
 
 
-    // 第3步：应用Material主题颜色#55aaff（全局统一应用）
-    applyMaterialTheme();
 }
 
 
@@ -293,29 +290,24 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
 
 // ============================================================================
-// 【应用Material主题颜色】
-// 功能：统一设置所有Material组件的主题色为#55aaff（天蓝色）
-// 说明：仅对蓝区组件应用主题色，橙区组件已在OrangeWidget内部自行设置
-//       绿区参数面板已清空，无需设置主题色
+
 // ============================================================================
-void MainWindow::applyMaterialTheme()
-{
+
     // 设置主题主色调为#55aaff（RGB: 85, 170, 255）
-    QColor themeColor(85, 170, 255);
+//    QColor themeColor(85, 170, 255);
     
-    // 注意：橙区组件的主题色已在OrangeWidget::applyMaterialTheme()中设置
-    // 无需在此处重复设置
+//    // 注意：橙区组件的主题色已在OrangeWidget::applyMaterialTheme()中设置
+//    // 无需在此处重复设置
     
-    // 设置窗口整体样式表（全局UI风格）
-    this->setStyleSheet(
-        "QMainWindow { background-color: #fafafa; }"
-        "QGroupBox { font-weight: bold; color: #55aaff; border: 2px solid #55aaff; "
-        "border-radius: 5px; margin-top: 10px; padding-top: 10px; }"
-        "QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 5px; }"
-        "QLabel { color: #333333; }"
-        "QMenuBar { background-color: #ffffff; color: #55aaff; border-bottom: 2px solid #55aaff; }"
-        "QMenuBar::item:selected { background-color: #e6f2ff; }"
-        "QMenu { background-color: #ffffff; border: 1px solid #cccccc; }"
-        "QMenu::item:selected { background-color: #e6f2ff; color: #55aaff; }"
-    );
-}
+//    // 设置窗口整体样式表（全局UI风格）
+//    this->setStyleSheet(
+//        "QMainWindow { background-color: #fafafa; }"
+//        "QGroupBox { font-weight: bold; color: #55aaff; border: 2px solid #55aaff; "
+//        "border-radius: 5px; margin-top: 10px; padding-top: 10px; }"
+//        "QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 5px; }"
+//        "QLabel { color: #333333; }"
+//        "QMenuBar { background-color: #ffffff; color: #55aaff; border-bottom: 2px solid #55aaff; }"
+//        "QMenuBar::item:selected { background-color: #e6f2ff; }"
+//        "QMenu { background-color: #ffffff; border: 1px solid #cccccc; }"
+//        "QMenu::item:selected { background-color: #e6f2ff; color: #55aaff; }"
+//    );

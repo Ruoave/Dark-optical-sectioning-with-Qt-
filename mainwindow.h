@@ -83,7 +83,6 @@ private:
     void connectPurpleAreaSignals();              // 紫区信号槽连接
     
     // ---------- 全局功能函数 ----------
-    void applyMaterialTheme();                    // 应用Material主题颜色#55aaff
     QImage applyStandardToneMapping(const cv::Mat& mat);            // 色调映射函数
 };
 

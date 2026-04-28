@@ -4,6 +4,8 @@
 
 #include "orangewidget.h"
 #include "ui_orangewidget.h"
+#include "qtmaterialslider.h"
+#include "qtmaterialprogress.h"
 
 // Qt标准库头文件引入
 #include <QImageReader>
@@ -716,10 +718,9 @@ void OrangeWidget::resizeEvent(QResizeEvent *event)
 
 
 // ============================================================================
-// 核心函数：从多帧TIFF文件中读取指定帧（Qt原生方式，无需OpenCV转换）
+// 核心函数：从多帧TIFF文件中读取指定帧（Qt原生方式）
 // 功能：使用Qt原生的QImageReader类直接读取TIFF文件的特定帧，
-//       直接返回QImage对象，无需经过OpenCV的Mat中间转换，
-//       因此显示效果与Windows照片查看器完全一致（无色调偏差）
+//       直接返回QImage对象，显示效果与Windows照片查看器完全一致（无色调偏差）
 // 参数：
 //   filePath - TIFF文件的完整路径（支持.tif/.tiff/.png/.jpg等多种格式）
 //   frameIndex - 要读取的帧索引（从0开始，0=第一帧，1=第二帧，以此类推）
