@@ -42,6 +42,7 @@ SOURCES += \
     guided_filter.cpp \
     guidedfilter.cpp \
     kmeans.cpp \
+    orangebar.cpp \
     orangewidget.cpp \
     separateHiLo.cpp \
     window_sum_filter.cpp \
@@ -51,6 +52,7 @@ HEADERS += \
     greenwidget.h \
     mainwindow.h \
     darkSectioning.h \
+    orangebar.h \
     orangewidget.h \
     params.h \
     ViewMat.h \
@@ -58,6 +60,7 @@ HEADERS += \
 FORMS += \
     greenwidget.ui \
     mainwindow.ui \
+    orangebar.ui \
     orangewidget.ui
 
 # Default rules for deployment.
