@@ -34,6 +34,13 @@ public:
     // 析构函数：释放OrangeBar资源
     ~OrangeBar();
 
+protected:
+    // 事件过滤器（用于拦截滑块的Resize事件，修复缩放时thumb位置不更新的bug）
+    // QtMaterialSlider没有重写resizeEvent()，窗口缩放时thumb偏移量不会自动更新
+    // 通过eventFilter在滑块收到Resize事件时，用blockSignals+setValue触发内部updateThumbOffset()
+    bool eventFilter(QObject *obj, QEvent *event) override;
+
+public:
     // ==================== 公共接口函数（供OrangeWidget调用） ====================
 
     // 初始化滑块（设置初始范围0-0和初始值0）
@@ -183,6 +190,12 @@ private:
     // 功能：当同步模式开启时，修改一个滑块会自动同步另一个滑块
     //       使用blockSignals防止循环触发
     void syncSlider(QtMaterialSlider *sourceSlider);
+
+    // 修复滑块overlay控件的Z-order图层顺序
+    // 根因：QtMaterialSlider的thumb和track都是overlay widget（父对象是OrangeBar而非slider自身）
+    //       track在thumb之后创建，导致灰色未选中轨道绘制在thumb圆钮之上
+    // 解决：将thumb overlay提升到track overlay之上，确保thumb始终可见
+    void fixSliderOverlayZOrder();
 };
 
 #endif // ORANGEBAR_H
