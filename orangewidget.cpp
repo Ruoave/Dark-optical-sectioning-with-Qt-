@@ -14,6 +14,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QFont>
 #include <QApplication>
 #include <QTimer>
 
@@ -71,21 +72,42 @@ OrangeWidget::~OrangeWidget()
 // ============================================================================
 void OrangeWidget::initOrangeAreaComponents()
 {
-    // ---------- 创建同步帧按钮 ----------
+    ///////////////////////////////////////////
+    ////// ---------- 同步帧按钮 ----------//////
+    ///////////////////////////////////////////
 
     // Material风格的扁平按钮（用于开启/关闭前后图片帧同步模式）
     m_syncButton = new QtMaterialFlatButton("同步帧");  // 默认文字为"同步帧"
     // 设置大小策略：水平方向可拉伸填充空间，垂直方向固定高度
     m_syncButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_syncButton->setMinimumHeight(30);         // 最小高度30像素
+    m_syncButton->setCornerRadius(4);             // 设置圆角半径为4像素
+
+
+    // ---------- 初始状态设为不可用（程序完成一次运行前禁用）----------
+    m_syncButton->setEnabled(false);           // 禁用按钮，用户无法点击
+
+    // ---------- 字体设置 ----------
+    m_syncButton->setFontSize(12);
+
+    // ---------- 按钮颜色设置（使用 QtMaterialFlatButton 自身 API，不能用 QSS）----------
+    // 重要：必须先禁用主题色，否则自定义颜色会被覆盖无效
+    m_syncButton->setUseThemeColors(false);
+    m_syncButton->setForegroundColor(QColor("#55aaff"));
+    m_syncButton->setBackgroundColor(QColor("#c4dff"));
+    m_syncButton->setBackgroundMode(Qt::TransparentMode);
+    m_syncButton->setOverlayColor(QColor("#a1afc9"));
+    m_syncButton->setBaseOpacity(0.2);  // 覆盖层透明度20%（和示例程序一致，悬停/选中时淡淡叠加）
+    m_syncButton->setDisabledForegroundColor(QColor("#9e9e9e"));  // 灰色文字
+    m_syncButton->setDisabledBackgroundColor(QColor("#e0e0e0")); // 浅灰背景
+
 
     // ---------- Material特性设置 ----------
-    // 设置涟漪效果为CenteredRipple（点击时涟漪从按钮中心向外扩散，而非点击位置扩散）
-    m_syncButton->setRippleStyle(Material::CenteredRipple);
-    // 设置按钮为可选中模式（checkable）
-    // 选中后按钮背景色自动变深（Material框架自带效果），再次点击取消选中恢复原色
-    // 这与"同步帧/取消同步"的切换语义完美匹配：未选中=不同步，选中=已开启同步
-    m_syncButton->setCheckable(true);
+    m_syncButton->setHaloVisible(true);             // 设置为有光晕动态效果
+    m_syncButton->setOverlayStyle(Material::TintedOverlay);  // 设置为TintedOverlay色调覆盖层（悬停/选中时叠加overlayColor）
+    m_syncButton->setRippleStyle(Material::CenteredRipple);   // 设置涟漪效果为CenteredRipple（点击时涟漪从按钮中心向外扩散，而非点击位置扩散）
+    m_syncButton->setCheckable(true);             // 设置为可选中状态
+    m_syncButton->setTextAlignment(Qt::AlignCenter);  // 文字居中对齐
 
 
 
@@ -503,6 +525,9 @@ void OrangeWidget::startProcessing()
     m_sliderOriginal->hide();     // 隐藏处理前图片滑块
     m_sliderProcessed->hide();    // 隐藏处理后图片滑块
 
+    // 禁用同步帧按钮（处理过程中不允许使用同步功能）
+    m_syncButton->setEnabled(false);             // 禁用按钮，防止处理中误操作
+
     // 强制立即刷新UI界面（确保上述变更立刻显示给用户，而不是等到事件循环空闲时才绘制）
     QApplication::processEvents();
 }
@@ -548,6 +573,9 @@ void OrangeWidget::finishProcessing(int originalFrames, int processedFrames)
 
     // 刷新图像显示（调用辅助函数显示第一帧的处理前/后对比图像）
     updateImageDisplay();
+
+    // 启用同步帧按钮（程序已完成一次运行，用户现在可以使用同步功能）
+    m_syncButton->setEnabled(true);
 
     // 强制最终UI刷新（确保所有变更都立刻呈现给用户）
     QApplication::processEvents();

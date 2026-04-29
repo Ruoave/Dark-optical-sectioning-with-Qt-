@@ -19,6 +19,7 @@
 #include <QLayout>
 #include <QApplication>
 #include <QTimer>
+#include <QPalette>
 
 using namespace cv;
 using namespace std;
