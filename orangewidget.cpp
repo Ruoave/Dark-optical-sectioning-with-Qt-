@@ -1,4 +1,4 @@
-// OrangeWidget 橙区模块实现
+﻿// OrangeWidget 橙区模块实现
 // 功能：双图像显示区域 + 两行底部控制条
 // 包含：处理前/后图片对比显示、帧切换控制、进度显示、同步帧功能
 
@@ -81,8 +81,8 @@ OrangeWidget::~OrangeWidget()
 
     // 释放【橙区】Material组件内存（防止内存泄漏）
     delete m_syncButton;                        // 释放同步帧按钮
-    delete m_sliderOriginal;                    // 释放处理前图片滑块
-    delete m_sliderProcessed;                   // 释放处理后图片滑块
+    // 滑块已通过.ui提升，由uic在setupUi时创建，属于OrangeWidget的子对象
+    // Qt父子对象机制会自动回收，无需手动delete
 }
 
 
@@ -133,20 +133,15 @@ void OrangeWidget::initOrangeAreaComponents()
 
 
 
-    // ---------- 创建处理前图片帧滑块（初始隐藏） ----------
+    // ---------- 初始化处理前图片帧滑块（已通过.ui提升为QtMaterialSlider） ----------
+    // ui->sliderOriginal 的类型已是 QtMaterialSlider*，由uic在setupUi时创建
+    ui->sliderOriginal->setRange(0, 0);           // 初始范围设为0-0（无数据时无效状态）
+    ui->sliderOriginal->setValue(0);              // 初始值设为0（第一帧）
 
-    // Material风格的滑块控件（拖动可快速跳转到指定帧）
-    m_sliderOriginal = new QtMaterialSlider(ui->widget_sliderOriginal);  // 父容器为widget_sliderOriginal
-    m_sliderOriginal->setRange(0, 0);           // 初始范围设为0-0（无数据时无效状态）
-    m_sliderOriginal->setValue(0);              // 初始值设为0（第一帧）
-    m_sliderOriginal->hide();                   // 初始隐藏（处理完成前不显示滑块）
-
-    // ---------- 创建处理后图片帧滑块（初始隐藏） ----------
-
-    m_sliderProcessed = new QtMaterialSlider(ui->widget_sliderProcessed);  // 父容器为widget_sliderProcessed
-    m_sliderProcessed->setRange(0, 0);          // 初始范围设为0-0（无数据时无效状态）
-    m_sliderProcessed->setValue(0);             // 初始值设为0（第一帧）
-    m_sliderProcessed->hide();                  // 初始隐藏（处理完成前不显示滑块）
+    // ---------- 初始化处理后图片帧滑块（已通过.ui提升为QtMaterialSlider） ----------
+    // ui->sliderProcessed 的类型已是 QtMaterialSlider*，由uic在setupUi时创建
+    ui->sliderProcessed->setRange(0, 0);          // 初始范围设为0-0（无数据时无效状态）
+    ui->sliderProcessed->setValue(0);             // 初始值设为0（第一帧）
 }
 
 
@@ -235,7 +230,7 @@ void OrangeWidget::connectOrangeAreaSignals()
 
     // 滑块值改变 -> 先选中处理前label -> 更新当前帧索引并刷新图像显示
     // 使用Lambda表达式捕获当前对象指针[this]，实现内联槽函数逻辑
-    connect(m_sliderOriginal, &QtMaterialSlider::valueChanged, [this](int value) {
+    connect(ui->sliderOriginal, &QtMaterialSlider::valueChanged, [this](int value) {
         // 选中OrangeWidget和处理前图片label
         setOrangeWidgetSelected(true);
         setOriginalLabelSelected(true);
@@ -246,9 +241,9 @@ void OrangeWidget::connectOrangeAreaSignals()
         if (isSyncMode) {
             currentProcessedFrame = value;          // 同步更新处理后图片的帧索引
             // 阻止右侧滑块发射信号（避免循环触发导致无限递归）
-            m_sliderProcessed->blockSignals(true);
-            m_sliderProcessed->setValue(value);     // 手动设置右侧滑块的位置
-            m_sliderProcessed->blockSignals(false); // 恢复右侧滑块的信号发射
+            ui->sliderProcessed->blockSignals(true);
+            ui->sliderProcessed->setValue(value);     // 手动设置右侧滑块的位置
+            ui->sliderProcessed->blockSignals(false); // 恢复右侧滑块的信号发射
         }
 
         // 调用图像显示更新函数，重新读取并显示当前帧的图像
@@ -258,7 +253,7 @@ void OrangeWidget::connectOrangeAreaSignals()
     // ---------- 处理后图片滑块信号槽连接 ----------
 
     // 滑块值改变 -> 先选中处理后label -> 更新当前帧索引并刷新图像显示
-    connect(m_sliderProcessed, &QtMaterialSlider::valueChanged, [this](int value) {
+    connect(ui->sliderProcessed, &QtMaterialSlider::valueChanged, [this](int value) {
         // 选中OrangeWidget和处理后图片label
         setOrangeWidgetSelected(true);
         setProcessedLabelSelected(true);
@@ -269,9 +264,9 @@ void OrangeWidget::connectOrangeAreaSignals()
         if (isSyncMode) {
             currentOriginalFrame = value;           // 同步更新处理前图片的帧索引
             // 阻止左侧滑块发射信号（避免循环触发）
-            m_sliderOriginal->blockSignals(true);
-            m_sliderOriginal->setValue(value);      // 手动设置左侧滑块的位置
-            m_sliderOriginal->blockSignals(false);  // 恢复左侧滑块的信号发射
+            ui->sliderOriginal->blockSignals(true);
+            ui->sliderOriginal->setValue(value);      // 手动设置左侧滑块的位置
+            ui->sliderOriginal->blockSignals(false);  // 恢复左侧滑块的信号发射
         }
 
         // 调用图像显示更新函数
@@ -306,13 +301,13 @@ void OrangeWidget::onPrevFrameLeft()
         if (isSyncMode) {
             currentProcessedFrame = currentOriginalFrame;  // 同步更新右侧帧索引
             // 阻止右侧滑块发射valueChanged信号（避免触发右侧滑块的槽函数导致无限循环）
-            m_sliderProcessed->blockSignals(true);
-            m_sliderProcessed->setValue(currentProcessedFrame);  // 手动设置右侧滑块位置
-            m_sliderProcessed->blockSignals(false);  // 恢复右侧滑块的正常信号发射
+            ui->sliderProcessed->blockSignals(true);
+            ui->sliderProcessed->setValue(currentProcessedFrame);  // 手动设置右侧滑块位置
+            ui->sliderProcessed->blockSignals(false);  // 恢复右侧滑块的正常信号发射
         }
 
         // 更新左侧滑块的位置（这会触发valueChanged信号，进而调用updateImageDisplay刷新图像）
-        m_sliderOriginal->setValue(currentOriginalFrame);
+        ui->sliderOriginal->setValue(currentOriginalFrame);
     }
     // 如果已经在第一帧（currentOriginalFrame == 0），则不做任何操作（静默忽略）
 }
@@ -332,13 +327,13 @@ void OrangeWidget::onNextFrameLeft()
         // 同步模式下的特殊处理
         if (isSyncMode) {
             currentProcessedFrame = currentOriginalFrame;
-            m_sliderProcessed->blockSignals(true);
-            m_sliderProcessed->setValue(currentProcessedFrame);
-            m_sliderProcessed->blockSignals(false);
+            ui->sliderProcessed->blockSignals(true);
+            ui->sliderProcessed->setValue(currentProcessedFrame);
+            ui->sliderProcessed->blockSignals(false);
         }
 
         // 更新左侧滑块位置
-        m_sliderOriginal->setValue(currentOriginalFrame);
+        ui->sliderOriginal->setValue(currentOriginalFrame);
     }
 }
 
@@ -356,13 +351,13 @@ void OrangeWidget::onPrevFrameRight()
         // 同步模式下的特殊处理
         if (isSyncMode) {
             currentOriginalFrame = currentProcessedFrame;
-            m_sliderOriginal->blockSignals(true);
-            m_sliderOriginal->setValue(currentOriginalFrame);
-            m_sliderOriginal->blockSignals(false);
+            ui->sliderOriginal->blockSignals(true);
+            ui->sliderOriginal->setValue(currentOriginalFrame);
+            ui->sliderOriginal->blockSignals(false);
         }
 
         // 更新右侧滑块位置
-        m_sliderProcessed->setValue(currentProcessedFrame);
+        ui->sliderProcessed->setValue(currentProcessedFrame);
     }
 }
 
@@ -380,13 +375,13 @@ void OrangeWidget::onNextFrameRight()
         // 同步模式下的特殊处理
         if (isSyncMode) {
             currentOriginalFrame = currentProcessedFrame;
-            m_sliderOriginal->blockSignals(true);
-            m_sliderOriginal->setValue(currentOriginalFrame);
-            m_sliderOriginal->blockSignals(false);
+            ui->sliderOriginal->blockSignals(true);
+            ui->sliderOriginal->setValue(currentOriginalFrame);
+            ui->sliderOriginal->blockSignals(false);
         }
 
         // 更新右侧滑块位置
-        m_sliderProcessed->setValue(currentProcessedFrame);
+        ui->sliderProcessed->setValue(currentProcessedFrame);
     }
 }
 
@@ -413,9 +408,9 @@ void OrangeWidget::onSyncFramesClicked()
         // 立即同步两侧到同一帧（以左侧处理前图片的当前帧为准）
         currentProcessedFrame = currentOriginalFrame;
         // 阻止右侧滑块信号，手动设置其位置
-        m_sliderProcessed->blockSignals(true);
-        m_sliderProcessed->setValue(currentProcessedFrame);
-        m_sliderProcessed->blockSignals(false);
+        ui->sliderProcessed->blockSignals(true);
+        ui->sliderProcessed->setValue(currentProcessedFrame);
+        ui->sliderProcessed->blockSignals(false);
         
         // 同步模式下，两个label都被选中
         if (isOrangeWidgetSelected) {
@@ -530,8 +525,8 @@ void OrangeWidget::preloadImagePreview(const QString &filePath)
 void OrangeWidget::startProcessing()
 {
     // 隐藏两个帧滑块（处理过程中不允许用户切换帧，避免干扰算法运行）
-    m_sliderOriginal->hide();     // 隐藏处理前图片滑块
-    m_sliderProcessed->hide();    // 隐藏处理后图片滑块
+    ui->sliderOriginal->hide();     // 隐藏处理前图片滑块
+    ui->sliderProcessed->hide();    // 隐藏处理后图片滑块
 
     // 禁用同步帧按钮（处理过程中不允许使用同步功能）
     m_syncButton->setEnabled(false);             // 禁用按钮，防止处理中误操作
@@ -556,17 +551,17 @@ void OrangeWidget::finishProcessing(int originalFrames, int processedFrames)
     // ---------- 配置处理前图片滑块 ----------
     if (totalOriginalFrames > 0) {
         // 只有当存在有效帧数时才启用滑块（避免除零错误或无效范围）
-        m_sliderOriginal->setRange(0, totalOriginalFrames - 1);  // 设置范围：0 到 总帧数-1
-        m_sliderOriginal->setValue(0);              // 重置滑块位置到第一帧（索引0）
-        m_sliderOriginal->show();                  // 显示滑块（之前被startProcessing()隐藏了）
+        ui->sliderOriginal->setRange(0, totalOriginalFrames - 1);  // 设置范围：0 到 总帧数-1
+        ui->sliderOriginal->setValue(0);              // 重置滑块位置到第一帧（索引0）
+        ui->sliderOriginal->show();                  // 显示滑块（之前被startProcessing()隐藏了）
     }
 
     // ---------- 配置处理后图片滑块 ----------
     if (totalProcessedFrames > 0) {
         // 只有当存在有效帧数时才启用滑块
-        m_sliderProcessed->setRange(0, totalProcessedFrames - 1);  // 设置范围
-        m_sliderProcessed->setValue(0);             // 重置到第一帧
-        m_sliderProcessed->show();                  // 显示滑块
+        ui->sliderProcessed->setRange(0, totalProcessedFrames - 1);  // 设置范围
+        ui->sliderProcessed->setValue(0);             // 重置到第一帧
+        ui->sliderProcessed->show();                  // 显示滑块
     }
 
     // ---------- 重置帧索引并更新进度 ----------
@@ -808,7 +803,7 @@ void OrangeWidget::mousePressEvent(QMouseEvent *event)
     }
     
     // 判断是否点击在滑块区域（属于对应图片区域）
-    if (ui->widget_sliderOriginal->geometry().contains(pos)) {
+    if (ui->sliderOriginal->geometry().contains(pos)) {
         if (!isOrangeWidgetSelected) {
             setOrangeWidgetSelected(true);
         }
@@ -819,7 +814,7 @@ void OrangeWidget::mousePressEvent(QMouseEvent *event)
         return;
     }
     
-    if (ui->widget_sliderProcessed->geometry().contains(pos)) {
+    if (ui->sliderProcessed->geometry().contains(pos)) {
         if (!isOrangeWidgetSelected) {
             setOrangeWidgetSelected(true);
         }

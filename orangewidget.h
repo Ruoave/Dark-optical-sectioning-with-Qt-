@@ -95,9 +95,9 @@ private:
     // 同步帧按钮：控制两侧图片是否同步切帧
     QtMaterialFlatButton *m_syncButton;           // 同步帧扁平按钮（Material风格）
     
-    // 帧滑块组件（2个）：用于快速跳转到指定帧
-    QtMaterialSlider *m_sliderOriginal;           // 处理前图片帧滑块（拖动可切换帧）
-    QtMaterialSlider *m_sliderProcessed;          // 处理后图片帧滑块（拖动可切换帧）
+    // 帧滑块已通过方法A（控件提升法）在.ui中提升为QtMaterialSlider
+    // ui->sliderOriginal 的类型已是 QtMaterialSlider*，无需额外声明成员变量
+    // ui->sliderProcessed 的类型已是 QtMaterialSlider*，无需额外声明成员变量
     
     // ==================== 橙区数据成员 ====================
     
