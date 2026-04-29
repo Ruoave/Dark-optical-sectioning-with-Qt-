@@ -8,9 +8,12 @@
 #include <QLabel>
 
 // Material组件头文件引入（严格使用libs文件夹下的公共接口头文件）
-// 仅包含橙区OrangeWidget自身使用的Material组件
-// 滑块（QtMaterialSlider）已迁入OrangeBar，此处不再需要
+// 仅包含橙区实际使用的Material组件，不包含其他区域组件
 #include "qtmaterialflatbutton.h"
+
+// 前向声明：SyncMaterialButton 子类（定义在orangewidget.cpp中）
+// 继承自QtMaterialFlatButton，重写paintEvent使enabled状态下Halo光晕持续显示
+class SyncMaterialButton;
 
 // 引入OrangeBar自定义控件头文件（用于访问OrangeBar的公共接口）
 #include "orangebar.h"
@@ -96,10 +99,11 @@ private:
     // ==================== 橙区Material组件声明 ====================
     
     // 同步帧按钮：控制两侧图片是否同步切帧
-    QtMaterialFlatButton *m_syncButton;           // 同步帧扁平按钮（Material风格）
+    // 使用 SyncMaterialButton 子类（继承自QtMaterialFlatButton），
+    // 重写paintEvent使enabled状态下Halo光晕在失去焦点时仍持续显示（disabled时停止）
+    SyncMaterialButton *m_syncButton;           // 同步帧扁平按钮（Material风格，带持续Halo）
     
     // 帧滑块已迁入OrangeBar（通过方法B占位容器封装法）
-    // ui->widget_orangeBarPlaceholder 提升为 OrangeBar* 后，
     // 可通过 ui->widget_orangeBarPlaceholder->originalFrame() 等接口访问滑块状态
     
     // ==================== 橙区数据成员 ====================

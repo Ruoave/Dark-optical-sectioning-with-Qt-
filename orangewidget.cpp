@@ -17,11 +17,136 @@
 #include <QApplication>
 #include <QTimer>
 #include <QPainter>
+#include <QPainterPath>
+#include <QStateMachine>
 #include <QMouseEvent>
 #include <QKeyEvent>
 #include <QColor>
 
 using namespace std;
+
+
+// ============================================================================
+// 【SyncMaterialButton 子类定义】
+// 功能：继承 QtMaterialFlatButton，重写 paintEvent
+// 目的：使同步帧按钮在 enabled 状态下始终显示 Halo 光晕呼吸动画，仅在 disabled 状态下才不播动画
+//       
+//
+// 原理说明：
+//   基类 QtMaterialFlatButton 内部有一个状态机（QtMaterialFlatButtonStateMachine），
+//   管理按钮的5个视觉状态：neutralState、neutralFocusedState、hoveredState、
+//   hoveredFocusedState、pressedState。
+//   每个状态对 Halo 有不同的属性赋值：
+//     - neutralState（无焦点无悬停）：haloOpacity=0, haloSize=0 → Halo不可见
+//     - neutralFocusedState（有焦点无悬停）：haloOpacity=baseOpacity, haloSize=0.7 → Halo可见
+//     - hoveredState（悬停无焦点）：haloOpacity=0, haloSize=0 → Halo不可见
+//     - hoveredFocusedState（悬停+有焦点）：haloOpacity=baseOpacity, haloSize=0.7 → Halo可见
+//     - pressedState（按下）：haloOpacity=0, haloSize=4 → Halo不可见
+//
+//   当用户点击其他地方时，按钮失去焦点，状态机从 neutralFocusedState 切换到 neutralState，
+//   haloOpacity 和 haloSize 都变为0，Halo 光晕就消失了。
+//
+//   但好消息是：状态机的 haloScaleFactor 属性一直在被呼吸动画驱动（0.56↔0.63循环），
+//   每次 setHaloScaleFactor 都会调用 m_button->update() 触发重绘，
+//   所以 paintEvent 会被持续调用，我们无需自己创建定时器。
+//
+//   本子类的做法：在基类 paintEvent 完成后，额外判断——如果按钮处于 enabled +
+//   haloVisible 状态，且基类没有绘制 Halo（haloOpacity≈0），
+//   则自行绘制一个持续可见的 Halo 光晕，复用状态机的 haloScaleFactor 实现呼吸效果。
+//   悬停效果完全不受影响，因为悬停效果由 overlayOpacity 控制，与 Halo 的
+//   haloOpacity/haloSize 是完全独立的属性。
+// ============================================================================
+class SyncMaterialButton : public QtMaterialFlatButton
+{
+public:
+    // 构造函数：与基类 QtMaterialFlatButton 兼容
+    // 参数：text - 按钮文字，parent - 父控件指针
+    explicit SyncMaterialButton(const QString &text, QWidget *parent = nullptr)
+        : QtMaterialFlatButton(text, parent)
+    {
+    }
+
+protected:
+    // 重写绘制事件：在基类绘制完成后，补充绘制 checked 状态下的持续 Halo
+    // 调用时机：每次按钮需要重绘时由 Qt 框架自动调用
+    // 流程：基类 paintEvent（绘制背景+悬停overlay+焦点态Halo+前景文字）
+    //       → 判断是否需要补充Halo → 绘制持续Halo
+    void paintEvent(QPaintEvent *event) override
+    {
+        // 第1步：调用基类 paintEvent，完成所有原有绘制
+        // 包括：背景、悬停overlay、焦点态Halo、前景文字等
+        // 悬停效果由 overlayOpacity 控制，与 Halo 无关，完全保留
+        QtMaterialFlatButton::paintEvent(event);
+
+        // 第2步：判断是否需要补充绘制 Halo
+        // 条件1：Halo 可见（setHaloVisible(true) 已设置）
+        if (!isHaloVisible()) {
+            return;
+        }
+        // 条件2：按钮启用（未禁用）——仅在disabled状态下不播Halo动画
+        if (!isEnabled()) {
+            return;
+        }
+        // 条件3：按钮未被按下（按下时基类也不绘制Halo，保持一致）
+        if (isDown()) {
+            return;
+        }
+
+        // 第3步：查找按钮的状态机子对象
+        // 状态机是 QtMaterialFlatButton 内部创建的 QStateMachine 子对象，
+        // 通过 findChildren 可以找到它
+        QList<QStateMachine*> machines = findChildren<QStateMachine*>();
+        if (machines.isEmpty()) {
+            return;  // 找不到状态机，安全退出
+        }
+
+        // 第4步：读取状态机当前的 haloOpacity 属性
+        // 如果基类已经绘制了可见的 Halo（haloOpacity > 0.01），
+        // 说明按钮处于有焦点状态，不需要补充绘制，避免双重叠加
+        qreal currentHaloOpacity = machines.first()->property("haloOpacity").toReal();
+        if (currentHaloOpacity > 0.01) {
+            return;  // 基类已绘制Halo，无需补充
+        }
+
+        // 第5步：读取状态机的 haloScaleFactor 属性
+        // 这个属性一直在被呼吸动画驱动（0.56↔0.63循环），
+        // 每次 setHaloScaleFactor 都会调用 m_button->update() 触发重绘，
+        // 所以 paintEvent 会被持续调用，呼吸效果自然延续
+        qreal scaleFactor = machines.first()->property("haloScaleFactor").toReal();
+
+        // 第6步：计算 Halo 半径
+        // 使用固定的 haloSize=0.7（与 neutralFocusedState 一致）
+        // 乘以呼吸动画的 scaleFactor，再乘以按钮宽度，得到最终像素半径
+        const qreal haloSize = 0.7;
+        const qreal radius = static_cast<qreal>(width()) * scaleFactor * haloSize;
+
+        // 第7步：绘制补充 Halo 光晕
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);  // 抗锯齿，使圆形边缘平滑
+
+        // 设置圆角裁剪区域（与基类 paintEvent 一致）
+        // 防止 Halo 圆形超出按钮的圆角边界
+        const qreal cr = cornerRadius();
+        if (cr > 0) {
+            QPainterPath path;
+            path.addRoundedRect(rect(), cr, cr);
+            painter.setClipPath(path);
+            painter.setClipping(true);
+        }
+
+        // 绘制 Halo 圆形光晕
+        QBrush brush;
+        brush.setStyle(Qt::SolidPattern);
+        brush.setColor(foregroundColor());  // 使用按钮前景色（与基类 paintHalo 一致）
+        painter.setOpacity(baseOpacity());  // 使用按钮基础透明度（与基类 paintHalo 一致）
+        painter.setBrush(brush);
+        painter.setPen(Qt::NoPen);
+        const QPointF center = rect().center();  // 以按钮中心为圆心
+        painter.drawEllipse(center, radius, radius);  // 绘制圆形光晕
+
+        painter.setClipping(false);  // 恢复裁剪状态
+    }
+};
 
 
 // ============================================================================
@@ -97,7 +222,8 @@ void OrangeWidget::initOrangeAreaComponents()
     ///////////////////////////////////////////
 
     // Material风格的扁平按钮（用于开启/关闭前后图片帧同步模式）
-    m_syncButton = new QtMaterialFlatButton("同步帧");  // 默认文字为"同步帧"
+    // 使用 SyncMaterialButton 子类：重写paintEvent，使checked状态下Halo光晕在失去焦点时仍持续显示
+    m_syncButton = new SyncMaterialButton("同步帧");  // 默认文字为"同步帧"
     // 设置大小策略：水平方向可拉伸填充空间，垂直方向固定高度
     m_syncButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_syncButton->setMinimumHeight(30);         // 最小高度30像素
@@ -452,21 +578,22 @@ void OrangeWidget::preloadImagePreview(const QString &filePath)
     // 重置当前帧索引到第一帧（索引0表示第一帧）
     currentOriginalFrame = 0;
 
+    // 立即显示第一帧图像（此时m_inputFilePath已设置，m_outputFilePath为空，
+    // 所以只有左侧label_originalImage会显示处理前图片，右侧不受影响）
+    updateImageDisplay();
+
     // 发射日志消息通知用户预加载结果
     emit logMessage(QString("预加载完成: %1 帧图像").arg(frameCount));
-
-    // 注意：此处不调用updateImageDisplay()，因为只是预加载了帧数信息
-    // 实际的图像像素数据显示将在用户点击"Run Dark Sectioning"按钮后进行
 }
 
 
 // 开始处理流程（由主窗口在点击"Run"按钮时调用）
-// 功能：显示进度条、隐藏滑块、重置进度值为0%，准备进入处理状态
+// 功能：显示进度条、禁用滑块、重置进度值为0%，准备进入处理状态
 // 使用场景：用户点击"Run Dark Sectioning"按钮后，主窗口调用此函数进入处理前的UI准备阶段
 void OrangeWidget::startProcessing()
 {
-    // 委托OrangeBar隐藏滑块（处理过程中不允许用户切换帧，避免干扰算法运行）
-    // OrangeBar::startProcessing()内部隐藏两个滑块并调用QApplication::processEvents()
+    // 委托OrangeBar禁用滑块（处理过程中不允许用户切换帧，避免干扰算法运行）
+    // OrangeBar::startProcessing()内部禁用两个滑块并调用QApplication::processEvents()
     ui->widget_orangeBarPlaceholder->startProcessing();
 
     // 禁用同步帧按钮（处理过程中不允许使用同步功能）
