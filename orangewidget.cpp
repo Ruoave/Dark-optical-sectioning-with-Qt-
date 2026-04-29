@@ -27,34 +27,15 @@ using namespace std;
 
 
 // ============================================================================
-// 【SyncMaterialButton 子类定义】
-// 功能：继承 QtMaterialFlatButton，重写 paintEvent
-// 目的：使同步帧按钮在 enabled 状态下始终显示 Halo 光晕呼吸动画，仅在 disabled 状态下才不播动画
-//       
+// 【SyncMaterialButton 子类】
+// 继承 QtMaterialFlatButton，重写 paintEvent
+// 目的：enabled 状态下始终显示 Halo 光晕呼吸动画，disabled 时停止
 //
-// 原理说明：
-//   基类 QtMaterialFlatButton 内部有一个状态机（QtMaterialFlatButtonStateMachine），
-//   管理按钮的5个视觉状态：neutralState、neutralFocusedState、hoveredState、
-//   hoveredFocusedState、pressedState。
-//   每个状态对 Halo 有不同的属性赋值：
-//     - neutralState（无焦点无悬停）：haloOpacity=0, haloSize=0 → Halo不可见
-//     - neutralFocusedState（有焦点无悬停）：haloOpacity=baseOpacity, haloSize=0.7 → Halo可见
-//     - hoveredState（悬停无焦点）：haloOpacity=0, haloSize=0 → Halo不可见
-//     - hoveredFocusedState（悬停+有焦点）：haloOpacity=baseOpacity, haloSize=0.7 → Halo可见
-//     - pressedState（按下）：haloOpacity=0, haloSize=4 → Halo不可见
-//
-//   当用户点击其他地方时，按钮失去焦点，状态机从 neutralFocusedState 切换到 neutralState，
-//   haloOpacity 和 haloSize 都变为0，Halo 光晕就消失了。
-//
-//   但好消息是：状态机的 haloScaleFactor 属性一直在被呼吸动画驱动（0.56↔0.63循环），
-//   每次 setHaloScaleFactor 都会调用 m_button->update() 触发重绘，
-//   所以 paintEvent 会被持续调用，我们无需自己创建定时器。
-//
-//   本子类的做法：在基类 paintEvent 完成后，额外判断——如果按钮处于 enabled +
-//   haloVisible 状态，且基类没有绘制 Halo（haloOpacity≈0），
-//   则自行绘制一个持续可见的 Halo 光晕，复用状态机的 haloScaleFactor 实现呼吸效果。
-//   悬停效果完全不受影响，因为悬停效果由 overlayOpacity 控制，与 Halo 的
-//   haloOpacity/haloSize 是完全独立的属性。
+// 原理：基类状态机在按钮失去焦点时将 haloOpacity/haloSize 设为0，导致 Halo 消失。
+// 但 haloScaleFactor 的呼吸动画（0.56↔0.63循环）一直在运行并触发 update()，
+// 所以 paintEvent 会被持续调用。本子类在基类绘制后，若 enabled+haloVisible
+// 且基类未画 Halo（haloOpacity≈0），则自行补画，复用 haloScaleFactor 实现呼吸。
+// 悬停效果不受影响（由 overlayOpacity 独立控制）。
 // ============================================================================
 class SyncMaterialButton : public QtMaterialFlatButton
 {

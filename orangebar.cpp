@@ -206,12 +206,22 @@ int OrangeBar::totalOriginalFrames() const
 // 【设置处理前总帧数】
 // 参数：frames - 处理前图片的总帧数
 // 调用时机：OrangeWidget::preloadImagePreview()中调用
-// 说明：仅更新内部数据成员m_totalOriginalFrames，不配置滑块范围
-//       滑块范围在finishProcessing()中统一配置
+// 功能：更新内部数据成员m_totalOriginalFrames，同时配置处理前滑块范围并启用滑块
+//       使预加载后用户即可通过箭头按钮/滑块切换处理前图片帧
+// 说明：处理后滑块不在此处配置（需等finishProcessing），同步帧按钮由OrangeWidget管理
 // ============================================================================
 void OrangeBar::setTotalOriginalFrames(int frames)
 {
     m_totalOriginalFrames = frames;
+
+    // 配置处理前滑块范围并启用（使预加载后即可切帧）
+    if (frames > 0) {
+        ui->sliderOriginal->blockSignals(true);    // 阻止信号（防止setRange/setValue触发valueChanged）
+        ui->sliderOriginal->setRange(0, frames - 1);  // 设置范围：0 到 总帧数-1
+        ui->sliderOriginal->setValue(0);           // 重置到第一帧
+        ui->sliderOriginal->blockSignals(false);   // 恢复信号发射
+        ui->sliderOriginal->setEnabled(true);      // 启用滑块
+    }
 }
 
 
