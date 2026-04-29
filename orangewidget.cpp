@@ -4,7 +4,7 @@
 
 #include "orangewidget.h"
 #include "ui_orangewidget.h"
-#include "qtmaterialslider.h"
+// qtmaterialslider.h 已移除：滑块已迁入OrangeBar，OrangeWidget不再直接操作滑块
 
 // Qt标准库头文件引入
 #include <QImageReader>
@@ -34,9 +34,8 @@ OrangeWidget::OrangeWidget(QWidget *parent) :
     m_outputFilePath(""),                       // 初始化输出文件路径为空字符串
     currentOriginalFrame(0),                    // 当前处理前图片帧索引初始化为0（第一帧）
     currentProcessedFrame(0),                   // 当前处理后图片帧索引初始化为0（第一帧）
-    totalOriginalFrames(0),                     // 处理前总帧数初始化为0（无数据状态）
-    totalProcessedFrames(0),                    // 处理后总帧数初始化为0（无数据状态）
-    isSyncMode(false),                          // 同步模式默认关闭（两侧独立切帧）
+    // totalOriginalFrames/totalProcessedFrames 已迁入OrangeBar
+    // isSyncMode 已迁入OrangeBar
     isOrangeWidgetSelected(false),              // OrangeWidget初始未选中
     isOriginalLabelSelected(true),              // 处理前图片label初始选中
     isProcessedLabelSelected(false)             // 处理后图片label初始未选中
@@ -81,8 +80,8 @@ OrangeWidget::~OrangeWidget()
 
     // 释放【橙区】Material组件内存（防止内存泄漏）
     delete m_syncButton;                        // 释放同步帧按钮
-    // 滑块已通过.ui提升，由uic在setupUi时创建，属于OrangeWidget的子对象
-    // Qt父子对象机制会自动回收，无需手动delete
+    // 滑块已迁入OrangeBar，由OrangeBar自行管理生命周期
+    // OrangeBar作为OrangeWidget的子对象（通过.ui提升），Qt父子机制会自动回收
 }
 
 
@@ -130,18 +129,8 @@ void OrangeWidget::initOrangeAreaComponents()
     m_syncButton->setCheckable(true);             // 设置为可选中状态
     m_syncButton->setTextAlignment(Qt::AlignCenter);  // 文字居中对齐
 
-
-
-
-    // ---------- 初始化处理前图片帧滑块（已通过.ui提升为QtMaterialSlider） ----------
-    // ui->sliderOriginal 的类型已是 QtMaterialSlider*，由uic在setupUi时创建
-    ui->sliderOriginal->setRange(0, 0);           // 初始范围设为0-0（无数据时无效状态）
-    ui->sliderOriginal->setValue(0);              // 初始值设为0（第一帧）
-
-    // ---------- 初始化处理后图片帧滑块（已通过.ui提升为QtMaterialSlider） ----------
-    // ui->sliderProcessed 的类型已是 QtMaterialSlider*，由uic在setupUi时创建
-    ui->sliderProcessed->setRange(0, 0);          // 初始范围设为0-0（无数据时无效状态）
-    ui->sliderProcessed->setValue(0);             // 初始值设为0（第一帧）
+    // 滑块初始化已迁入OrangeBar::initSliders()
+    // OrangeBar构造函数中自动调用initSliders()，无需在此处初始化
 }
 
 
@@ -226,52 +215,95 @@ void OrangeWidget::connectOrangeAreaSignals()
     connect(m_syncButton, &QtMaterialFlatButton::clicked,
             this, &OrangeWidget::onSyncFramesClicked);
 
-    // ---------- 处理前图片滑块信号槽连接 ----------
+    // ---------- OrangeBar信号槽连接（接收OrangeBar发射的信号） ----------
+    // 滑块内部信号连接已迁入OrangeBar::connectSignals()
+    // 此处仅连接OrangeBar发射的对外信号到OrangeWidget的槽函数
 
-    // 滑块值改变 -> 先选中处理前label -> 更新当前帧索引并刷新图像显示
-    // 使用Lambda表达式捕获当前对象指针[this]，实现内联槽函数逻辑
-    connect(ui->sliderOriginal, &QtMaterialSlider::valueChanged, [this](int value) {
-        // 选中OrangeWidget和处理前图片label
+    // 处理前滑块选中信号 -> 选中OrangeWidget和处理前图片label
+    // 信号源：OrangeBar::originalSliderSelected()
+    // 功能：用户拖动/点击sliderOriginal时，选中OrangeWidget并选中处理前图片label
+    connect(ui->widget_orangeBarPlaceholder, &OrangeBar::originalSliderSelected, this, [this]() {
         setOrangeWidgetSelected(true);
         setOriginalLabelSelected(true);
-        
-        currentOriginalFrame = value;              // 更新当前帧索引为滑块的当前值
-
-        // 如果处于同步模式，需要同步更新右侧（处理后图片）的帧索引和滑块位置
-        if (isSyncMode) {
-            currentProcessedFrame = value;          // 同步更新处理后图片的帧索引
-            // 阻止右侧滑块发射信号（避免循环触发导致无限递归）
-            ui->sliderProcessed->blockSignals(true);
-            ui->sliderProcessed->setValue(value);     // 手动设置右侧滑块的位置
-            ui->sliderProcessed->blockSignals(false); // 恢复右侧滑块的信号发射
-        }
-
-        // 调用图像显示更新函数，重新读取并显示当前帧的图像
-        updateImageDisplay();
     });
 
-    // ---------- 处理后图片滑块信号槽连接 ----------
-
-    // 滑块值改变 -> 先选中处理后label -> 更新当前帧索引并刷新图像显示
-    connect(ui->sliderProcessed, &QtMaterialSlider::valueChanged, [this](int value) {
-        // 选中OrangeWidget和处理后图片label
+    // 处理后滑块选中信号 -> 选中OrangeWidget和处理后图片label
+    // 信号源：OrangeBar::processedSliderSelected()
+    // 功能：用户拖动/点击sliderProcessed时，选中OrangeWidget并选中处理后图片label
+    connect(ui->widget_orangeBarPlaceholder, &OrangeBar::processedSliderSelected, this, [this]() {
         setOrangeWidgetSelected(true);
         setProcessedLabelSelected(true);
-        
-        currentProcessedFrame = value;             // 更新当前帧索引
+    });
 
-        // 如果处于同步模式，需要同步更新左侧（处理前图片）的帧索引和滑块位置
-        if (isSyncMode) {
-            currentOriginalFrame = value;           // 同步更新处理前图片的帧索引
-            // 阻止左侧滑块发射信号（避免循环触发）
-            ui->sliderOriginal->blockSignals(true);
-            ui->sliderOriginal->setValue(value);      // 手动设置左侧滑块的位置
-            ui->sliderOriginal->blockSignals(false);  // 恢复左侧滑块的信号发射
+    // 处理前帧变化信号 -> 更新帧索引并刷新图像显示
+    // 信号源：OrangeBar::originalFrameChanged(int)
+    // 功能：sliderOriginal值改变时，更新currentOriginalFrame并刷新图像
+    //       同步模式下同时更新currentProcessedFrame
+    connect(ui->widget_orangeBarPlaceholder, &OrangeBar::originalFrameChanged, this, [this](int frame) {
+        currentOriginalFrame = frame;              // 更新处理前帧索引
+
+        // 如果处于同步模式，同步更新处理后帧索引
+        // （OrangeBar内部已通过syncSlider同步了滑块位置，
+        //   但currentProcessedFrame需要OrangeWidget自行更新）
+        if (ui->widget_orangeBarPlaceholder->isSyncMode()) {
+            currentProcessedFrame = frame;          // 同步更新处理后帧索引
         }
 
-        // 调用图像显示更新函数
+        updateImageDisplay();                      // 刷新图像显示
+    });
+
+    // 处理后帧变化信号 -> 更新帧索引并刷新图像显示
+    // 信号源：OrangeBar::processedFrameChanged(int)
+    // 功能：sliderProcessed值改变时，更新currentProcessedFrame并刷新图像
+    connect(ui->widget_orangeBarPlaceholder, &OrangeBar::processedFrameChanged, this, [this](int frame) {
+        currentProcessedFrame = frame;             // 更新处理后帧索引
+
+        // 如果处于同步模式，同步更新处理前帧索引
+        if (ui->widget_orangeBarPlaceholder->isSyncMode()) {
+            currentOriginalFrame = frame;           // 同步更新处理前帧索引
+        }
+
+        updateImageDisplay();                      // 刷新图像显示
+    });
+
+    // 同步模式变化信号 -> 更新按钮文字和label选中状态
+    // 信号源：OrangeBar::syncModeChanged(bool)
+    // 功能：同步模式开启/关闭时，更新同步按钮文字、label选中状态、帧索引
+    connect(ui->widget_orangeBarPlaceholder, &OrangeBar::syncModeChanged, this, [this](bool sync) {
+        if (sync) {
+            // ========== 开启同步模式 ==========
+            m_syncButton->setText("同步中");       // 按钮文字改为"同步中"
+
+            // 同步帧索引（OrangeBar已将processedSlider同步到originalSlider的值）
+            currentProcessedFrame = ui->widget_orangeBarPlaceholder->processedFrame();
+            currentOriginalFrame = ui->widget_orangeBarPlaceholder->originalFrame();
+
+            // 同步模式下，两个label都被选中
+            if (isOrangeWidgetSelected) {
+                isOriginalLabelSelected = true;
+                isProcessedLabelSelected = true;
+                updateLabelBorders();
+            }
+        } else {
+            // ========== 关闭同步模式 ==========
+            m_syncButton->setText("同步帧");       // 按钮文字恢复为"同步帧"
+
+            // 关闭同步模式后，如果两个label都被选中，默认只保留处理后图片label的选中状态
+            if (isOrangeWidgetSelected && isOriginalLabelSelected && isProcessedLabelSelected) {
+                isOriginalLabelSelected = false;
+                updateLabelBorders();
+            }
+        }
+
+        // 无论是否开启同步模式，都强制刷新一次图像显示（确保界面状态一致）
         updateImageDisplay();
     });
+
+    // 日志消息信号 -> 转发给主窗口紫区日志栏
+    // 信号源：OrangeBar::logMessage(QString)
+    // 功能：OrangeBar内部产生的日志消息，通过OrangeWidget转发给主窗口
+    connect(ui->widget_orangeBarPlaceholder, &OrangeBar::logMessage,
+            this, &OrangeWidget::logMessage);
 }
 
 
@@ -287,153 +319,61 @@ void OrangeWidget::connectOrangeAreaSignals()
 
 // 项目自定义槽函数：左侧上一帧（处理前图片）
 // 信号源：ui->pushButton_prevLeft clicked()信号
-// 流程：检查边界条件 -> 帧索引减1 -> 同步模式下更新右侧 -> 更新滑块 -> 刷新显示
 // 功能：切换到处理前图片的上一帧（如果当前不在第一帧）
+// 说明：帧切换逻辑已迁入OrangeBar::onPrevFrameOriginal()
+//       OrangeBar内部处理边界检查、滑块设置、同步模式联动
+//       OrangeWidget通过OrangeBar的信号更新帧索引和刷新图像
 void OrangeWidget::onPrevFrameLeft()
 {
-    // 边界检查：确保不会超出第一帧（帧索引不能小于0）
-    if (currentOriginalFrame > 0) {
-        // 帧索引减1（切换到上一帧，例如从第5帧切换到第4帧）
-        currentOriginalFrame--;
-
-        // 同步模式下的特殊处理：如果开启了同步模式（isSyncMode == true）
-        // 则处理后图片也需要跟着切换到相同的帧
-        if (isSyncMode) {
-            currentProcessedFrame = currentOriginalFrame;  // 同步更新右侧帧索引
-            // 阻止右侧滑块发射valueChanged信号（避免触发右侧滑块的槽函数导致无限循环）
-            ui->sliderProcessed->blockSignals(true);
-            ui->sliderProcessed->setValue(currentProcessedFrame);  // 手动设置右侧滑块位置
-            ui->sliderProcessed->blockSignals(false);  // 恢复右侧滑块的正常信号发射
-        }
-
-        // 更新左侧滑块的位置（这会触发valueChanged信号，进而调用updateImageDisplay刷新图像）
-        ui->sliderOriginal->setValue(currentOriginalFrame);
-    }
-    // 如果已经在第一帧（currentOriginalFrame == 0），则不做任何操作（静默忽略）
+    // 委托OrangeBar执行帧切换（内部处理边界检查、滑块设置、同步联动）
+    ui->widget_orangeBarPlaceholder->onPrevFrameOriginal();
 }
 
 
 // 项目自定义槽函数：左侧下一帧（处理前图片）
 // 信号源：ui->pushButton_nextLeft clicked()信号
-// 流程：检查边界条件 -> 帧索引加1 -> 同步模式下更新右侧 -> 更新滑块 -> 刷新显示
 // 功能：切换到处理前图片的下一帧（如果当前不在最后一帧）
+// 说明：帧切换逻辑已迁入OrangeBar::onNextFrameOriginal()
 void OrangeWidget::onNextFrameLeft()
 {
-    // 边界检查：确保不会超出最后一帧（帧索引不能大于等于总帧数）
-    if (currentOriginalFrame < totalOriginalFrames - 1) {
-        // 帧索引加1（切换到下一帧，例如从第4帧切换到第5帧）
-        currentOriginalFrame++;
-
-        // 同步模式下的特殊处理
-        if (isSyncMode) {
-            currentProcessedFrame = currentOriginalFrame;
-            ui->sliderProcessed->blockSignals(true);
-            ui->sliderProcessed->setValue(currentProcessedFrame);
-            ui->sliderProcessed->blockSignals(false);
-        }
-
-        // 更新左侧滑块位置
-        ui->sliderOriginal->setValue(currentOriginalFrame);
-    }
+    // 委托OrangeBar执行帧切换
+    ui->widget_orangeBarPlaceholder->onNextFrameOriginal();
 }
 
 
 // 项目自定义槽函数：右侧上一帧（处理后图片）
 // 信号源：ui->pushButton_prevRight clicked()信号
 // 功能：切换到处理后图片的上一帧（如果当前不在第一帧）
+// 说明：帧切换逻辑已迁入OrangeBar::onPrevFrameProcessed()
 void OrangeWidget::onPrevFrameRight()
 {
-    // 边界检查：确保不会超出第一帧
-    if (currentProcessedFrame > 0) {
-        // 帧索引减1
-        currentProcessedFrame--;
-
-        // 同步模式下的特殊处理
-        if (isSyncMode) {
-            currentOriginalFrame = currentProcessedFrame;
-            ui->sliderOriginal->blockSignals(true);
-            ui->sliderOriginal->setValue(currentOriginalFrame);
-            ui->sliderOriginal->blockSignals(false);
-        }
-
-        // 更新右侧滑块位置
-        ui->sliderProcessed->setValue(currentProcessedFrame);
-    }
+    // 委托OrangeBar执行帧切换
+    ui->widget_orangeBarPlaceholder->onPrevFrameProcessed();
 }
 
 
 // 项目自定义槽函数：右侧下一帧（处理后图片）
 // 信号源：ui->pushButton_nextRight clicked()信号
 // 功能：切换到处理后图片的下一帧（如果当前不在最后一帧）
+// 说明：帧切换逻辑已迁入OrangeBar::onNextFrameProcessed()
 void OrangeWidget::onNextFrameRight()
 {
-    // 边界检查：确保不会超出最后一帧
-    if (currentProcessedFrame < totalProcessedFrames - 1) {
-        // 帧索引加1
-        currentProcessedFrame++;
-
-        // 同步模式下的特殊处理
-        if (isSyncMode) {
-            currentOriginalFrame = currentProcessedFrame;
-            ui->sliderOriginal->blockSignals(true);
-            ui->sliderOriginal->setValue(currentOriginalFrame);
-            ui->sliderOriginal->blockSignals(false);
-        }
-
-        // 更新右侧滑块位置
-        ui->sliderProcessed->setValue(currentProcessedFrame);
-    }
+    // 委托OrangeBar执行帧切换
+    ui->widget_orangeBarPlaceholder->onNextFrameProcessed();
 }
 
 
 // 项目自定义槽函数：同步帧按钮点击处理
 // 信号源：m_syncButton clicked()信号
-// 流程：切换同步模式标志位 -> 更新按钮文字提示 -> 发射日志信号 -> 可选地同步两侧帧 -> 更新label选中状态
 // 功能：开启或关闭前后图片帧的同步模式
-//       开启同步模式后：操作一侧（如点击左箭头），另一侧会自动跟随切换到相同帧
-//       关闭同步模式后：两侧可以独立进行帧切换操作，互不影响
+// 说明：滑块同步逻辑已迁入OrangeBar::toggleSyncMode()
+//       此处仅负责调用OrangeBar接口，UI更新由syncModeChanged信号处理器完成
 void OrangeWidget::onSyncFramesClicked()
 {
-    // 切换同步模式标志位（使用逻辑非运算符!取反：true变false，false变true）
-    isSyncMode = !isSyncMode;
-
-    // 根据新的模式状态执行不同的UI更新逻辑
-    if (isSyncMode) {
-        // ========== 开启同步模式 ==========
-        m_syncButton->setText("同步中");           // 按钮文字改为"同步中"（提示用户再次点击可取消）
-
-        // 发射日志消息信号（主窗口会接收到并在紫区日志栏显示）
-        emit logMessage("同步模式已开启: 前后图片帧数将联动");
-
-        // 立即同步两侧到同一帧（以左侧处理前图片的当前帧为准）
-        currentProcessedFrame = currentOriginalFrame;
-        // 阻止右侧滑块信号，手动设置其位置
-        ui->sliderProcessed->blockSignals(true);
-        ui->sliderProcessed->setValue(currentProcessedFrame);
-        ui->sliderProcessed->blockSignals(false);
-        
-        // 同步模式下，两个label都被选中
-        if (isOrangeWidgetSelected) {
-            isOriginalLabelSelected = true;
-            isProcessedLabelSelected = true;
-            updateLabelBorders();
-        }
-    } else {
-        // ========== 关闭同步模式 ==========
-        m_syncButton->setText("同步帧");              // 按钮文字恢复为"同步帧"（初始状态）
-
-        // 发射日志消息信号
-        emit logMessage("同步模式已关闭: 前后图片帧数独立控制");
-        
-        // 关闭同步模式后，如果两个label都被选中，默认只保留处理后图片label的选中状态
-        if (isOrangeWidgetSelected && isOriginalLabelSelected && isProcessedLabelSelected) {
-            isOriginalLabelSelected = false;
-            updateLabelBorders();
-        }
-    }
-
-    // 无论是否开启同步模式，都强制刷新一次图像显示（确保界面状态一致）
-    updateImageDisplay();
+    // 委托OrangeBar切换同步模式
+    // OrangeBar内部处理：切换m_isSyncMode、同步滑块位置、发射syncModeChanged信号
+    // OrangeWidget通过syncModeChanged信号处理器更新按钮文字、label选中状态、帧索引
+    ui->widget_orangeBarPlaceholder->toggleSyncMode();
 }
 
 
@@ -503,7 +443,8 @@ void OrangeWidget::preloadImagePreview(const QString &filePath)
     }
 
     // 更新处理前图片的总帧数（用于后续设置滑块的范围）
-    totalOriginalFrames = frameCount;
+    // 已迁入OrangeBar，通过setTotalOriginalFrames设置
+    ui->widget_orangeBarPlaceholder->setTotalOriginalFrames(frameCount);
 
     // 保存输入文件路径（供后续updateImageDisplay()读取图像时使用）
     m_inputFilePath = filePath;
@@ -524,9 +465,9 @@ void OrangeWidget::preloadImagePreview(const QString &filePath)
 // 使用场景：用户点击"Run Dark Sectioning"按钮后，主窗口调用此函数进入处理前的UI准备阶段
 void OrangeWidget::startProcessing()
 {
-    // 隐藏两个帧滑块（处理过程中不允许用户切换帧，避免干扰算法运行）
-    ui->sliderOriginal->hide();     // 隐藏处理前图片滑块
-    ui->sliderProcessed->hide();    // 隐藏处理后图片滑块
+    // 委托OrangeBar隐藏滑块（处理过程中不允许用户切换帧，避免干扰算法运行）
+    // OrangeBar::startProcessing()内部隐藏两个滑块并调用QApplication::processEvents()
+    ui->widget_orangeBarPlaceholder->startProcessing();
 
     // 禁用同步帧按钮（处理过程中不允许使用同步功能）
     m_syncButton->setEnabled(false);             // 禁用按钮，防止处理中误操作
@@ -544,25 +485,17 @@ void OrangeWidget::startProcessing()
 // 使用场景：算法处理全部完成后，主窗口调用此函数恢复橙区的交互功能
 void OrangeWidget::finishProcessing(int originalFrames, int processedFrames)
 {
-    // 保存总帧数到成员变量（用于边界检查和滑块范围设置）
-    totalOriginalFrames = originalFrames;
-    totalProcessedFrames = processedFrames;
+    // 阻止OrangeBar发射信号（避免finishProcessing内部发射的帧变化信号触发多次图像刷新）
+    // OrangeBar::finishProcessing()配置完滑块后会发射originalFrameChanged(0)和processedFrameChanged(0)
+    // 但此处我们需要手动控制帧索引更新和图像刷新的时序，所以暂时屏蔽信号
+    ui->widget_orangeBarPlaceholder->blockSignals(true);
 
-    // ---------- 配置处理前图片滑块 ----------
-    if (totalOriginalFrames > 0) {
-        // 只有当存在有效帧数时才启用滑块（避免除零错误或无效范围）
-        ui->sliderOriginal->setRange(0, totalOriginalFrames - 1);  // 设置范围：0 到 总帧数-1
-        ui->sliderOriginal->setValue(0);              // 重置滑块位置到第一帧（索引0）
-        ui->sliderOriginal->show();                  // 显示滑块（之前被startProcessing()隐藏了）
-    }
+    // 委托OrangeBar配置滑块（设置范围、重置到第一帧、显示滑块）
+    // OrangeBar内部使用blockSignals防止配置过程中发射中间状态信号
+    ui->widget_orangeBarPlaceholder->finishProcessing(originalFrames, processedFrames);
 
-    // ---------- 配置处理后图片滑块 ----------
-    if (totalProcessedFrames > 0) {
-        // 只有当存在有效帧数时才启用滑块
-        ui->sliderProcessed->setRange(0, totalProcessedFrames - 1);  // 设置范围
-        ui->sliderProcessed->setValue(0);             // 重置到第一帧
-        ui->sliderProcessed->show();                  // 显示滑块
-    }
+    // 恢复OrangeBar信号发射
+    ui->widget_orangeBarPlaceholder->blockSignals(false);
 
     // ---------- 重置帧索引并更新进度 ----------
     currentOriginalFrame = 0;      // 重置处理前图片帧索引到第一帧
@@ -637,7 +570,7 @@ void OrangeWidget::doUpdateImageDisplay()
             // 格式示例："处理前图片\n(帧 3/10)" 表示共10帧，当前显示第3帧
             ui->label_originalImage->setText(
                 "处理前图片\n(帧 " + QString::number(currentOriginalFrame + 1) + "/" +
-                QString::number(totalOriginalFrames) + ")"
+                QString::number(ui->widget_orangeBarPlaceholder->totalOriginalFrames()) + ")"
             );
         }
     }
@@ -669,7 +602,7 @@ void OrangeWidget::doUpdateImageDisplay()
             // 读取失败时显示占位文字
             ui->label_processedImage->setText(
                 "处理后图片\n(帧 " + QString::number(currentProcessedFrame + 1) + "/" +
-                QString::number(totalProcessedFrames) + ")"
+                QString::number(ui->widget_orangeBarPlaceholder->totalProcessedFrames()) + ")"
             );
         }
     }
@@ -751,7 +684,7 @@ void OrangeWidget::mousePressEvent(QMouseEvent *event)
         // 选中处理前图片label
         setOriginalLabelSelected(true);
         // 如果不在同步模式，取消处理后图片label的选中状态
-        if (!isSyncMode) {
+        if (!ui->widget_orangeBarPlaceholder->isSyncMode()) {
             setProcessedLabelSelected(false);
         }
         return;
@@ -766,7 +699,7 @@ void OrangeWidget::mousePressEvent(QMouseEvent *event)
         // 选中处理后图片label
         setProcessedLabelSelected(true);
         // 如果不在同步模式，取消处理前图片label的选中状态
-        if (!isSyncMode) {
+        if (!ui->widget_orangeBarPlaceholder->isSyncMode()) {
             setOriginalLabelSelected(false);
         }
         return;
@@ -781,7 +714,7 @@ void OrangeWidget::mousePressEvent(QMouseEvent *event)
         }
         // 选中处理前图片label
         setOriginalLabelSelected(true);
-        if (!isSyncMode) {
+        if (!ui->widget_orangeBarPlaceholder->isSyncMode()) {
             setProcessedLabelSelected(false);
         }
         return;
@@ -796,31 +729,19 @@ void OrangeWidget::mousePressEvent(QMouseEvent *event)
         }
         // 选中处理后图片label
         setProcessedLabelSelected(true);
-        if (!isSyncMode) {
+        if (!ui->widget_orangeBarPlaceholder->isSyncMode()) {
             setOriginalLabelSelected(false);
         }
         return;
     }
     
-    // 判断是否点击在滑块区域（属于对应图片区域）
-    if (ui->sliderOriginal->geometry().contains(pos)) {
+    // 判断是否点击在OrangeBar占位区域（滑块已迁入OrangeBar内部，不再直接检查滑块几何）
+    // OrangeBar内部的滑块选中由OrangeBar::originalSliderSelected/processedSliderSelected信号处理
+    if (ui->widget_orangeBarPlaceholder->geometry().contains(pos)) {
+        // 点击OrangeBar区域时，选中OrangeWidget
+        // 具体选中哪个label由OrangeBar发射的信号决定
         if (!isOrangeWidgetSelected) {
             setOrangeWidgetSelected(true);
-        }
-        setOriginalLabelSelected(true);
-        if (!isSyncMode) {
-            setProcessedLabelSelected(false);
-        }
-        return;
-    }
-    
-    if (ui->sliderProcessed->geometry().contains(pos)) {
-        if (!isOrangeWidgetSelected) {
-            setOrangeWidgetSelected(true);
-        }
-        setProcessedLabelSelected(true);
-        if (!isSyncMode) {
-            setOriginalLabelSelected(false);
         }
         return;
     }
@@ -1052,12 +973,12 @@ void OrangeWidget::setOriginalLabelSelected(bool selected)
     isOriginalLabelSelected = selected;
     
     // 如果不在同步模式，且选中了处理前图片label，需要取消处理后图片label的选中
-    if (selected && !isSyncMode) {
+    if (selected && !ui->widget_orangeBarPlaceholder->isSyncMode()) {
         isProcessedLabelSelected = false;
     }
     
     // 如果在同步模式，选中一个label时同时选中另一个
-    if (selected && isSyncMode) {
+    if (selected && ui->widget_orangeBarPlaceholder->isSyncMode()) {
         isProcessedLabelSelected = true;
     }
     
@@ -1078,12 +999,12 @@ void OrangeWidget::setProcessedLabelSelected(bool selected)
     isProcessedLabelSelected = selected;
     
     // 如果不在同步模式，且选中了处理后图片label，需要取消处理前图片label的选中
-    if (selected && !isSyncMode) {
+    if (selected && !ui->widget_orangeBarPlaceholder->isSyncMode()) {
         isOriginalLabelSelected = false;
     }
     
     // 如果在同步模式，选中一个label时同时选中另一个
-    if (selected && isSyncMode) {
+    if (selected && ui->widget_orangeBarPlaceholder->isSyncMode()) {
         isOriginalLabelSelected = true;
     }
     

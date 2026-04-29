@@ -8,9 +8,12 @@
 #include <QLabel>
 
 // Material组件头文件引入（严格使用libs文件夹下的公共接口头文件）
-// 仅包含橙区实际使用的Material组件，不包含其他区域组件
+// 仅包含橙区OrangeWidget自身使用的Material组件
+// 滑块（QtMaterialSlider）已迁入OrangeBar，此处不再需要
 #include "qtmaterialflatbutton.h"
-#include "qtmaterialslider.h"
+
+// 引入OrangeBar自定义控件头文件（用于访问OrangeBar的公共接口）
+#include "orangebar.h"
 
 namespace Ui {
 class OrangeWidget;
@@ -95,9 +98,9 @@ private:
     // 同步帧按钮：控制两侧图片是否同步切帧
     QtMaterialFlatButton *m_syncButton;           // 同步帧扁平按钮（Material风格）
     
-    // 帧滑块已通过方法A（控件提升法）在.ui中提升为QtMaterialSlider
-    // ui->sliderOriginal 的类型已是 QtMaterialSlider*，无需额外声明成员变量
-    // ui->sliderProcessed 的类型已是 QtMaterialSlider*，无需额外声明成员变量
+    // 帧滑块已迁入OrangeBar（通过方法B占位容器封装法）
+    // ui->widget_orangeBarPlaceholder 提升为 OrangeBar* 后，
+    // 可通过 ui->widget_orangeBarPlaceholder->originalFrame() 等接口访问滑块状态
     
     // ==================== 橙区数据成员 ====================
     
@@ -105,9 +108,10 @@ private:
     QString m_outputFilePath;                     // 输出文件路径（处理后，从算法模块获取）
     int currentOriginalFrame;                     // 当前处理前图片帧索引（0开始）
     int currentProcessedFrame;                    // 当前处理后图片帧索引（0开始）
-    int totalOriginalFrames;                      // 处理前图片总帧数（用于滑块范围设置）
-    int totalProcessedFrames;                     // 处理后图片总帧数（用于滑块范围设置）
-    bool isSyncMode;                              // 同步模式标志位（true=同步，false=独立）
+    // totalOriginalFrames/totalProcessedFrames 已迁入OrangeBar
+    // 通过 ui->widget_orangeBarPlaceholder->totalOriginalFrames() 获取
+    // isSyncMode 已迁入OrangeBar
+    // 通过 ui->widget_orangeBarPlaceholder->isSyncMode() 获取
     
     // ==================== 选中状态数据成员 ====================
     
