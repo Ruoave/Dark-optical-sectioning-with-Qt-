@@ -44,6 +44,7 @@ SOURCES += \
     kmeans.cpp \
     orangebar.cpp \
     orangewidget.cpp \
+    qt_readTiffFrame.cpp \
     separateHiLo.cpp \
     window_sum_filter.cpp \
     ViewMat.cpp \
@@ -55,6 +56,7 @@ HEADERS += \
     orangebar.h \
     orangewidget.h \
     params.h \
+    qt_readTiffFrame.h \
     ViewMat.h \
     port_matlab2opencv.h
 FORMS += \

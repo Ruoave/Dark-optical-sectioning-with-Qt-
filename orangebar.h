@@ -35,10 +35,28 @@ public:
     ~OrangeBar();
 
 protected:
-    // 事件过滤器（用于拦截滑块的Resize事件，修复缩放时thumb位置不更新的bug）
-    // QtMaterialSlider没有重写resizeEvent()，窗口缩放时thumb偏移量不会自动更新
-    // 通过eventFilter在滑块收到Resize事件时，用blockSignals+setValue触发内部updateThumbOffset()
-    bool eventFilter(QObject *obj, QEvent *event) override;
+    // 重写resizeEvent（修复窗口缩放时slider圆钮位置不更新的bug）
+    // 根因分析：
+    //   QtMaterialSlider没有重写resizeEvent()，其thumb偏移量(offset)通过updateThumbOffset()计算
+    //   updateThumbOffset()仅在sliderChange()中被调用，而sliderChange仅在value/range改变时触发
+    //   窗口缩放时slider宽度改变但value和range都不变 → updateThumbOffset()永远不会被调用
+    //   导致圆钮停留在旧位置，与轨道不匹配
+    // 解决方案：
+    //   在OrangeBar的resizeEvent中用QTimer::singleShot(0)延迟执行updateSliderThumbs()
+    //   延迟原因：resize时layout尚未完成对子控件(slider)的几何调整，
+    //             需要等事件循环回到主事件循环后slider才有正确的新尺寸
+    //   updateSliderThumbs()通过临时改变range触发sliderChange(SliderRangeChange)
+    //   sliderChange内部无条件调用updateThumbOffset()重新计算thumb位置
+    void resizeEvent(QResizeEvent *event) override;
+
+private:
+    // 强制更新两个滑块的thumb位置（供resizeEvent调用）
+    // 实现原理：
+    //   QtMaterialSlider::setRange()在max不变时直接return不触发sliderChange
+    //   因此临时将maximum+1再恢复，强制触发SliderRangeChange
+    //   SliderRangeChange → sliderChange() → updateThumbOffset() 重新计算offset
+    // 使用blockSignals防止发射rangeChanged/valueChanged等信号
+    void updateSliderThumbs();
 
 public:
     // ==================== 公共接口函数（供OrangeWidget调用） ====================
