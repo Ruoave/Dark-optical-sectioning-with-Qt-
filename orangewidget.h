@@ -5,12 +5,11 @@
 #include <QString>
 #include <QImage>
 #include <QPixmap>
-#include <QLabel>                            // Qt原生标签控件（用于显示进度数值文本）
+#include <QLabel>
 
 // Material组件头文件引入（严格使用libs文件夹下的公共接口头文件）
 // 仅包含橙区实际使用的Material组件，不包含其他区域组件
 #include "qtmaterialflatbutton.h"
-#include "qtmaterialprogress.h"
 #include "qtmaterialslider.h"
 
 namespace Ui {
@@ -67,6 +66,26 @@ protected:
     // 信号源：系统resizeEvent
     // 功能：窗口缩放时自动重新计算图片大小并更新显示
     void resizeEvent(QResizeEvent *event) override;
+    
+    // Qt原生事件重载：绘制事件
+    // 功能：绘制OrangeWidget的边框（根据选中状态显示不同颜色）
+    void paintEvent(QPaintEvent *event) override;
+    
+    // Qt原生事件重载：鼠标点击事件
+    // 功能：处理OrangeWidget内部的点击，实现选中逻辑
+    void mousePressEvent(QMouseEvent *event) override;
+    
+    // Qt原生事件重载：键盘按下事件
+    // 功能：处理键盘方向键和字母键，控制帧切换
+    void keyPressEvent(QKeyEvent *event) override;
+    
+    // Qt原生事件重载：滚轮事件
+    // 功能：处理鼠标滚轮，控制帧切换
+    void wheelEvent(QWheelEvent *event) override;
+
+    // Qt事件过滤器：用于检测父窗口（MainWindow）上的点击事件
+    // 功能：当点击OrangeWidget外部区域时，自动取消选中状态
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
     Ui::OrangeWidget *ui;                        // UI界面指针（来自Qt Designer生成的ui_orangewidget.h）
@@ -76,25 +95,28 @@ private:
     // 同步帧按钮：控制两侧图片是否同步切帧
     QtMaterialFlatButton *m_syncButton;           // 同步帧扁平按钮（Material风格）
     
-    // 进度条组件：显示Dark Sectioning处理进度
-    QtMaterialProgress *m_progressBar;            // 处理进度条（Material风格）
-    
     // 帧滑块组件（2个）：用于快速跳转到指定帧
     QtMaterialSlider *m_sliderOriginal;           // 处理前图片帧滑块（拖动可切换帧）
     QtMaterialSlider *m_sliderProcessed;          // 处理后图片帧滑块（拖动可切换帧）
     
-    // 进度数值显示标签：显示当前进度百分比
-    QLabel *m_progressValueLabel;                 // 进度数值显示标签（#55aaff颜色，微软雅黑加粗）
-
     // ==================== 橙区数据成员 ====================
     
     QString m_inputFilePath;                      // 输入图片文件路径（从蓝区传入）
-    QString m_outputFilePath;                     // 输出图片文件路径（处理后，从算法模块获取）
+    QString m_outputFilePath;                     // 输出文件路径（处理后，从算法模块获取）
     int currentOriginalFrame;                     // 当前处理前图片帧索引（0开始）
     int currentProcessedFrame;                    // 当前处理后图片帧索引（0开始）
     int totalOriginalFrames;                      // 处理前图片总帧数（用于滑块范围设置）
     int totalProcessedFrames;                     // 处理后图片总帧数（用于滑块范围设置）
     bool isSyncMode;                              // 同步模式标志位（true=同步，false=独立）
+    
+    // ==================== 选中状态数据成员 ====================
+    
+    bool isOrangeWidgetSelected;                  // OrangeWidget是否被选中
+    bool isOriginalLabelSelected;                 // 处理前图片label是否被选中
+    bool isProcessedLabelSelected;                // 处理后图片label是否被选中
+    const QColor unselected_OrangeWidgetBorderColor = QColor("#9e9e9e");  // 未选中时边框颜色（灰色）
+    const QColor selected_OrangeWidgetBorderColor = QColor("#c4dfff"); // OrangeWidget选中时边框颜色
+    const QColor labelSelectedColor = QColor("#55aaff");       // label选中时边框颜色
 
     // ==================== 橙区内部辅助函数 ====================
     
@@ -106,6 +128,21 @@ private:
     
     // 绑定所有信号槽连接（箭头按钮、滑块、同步按钮等）
     void connectOrangeAreaSignals();
+    
+    // 更新OrangeWidget边框样式（根据选中状态）
+    void updateOrangeWidgetBorder();
+    
+    // 更新label边框样式（根据选中状态）
+    void updateLabelBorders();
+    
+    // 设置OrangeWidget选中状态
+    void setOrangeWidgetSelected(bool selected);
+    
+    // 设置处理前图片label选中状态
+    void setOriginalLabelSelected(bool selected);
+    
+    // 设置处理后图片label选中状态
+    void setProcessedLabelSelected(bool selected);
 
     // ==================== 橙区对外公共接口 ====================
 public:
@@ -139,10 +176,6 @@ public:
     //   originalFrames - 处理前图片的总帧数
     //   processedFrames - 处理后图片的总帧数
     void finishProcessing(int originalFrames, int processedFrames);
-    
-    // 更新处理进度（实时刷新进度条和进度数值）
-    // 参数：progress - 当前进度百分比（0-100）
-    void updateProgress(int progress);
     
     // 强制刷新图像显示（根据当前帧索引重新读取并显示图片）
     // 在窗口resize或帧切换时自动调用

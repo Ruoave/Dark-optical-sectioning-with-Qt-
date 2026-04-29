@@ -181,11 +181,7 @@ void MainWindow::on_pushButton_run_clicked()
     // 橙区会自动显示进度条、重置进度值为0%
     ui->widget_orangePlaceholder->startProcessing();
     
-    // 强制刷新UI（确保进度条立刻显示）
-    QApplication::processEvents();
-    
-    // 更新进度条到10%（表示开始处理）
-    ui->widget_orangePlaceholder->updateProgress(10);
+    // 强制刷新UI（确保界面立刻更新）
     QApplication::processEvents();
     
     // ========== 第3步：调用原有的DarkSectioning处理函数（保持原有业务逻辑不变） ==========
@@ -196,8 +192,6 @@ void MainWindow::on_pushButton_run_clicked()
     // 3. 定期调用QApplication::processEvents()保持UI响应
     darkSectioning->process();
     
-    // 更新进度条到90%（表示算法处理完成）
-    ui->widget_orangePlaceholder->updateProgress(100);
     QApplication::processEvents();
     
     // ========== 第4步：构建输出文件路径并传递给橙区 ==========

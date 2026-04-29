@@ -5,7 +5,6 @@
 #include "orangewidget.h"
 #include "ui_orangewidget.h"
 #include "qtmaterialslider.h"
-#include "qtmaterialprogress.h"
 
 // Qt标准库头文件引入
 #include <QImageReader>
@@ -17,6 +16,10 @@
 #include <QFont>
 #include <QApplication>
 #include <QTimer>
+#include <QPainter>
+#include <QMouseEvent>
+#include <QKeyEvent>
+#include <QColor>
 
 using namespace std;
 
@@ -33,10 +36,16 @@ OrangeWidget::OrangeWidget(QWidget *parent) :
     currentProcessedFrame(0),                   // 当前处理后图片帧索引初始化为0（第一帧）
     totalOriginalFrames(0),                     // 处理前总帧数初始化为0（无数据状态）
     totalProcessedFrames(0),                    // 处理后总帧数初始化为0（无数据状态）
-    isSyncMode(false)                           // 同步模式默认关闭（两侧独立切帧）
+    isSyncMode(false),                          // 同步模式默认关闭（两侧独立切帧）
+    isOrangeWidgetSelected(false),              // OrangeWidget初始未选中
+    isOriginalLabelSelected(true),              // 处理前图片label初始选中
+    isProcessedLabelSelected(false)             // 处理后图片label初始未选中
 {
     // 第1步：调用Qt Designer生成的UI设置（加载orangewidget.ui中的界面定义）
     ui->setupUi(this);
+
+    // 设置焦点策略，使其能够接收键盘事件
+    setFocusPolicy(Qt::StrongFocus);
 
     // 第2步：初始化所有Material组件（创建对象、配置属性、设置样式）
     initOrangeAreaComponents();
@@ -46,6 +55,19 @@ OrangeWidget::OrangeWidget(QWidget *parent) :
 
     // 第4步：绑定所有信号槽连接（箭头按钮、滑块、同步按钮的交互逻辑）
     connectOrangeAreaSignals();
+
+    // 第5步：初始化边框样式
+    updateLabelBorders();
+
+    // 第6步：安装事件过滤器到父窗口（MainWindow）
+    // 用于检测点击OrangeWidget外部区域时，自动取消选中状态
+    // 注意：parent()在构造函数中可能为nullptr（如果还未被添加到父窗口布局）
+    // 因此使用QTimer延迟安装，确保父窗口已就绪
+    QTimer::singleShot(100, this, [this]() {
+        if (parentWidget()) {
+            parentWidget()->installEventFilter(this);
+        }
+    });
 }
 
 
@@ -59,7 +81,6 @@ OrangeWidget::~OrangeWidget()
 
     // 释放【橙区】Material组件内存（防止内存泄漏）
     delete m_syncButton;                        // 释放同步帧按钮
-    delete m_progressBar;                       // 释放进度条控件
     delete m_sliderOriginal;                    // 释放处理前图片滑块
     delete m_sliderProcessed;                   // 释放处理后图片滑块
 }
@@ -88,7 +109,7 @@ void OrangeWidget::initOrangeAreaComponents()
     m_syncButton->setEnabled(false);           // 禁用按钮，用户无法点击
 
     // ---------- 字体设置 ----------
-    m_syncButton->setFontSize(12);
+    m_syncButton->setFontSize(14);
 
     // ---------- 按钮颜色设置（使用 QtMaterialFlatButton 自身 API，不能用 QSS）----------
     // 重要：必须先禁用主题色，否则自定义颜色会被覆盖无效
@@ -111,23 +132,6 @@ void OrangeWidget::initOrangeAreaComponents()
 
 
 
-
-    // ---------- 创建处理进度条 ----------
-
-    // Material风格的进度条控件（用于显示Dark Sectioning算法的处理进度）
-    m_progressBar = new QtMaterialProgress();
-    m_progressBar->setRange(0, 100);            // 设置进度范围：0%（开始）到100%（完成）
-    m_progressBar->setValue(0);                  // 初始值设为0（未开始状态）
-
-    // ---------- 创建进度数值显示标签 ----------
-
-    // QLabel标签用于显示当前进度的百分比文本（如"100%"）
-    m_progressValueLabel = new QLabel("100%");   // 默认显示"100%"（因为进度功能暂未完全实现）
-    m_progressValueLabel->setAlignment(Qt::AlignCenter);  // 文字居中对齐
-    // 设置样式表：#55aaff天蓝色、微软雅黑字体、加粗、12px字号
-    m_progressValueLabel->setStyleSheet(
-        "QLabel { color: #55aaff; font-family: 'Microsoft YaHei'; font-weight: bold; font-size: 12px; }"
-    );
 
     // ---------- 创建处理前图片帧滑块（初始隐藏） ----------
 
@@ -153,29 +157,6 @@ void OrangeWidget::initOrangeAreaComponents()
 // ============================================================================
 void OrangeWidget::setupOrangeAreaInLayout()
 {
-    // ---------- 替换进度条（移到顶部控制条 horizontalLayout_topControlBar） ----------
-
-    // 获取顶部控制条的水平布局对象
-    QHBoxLayout *topControlBarLayout = qobject_cast<QHBoxLayout*>(ui->horizontalLayout_topControlBar);
-    if (topControlBarLayout) {
-        // 移除原始进度条控件（progressBar_processing是Qt原生QProgressBar）
-        QLayoutItem *progressItem = topControlBarLayout->itemAt(1);  // 进度条在第2个位置（索引1）
-        if (progressItem && progressItem->widget() == ui->progressBar_processing) {
-            topControlBarLayout->removeWidget(ui->progressBar_processing);  // 从布局移除
-            ui->progressBar_processing->deleteLater();                      // 延迟删除原进度条
-            topControlBarLayout->insertWidget(1, m_progressBar);             // 在原位置插入Material进度条
-        }
-
-        // 添加进度数值显示标签到widget_progressValue容器中
-        QLayoutItem *progressValueItem = topControlBarLayout->itemAt(2);  // 进度数值容器在第3个位置（索引2）
-        if (progressValueItem && progressValueItem->widget() == ui->widget_progressValue) {
-            // 为widget_progressValue容器创建垂直布局
-            QVBoxLayout *progressValueLayout = new QVBoxLayout(ui->widget_progressValue);
-            progressValueLayout->setContentsMargins(0, 0, 0, 0);       // 设置边距为0（紧凑显示）
-            progressValueLayout->addWidget(m_progressValueLabel);          // 将标签添加到布局中
-        }
-    }
-
     // ---------- 替换同步帧按钮（在底部控制条 horizontalLayout） ----------
 
     // 获取底部控制条的水平布局对象（pushButton_syncFrames所在的布局）
@@ -214,23 +195,35 @@ void OrangeWidget::connectOrangeAreaSignals()
 {
     // ---------- 左侧箭头按钮信号槽连接（控制处理前图片帧） ----------
 
-    // 左箭头按钮点击 -> 执行onPrevFrameLeft()槽函数（切换到上一帧）
-    connect(ui->pushButton_prevLeft, &QPushButton::clicked,
-            this, &OrangeWidget::onPrevFrameLeft);
+    // 左箭头按钮点击 -> 先选中处理前label -> 再执行onPrevFrameLeft()槽函数
+    connect(ui->pushButton_prevLeft, &QPushButton::clicked, [this]() {
+        setOrangeWidgetSelected(true);
+        setOriginalLabelSelected(true);
+        onPrevFrameLeft();
+    });
 
-    // 右箭头按钮点击 -> 执行onNextFrameLeft()槽函数（切换到下一帧）
-    connect(ui->pushButton_nextLeft, &QPushButton::clicked,
-            this, &OrangeWidget::onNextFrameLeft);
+    // 右箭头按钮点击 -> 先选中处理前label -> 再执行onNextFrameLeft()槽函数
+    connect(ui->pushButton_nextLeft, &QPushButton::clicked, [this]() {
+        setOrangeWidgetSelected(true);
+        setOriginalLabelSelected(true);
+        onNextFrameLeft();
+    });
 
     // ---------- 右侧箭头按钮信号槽连接（控制处理后图片帧） ----------
 
-    // 左箭头按钮点击 -> 执行onPrevFrameRight()槽函数（切换到上一帧）
-    connect(ui->pushButton_prevRight, &QPushButton::clicked,
-            this, &OrangeWidget::onPrevFrameRight);
+    // 左箭头按钮点击 -> 先选中处理后label -> 再执行onPrevFrameRight()槽函数
+    connect(ui->pushButton_prevRight, &QPushButton::clicked, [this]() {
+        setOrangeWidgetSelected(true);
+        setProcessedLabelSelected(true);
+        onPrevFrameRight();
+    });
 
-    // 右箭头按钮点击 -> 执行onNextFrameRight()槽函数（切换到下一帧）
-    connect(ui->pushButton_nextRight, &QPushButton::clicked,
-            this, &OrangeWidget::onNextFrameRight);
+    // 右箭头按钮点击 -> 先选中处理后label -> 再执行onNextFrameRight()槽函数
+    connect(ui->pushButton_nextRight, &QPushButton::clicked, [this]() {
+        setOrangeWidgetSelected(true);
+        setProcessedLabelSelected(true);
+        onNextFrameRight();
+    });
 
     // ---------- 同步帧按钮信号槽连接 ----------
 
@@ -240,9 +233,13 @@ void OrangeWidget::connectOrangeAreaSignals()
 
     // ---------- 处理前图片滑块信号槽连接 ----------
 
-    // 滑块值改变 -> 更新当前帧索引并刷新图像显示
+    // 滑块值改变 -> 先选中处理前label -> 更新当前帧索引并刷新图像显示
     // 使用Lambda表达式捕获当前对象指针[this]，实现内联槽函数逻辑
     connect(m_sliderOriginal, &QtMaterialSlider::valueChanged, [this](int value) {
+        // 选中OrangeWidget和处理前图片label
+        setOrangeWidgetSelected(true);
+        setOriginalLabelSelected(true);
+        
         currentOriginalFrame = value;              // 更新当前帧索引为滑块的当前值
 
         // 如果处于同步模式，需要同步更新右侧（处理后图片）的帧索引和滑块位置
@@ -260,8 +257,12 @@ void OrangeWidget::connectOrangeAreaSignals()
 
     // ---------- 处理后图片滑块信号槽连接 ----------
 
-    // 滑块值改变 -> 更新当前帧索引并刷新图像显示
+    // 滑块值改变 -> 先选中处理后label -> 更新当前帧索引并刷新图像显示
     connect(m_sliderProcessed, &QtMaterialSlider::valueChanged, [this](int value) {
+        // 选中OrangeWidget和处理后图片label
+        setOrangeWidgetSelected(true);
+        setProcessedLabelSelected(true);
+        
         currentProcessedFrame = value;             // 更新当前帧索引
 
         // 如果处于同步模式，需要同步更新左侧（处理前图片）的帧索引和滑块位置
@@ -392,7 +393,7 @@ void OrangeWidget::onNextFrameRight()
 
 // 项目自定义槽函数：同步帧按钮点击处理
 // 信号源：m_syncButton clicked()信号
-// 流程：切换同步模式标志位 -> 更新按钮文字提示 -> 发射日志信号 -> 可选地同步两侧帧
+// 流程：切换同步模式标志位 -> 更新按钮文字提示 -> 发射日志信号 -> 可选地同步两侧帧 -> 更新label选中状态
 // 功能：开启或关闭前后图片帧的同步模式
 //       开启同步模式后：操作一侧（如点击左箭头），另一侧会自动跟随切换到相同帧
 //       关闭同步模式后：两侧可以独立进行帧切换操作，互不影响
@@ -404,7 +405,7 @@ void OrangeWidget::onSyncFramesClicked()
     // 根据新的模式状态执行不同的UI更新逻辑
     if (isSyncMode) {
         // ========== 开启同步模式 ==========
-        m_syncButton->setText("同步中");           // 按钮文字改为"取消同步"（提示用户再次点击可取消）
+        m_syncButton->setText("同步中");           // 按钮文字改为"同步中"（提示用户再次点击可取消）
 
         // 发射日志消息信号（主窗口会接收到并在紫区日志栏显示）
         emit logMessage("同步模式已开启: 前后图片帧数将联动");
@@ -415,12 +416,25 @@ void OrangeWidget::onSyncFramesClicked()
         m_sliderProcessed->blockSignals(true);
         m_sliderProcessed->setValue(currentProcessedFrame);
         m_sliderProcessed->blockSignals(false);
+        
+        // 同步模式下，两个label都被选中
+        if (isOrangeWidgetSelected) {
+            isOriginalLabelSelected = true;
+            isProcessedLabelSelected = true;
+            updateLabelBorders();
+        }
     } else {
         // ========== 关闭同步模式 ==========
         m_syncButton->setText("同步帧");              // 按钮文字恢复为"同步帧"（初始状态）
 
         // 发射日志消息信号
         emit logMessage("同步模式已关闭: 前后图片帧数独立控制");
+        
+        // 关闭同步模式后，如果两个label都被选中，默认只保留处理后图片label的选中状态
+        if (isOrangeWidgetSelected && isOriginalLabelSelected && isProcessedLabelSelected) {
+            isOriginalLabelSelected = false;
+            updateLabelBorders();
+        }
     }
 
     // 无论是否开启同步模式，都强制刷新一次图像显示（确保界面状态一致）
@@ -515,12 +529,6 @@ void OrangeWidget::preloadImagePreview(const QString &filePath)
 // 使用场景：用户点击"Run Dark Sectioning"按钮后，主窗口调用此函数进入处理前的UI准备阶段
 void OrangeWidget::startProcessing()
 {
-    // 显示进度条（让用户看到处理正在进行中）
-    m_progressBar->show();
-
-    // 重置进度值到0%（表示刚开始处理）
-    m_progressBar->setValue(0);
-
     // 隐藏两个帧滑块（处理过程中不允许用户切换帧，避免干扰算法运行）
     m_sliderOriginal->hide();     // 隐藏处理前图片滑块
     m_sliderProcessed->hide();    // 隐藏处理后图片滑块
@@ -565,12 +573,6 @@ void OrangeWidget::finishProcessing(int originalFrames, int processedFrames)
     currentOriginalFrame = 0;      // 重置处理前图片帧索引到第一帧
     currentProcessedFrame = 0;     // 重置处理后图片帧索引到第一帧
 
-    // 更新进度条到100%（表示处理已全部完成）
-    m_progressBar->setValue(100);
-
-    // 更新进度数值显示标签的文字为"100%"
-    m_progressValueLabel->setText("100%");
-
     // 刷新图像显示（调用辅助函数显示第一帧的处理前/后对比图像）
     updateImageDisplay();
 
@@ -579,23 +581,6 @@ void OrangeWidget::finishProcessing(int originalFrames, int processedFrames)
 
     // 强制最终UI刷新（确保所有变更都立刻呈现给用户）
     QApplication::processEvents();
-}
-
-
-// 更新处理进度（实时刷新进度条和进度数值）
-// 参数：progress - 当前进度百分比（整数，范围0-100）
-// 使用场景：主窗口在darkSectioning->process()执行期间定期调用此函数更新UI
-//           例如：开始时传10，中间传50，快结束时传90，最后finishProcessing()自动设为100
-void OrangeWidget::updateProgress(int progress)
-{
-    // 更新Material进度条的当前值（进度条会自动根据新值重绘填充部分）
-    m_progressBar->setValue(progress);
-
-    // 更新进度数值显示标签的文字（转换为字符串格式，如"45%"）
-    m_progressValueLabel->setText(QString("%1%").arg(progress));
-
-    // 可选：强制刷新UI（如果调用频率较低建议加上这句；如果调用频率很高则不需要）
-    // QApplication::processEvents();
 }
 
 
@@ -724,6 +709,391 @@ void OrangeWidget::resizeEvent(QResizeEvent *event)
     });
 }
 
+// ============================================================================
+// 绘制事件处理函数（重载QWidget的虚函数）
+// 功能：绘制OrangeWidget的边框，根据选中状态显示不同颜色
+// 参数：event - Qt框架传入的paint事件对象
+// ============================================================================
+void OrangeWidget::paintEvent(QPaintEvent *event)
+{
+    // 首先调用父类的paintEvent处理（这一步必须要有！）
+    // 确保子控件能够正常绘制
+    QWidget::paintEvent(event);
+
+    // 创建QPainter对象用于绘制边框
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);  // 启用抗锯齿，使边框更平滑
+
+    // 根据选中状态选择边框颜色
+    QColor borderColor = isOrangeWidgetSelected ? selected_OrangeWidgetBorderColor : unselected_OrangeWidgetBorderColor;
+    painter.setPen(QPen(borderColor, 2));  // 设置画笔颜色和宽度（2像素）
+
+    // 绘制圆角矩形边框（圆角半径4像素）
+    // rect().adjust(1, 1, -1, -1) 用于向内缩进1像素，避免边框超出widget边界
+    painter.drawRoundedRect(rect().adjusted(1, 1, -1, -1), 4, 4);
+}
+
+// ============================================================================
+// 鼠标点击事件处理函数（重载QWidget的虚函数）
+// 功能：处理OrangeWidget内部的点击事件，实现选中逻辑
+// 参数：event - Qt框架传入的mouse事件对象
+// ============================================================================
+void OrangeWidget::mousePressEvent(QMouseEvent *event)
+{
+    // 首先调用父类的mousePressEvent处理（这一步必须要有！）
+    QWidget::mousePressEvent(event);
+
+    // 如果点击的是OrangeWidget内部空间（不是子控件），选中OrangeWidget
+    // 检查点击位置是否在布局区域内但不在任何子控件上
+    QPoint pos = event->pos();
+    
+    // 判断是否点击在label_originalImage上
+    if (ui->label_originalImage->geometry().contains(pos)) {
+        // 如果OrangeWidget未被选中，先选中它
+        if (!isOrangeWidgetSelected) {
+            setOrangeWidgetSelected(true);
+        }
+        // 选中处理前图片label
+        setOriginalLabelSelected(true);
+        // 如果不在同步模式，取消处理后图片label的选中状态
+        if (!isSyncMode) {
+            setProcessedLabelSelected(false);
+        }
+        return;
+    }
+    
+    // 判断是否点击在label_processedImage上
+    if (ui->label_processedImage->geometry().contains(pos)) {
+        // 如果OrangeWidget未被选中，先选中它
+        if (!isOrangeWidgetSelected) {
+            setOrangeWidgetSelected(true);
+        }
+        // 选中处理后图片label
+        setProcessedLabelSelected(true);
+        // 如果不在同步模式，取消处理前图片label的选中状态
+        if (!isSyncMode) {
+            setOriginalLabelSelected(false);
+        }
+        return;
+    }
+    
+    // 判断是否点击在左侧箭头按钮上（属于处理前图片区域）
+    if (ui->pushButton_prevLeft->geometry().contains(pos) || 
+        ui->pushButton_nextLeft->geometry().contains(pos)) {
+        // 如果OrangeWidget未被选中，先选中它
+        if (!isOrangeWidgetSelected) {
+            setOrangeWidgetSelected(true);
+        }
+        // 选中处理前图片label
+        setOriginalLabelSelected(true);
+        if (!isSyncMode) {
+            setProcessedLabelSelected(false);
+        }
+        return;
+    }
+    
+    // 判断是否点击在右侧箭头按钮上（属于处理后图片区域）
+    if (ui->pushButton_prevRight->geometry().contains(pos) || 
+        ui->pushButton_nextRight->geometry().contains(pos)) {
+        // 如果OrangeWidget未被选中，先选中它
+        if (!isOrangeWidgetSelected) {
+            setOrangeWidgetSelected(true);
+        }
+        // 选中处理后图片label
+        setProcessedLabelSelected(true);
+        if (!isSyncMode) {
+            setOriginalLabelSelected(false);
+        }
+        return;
+    }
+    
+    // 判断是否点击在滑块区域（属于对应图片区域）
+    if (ui->widget_sliderOriginal->geometry().contains(pos)) {
+        if (!isOrangeWidgetSelected) {
+            setOrangeWidgetSelected(true);
+        }
+        setOriginalLabelSelected(true);
+        if (!isSyncMode) {
+            setProcessedLabelSelected(false);
+        }
+        return;
+    }
+    
+    if (ui->widget_sliderProcessed->geometry().contains(pos)) {
+        if (!isOrangeWidgetSelected) {
+            setOrangeWidgetSelected(true);
+        }
+        setProcessedLabelSelected(true);
+        if (!isSyncMode) {
+            setOriginalLabelSelected(false);
+        }
+        return;
+    }
+    
+    // 判断是否点击在同步帧按钮上（不改变label选中状态，只切换同步模式）
+    // 同步帧按钮的点击处理已经在connectOrangeAreaSignals中绑定
+    // 这里不需要额外处理
+    
+    // 如果点击的是OrangeWidget内部空白区域，选中OrangeWidget但不改变label选中状态
+    // 确保至少有一个label被选中
+    if (!isOrangeWidgetSelected) {
+        setOrangeWidgetSelected(true);
+        // 如果两个label都未选中，默认选中处理前图片label
+        if (!isOriginalLabelSelected && !isProcessedLabelSelected) {
+            setOriginalLabelSelected(true);
+        }
+    }
+}
+
+// ============================================================================
+// 事件过滤器处理函数（重载QObject的虚函数）
+// 功能：监听父窗口（MainWindow）的鼠标点击事件
+//       当检测到点击在OrangeWidget外部区域时，自动取消选中状态
+// 参数：
+//   watched - 被监听的对象（父窗口MainWindow）
+//   event - 发生的事件对象
+// 返回值：true表示事件已处理（不传递给目标），false表示继续正常传递
+// ============================================================================
+bool OrangeWidget::eventFilter(QObject *watched, QEvent *event)
+{
+    // 只处理鼠标按下事件
+    if (event->type() == QEvent::MouseButtonPress) {
+        // 将事件转换为鼠标事件
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        
+        // 获取鼠标点击位置相对于OrangeWidget的坐标
+        QPoint globalPos = mouseEvent->globalPos();
+        QPoint localPos = mapFromGlobal(globalPos);
+        
+        // 检查点击位置是否在OrangeWidget外部
+        // 如果点击不在OrangeWidget的矩形区域内，说明点击了外部区域
+        if (!rect().contains(localPos) && isOrangeWidgetSelected) {
+            // 取消OrangeWidget及其所有子label的选中状态
+            setOrangeWidgetSelected(false);
+        }
+    }
+    
+    // 继续将事件传递给其他处理器（不拦截）
+    return QWidget::eventFilter(watched, event);
+}
+
+// ============================================================================
+// 键盘按下事件处理函数（重载QWidget的虚函数）
+// 功能：处理键盘方向键和字母键，控制帧切换
+// 参数：event - Qt框架传入的key事件对象
+// ============================================================================
+void OrangeWidget::keyPressEvent(QKeyEvent *event)
+{
+    // 如果OrangeWidget未被选中，不处理键盘事件
+    if (!isOrangeWidgetSelected) {
+        QWidget::keyPressEvent(event);
+        return;
+    }
+
+    // 判断是否为向上切帧的按键：左箭头、上箭头、A、W
+    bool isUpKey = (event->key() == Qt::Key_Left || 
+                    event->key() == Qt::Key_Up || 
+                    event->key() == Qt::Key_A || 
+                    event->key() == Qt::Key_W);
+    
+    // 判断是否为向下切帧的按键：右箭头、下箭头、D、S
+    bool isDownKey = (event->key() == Qt::Key_Right || 
+                      event->key() == Qt::Key_Down || 
+                      event->key() == Qt::Key_D || 
+                      event->key() == Qt::Key_S);
+
+    // 如果是向上切帧按键
+    if (isUpKey) {
+        // 如果两个label都被选中（同步模式），同时控制两侧
+        if (isOriginalLabelSelected && isProcessedLabelSelected) {
+            onPrevFrameLeft();
+        } else if (isOriginalLabelSelected) {
+            // 只有处理前图片label被选中
+            onPrevFrameLeft();
+        } else if (isProcessedLabelSelected) {
+            // 只有处理后图片label被选中
+            onPrevFrameRight();
+        }
+        event->accept();  // 标记事件已处理
+        return;
+    }
+
+    // 如果是向下切帧按键
+    if (isDownKey) {
+        // 如果两个label都被选中（同步模式），同时控制两侧
+        if (isOriginalLabelSelected && isProcessedLabelSelected) {
+            onNextFrameLeft();
+        } else if (isOriginalLabelSelected) {
+            // 只有处理前图片label被选中
+            onNextFrameLeft();
+        } else if (isProcessedLabelSelected) {
+            // 只有处理后图片label被选中
+            onNextFrameRight();
+        }
+        event->accept();  // 标记事件已处理
+        return;
+    }
+
+    // 如果不是切帧按键，交给父类处理
+    QWidget::keyPressEvent(event);
+}
+
+// ============================================================================
+// 滚轮事件处理函数（重载QWidget的虚函数）
+// 功能：处理鼠标滚轮，控制帧切换
+// 参数：event - Qt框架传入的wheel事件对象
+// ============================================================================
+void OrangeWidget::wheelEvent(QWheelEvent *event)
+{
+    // 如果OrangeWidget未被选中，不处理滚轮事件
+    if (!isOrangeWidgetSelected) {
+        QWidget::wheelEvent(event);
+        return;
+    }
+
+    // 判断滚轮方向：正值表示向上滚动，负值表示向下滚动
+    int delta = event->delta();
+    
+    // 如果两个label都被选中（同步模式），同时控制两侧
+    if (isOriginalLabelSelected && isProcessedLabelSelected) {
+        if (delta > 0) {
+            // 滚轮上滑：向上切帧
+            onPrevFrameLeft();
+        } else {
+            // 滚轮下滑：向下切帧
+            onNextFrameLeft();
+        }
+        event->accept();
+        return;
+    }
+    
+    // 如果只有处理前图片label被选中
+    if (isOriginalLabelSelected) {
+        if (delta > 0) {
+            onPrevFrameLeft();
+        } else {
+            onNextFrameLeft();
+        }
+        event->accept();
+        return;
+    }
+    
+    // 如果只有处理后图片label被选中
+    if (isProcessedLabelSelected) {
+        if (delta > 0) {
+            onPrevFrameRight();
+        } else {
+            onNextFrameRight();
+        }
+        event->accept();
+        return;
+    }
+
+    // 如果没有label被选中，交给父类处理
+    QWidget::wheelEvent(event);
+}
+
+// ============================================================================
+// 更新OrangeWidget边框样式
+// 功能：根据选中状态更新边框颜色
+// ============================================================================
+void OrangeWidget::updateOrangeWidgetBorder()
+{
+    // 触发重绘事件，调用paintEvent绘制边框
+    update();
+}
+
+// ============================================================================
+// 更新label边框样式
+// 功能：根据选中状态更新两个label的边框颜色
+// ============================================================================
+void OrangeWidget::updateLabelBorders()
+{
+    // 更新处理前图片label的边框样式
+    QString originalStyleSheet = QString("QLabel {"
+                                         "border: 2px solid %1;"
+                                         "border-radius: 8px;"
+                                         "background-color: #f0f0f0;"
+                                         "}").arg(isOriginalLabelSelected ? labelSelectedColor.name() : unselected_OrangeWidgetBorderColor.name());
+    ui->label_originalImage->setStyleSheet(originalStyleSheet);
+
+    // 更新处理后图片label的边框样式
+    QString processedStyleSheet = QString("QLabel {"
+                                          "border: 2px solid %1;"
+                                          "border-radius: 8px;"
+                                          "background-color: #f0f0f0;"
+                                          "}").arg(isProcessedLabelSelected ? labelSelectedColor.name() : unselected_OrangeWidgetBorderColor.name());
+    ui->label_processedImage->setStyleSheet(processedStyleSheet);
+}
+
+// ============================================================================
+// 设置OrangeWidget选中状态
+// 参数：selected - 是否选中
+// ============================================================================
+void OrangeWidget::setOrangeWidgetSelected(bool selected)
+{
+    isOrangeWidgetSelected = selected;
+    updateOrangeWidgetBorder();
+    
+    // 如果取消选中，同时取消所有label的选中状态
+    if (!selected) {
+        isOriginalLabelSelected = false;
+        isProcessedLabelSelected = false;
+        updateLabelBorders();
+    }
+}
+
+// ============================================================================
+// 设置处理前图片label选中状态
+// 参数：selected - 是否选中
+// ============================================================================
+void OrangeWidget::setOriginalLabelSelected(bool selected)
+{
+    // 如果OrangeWidget未被选中，不允许选中label
+    if (!isOrangeWidgetSelected) {
+        return;
+    }
+    
+    isOriginalLabelSelected = selected;
+    
+    // 如果不在同步模式，且选中了处理前图片label，需要取消处理后图片label的选中
+    if (selected && !isSyncMode) {
+        isProcessedLabelSelected = false;
+    }
+    
+    // 如果在同步模式，选中一个label时同时选中另一个
+    if (selected && isSyncMode) {
+        isProcessedLabelSelected = true;
+    }
+    
+    updateLabelBorders();
+}
+
+// ============================================================================
+// 设置处理后图片label选中状态
+// 参数：selected - 是否选中
+// ============================================================================
+void OrangeWidget::setProcessedLabelSelected(bool selected)
+{
+    // 如果OrangeWidget未被选中，不允许选中label
+    if (!isOrangeWidgetSelected) {
+        return;
+    }
+    
+    isProcessedLabelSelected = selected;
+    
+    // 如果不在同步模式，且选中了处理后图片label，需要取消处理前图片label的选中
+    if (selected && !isSyncMode) {
+        isOriginalLabelSelected = false;
+    }
+    
+    // 如果在同步模式，选中一个label时同时选中另一个
+    if (selected && isSyncMode) {
+        isOriginalLabelSelected = true;
+    }
+    
+    updateLabelBorders();
+}
 
 // ============================================================================
 // 核心函数：从多帧TIFF文件中读取指定帧（Qt原生方式）
