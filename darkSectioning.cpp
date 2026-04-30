@@ -9,11 +9,16 @@ int confirm_block(Params params, cv::Mat lp);
 cv::Mat dehaze_fast2(cv::Mat image, double omega, int win_size, cv::Mat EL, double dep, int thres);
 
 DarkSectioning::DarkSectioning(Ui::MainWindow *ui)
-    : ui(ui)
+    : ui(ui), m_orangeBar(nullptr), progressValue_calcu(0), progressValue_step(0)
 {}
 
 DarkSectioning::~DarkSectioning()
 {}
+
+void DarkSectioning::setOrangeBar(OrangeBar *bar)
+{
+    m_orangeBar = bar;
+}
 
 void DarkSectioning::getImageDimensions(const cv::Mat &image, int &Nx, int &Ny, int &Nc)
 {
@@ -34,6 +39,31 @@ void DarkSectioning::process()
 {
     // 计时开始
     auto start = std::chrono::high_resolution_clock::now();
+
+
+        //重建参数
+    int background = 1; // 0-middle,1-severve
+    int pad = 1;        //1-sysemtic对称填充,0-pad0零填充
+    int denoise = 0;    // Guassion denoise，是否进行高斯去噪
+    int thres = 70;     // Threshold to distinguish background and information，划分信息和背景的阈值
+    double divide = 0.5; //划分高频/低频部分的边界
+
+    // 背景设置
+    int maxtime;
+    std::vector<double> deg_matrix, dep_matrix, hl_matrix;
+
+    // 0-middle,1-severve
+    if (background == 1) {
+        maxtime = 2;
+        deg_matrix = {6, 3, 1.2};
+        dep_matrix = {3, 3, 2};
+        hl_matrix = {1, 1, 1};
+    } else if (background == 0) {
+        maxtime = 1;
+        deg_matrix = {6};
+        dep_matrix = {3};
+        hl_matrix = {1};
+    }
 
     // 预处理：多通道图像栈读取和处理
     // 清空之前的图像数据
@@ -90,6 +120,10 @@ void DarkSectioning::process()
                          QString::number(Ny0) + ", " + QString::number(Nz) + " 帧" +
                          " (通道数: " + QString::number(Nc) + ")");
 
+    // 初始化进度计算参数（maxtime、Nc、Nz在此处均已获取）
+    progressValue_calcu = 0;
+    progressValue_step = 87.0 / (maxtime * Nc * Nz);
+
     // 保持UI响应：处理事件循环
     QApplication::processEvents();
 
@@ -128,7 +162,9 @@ void DarkSectioning::process()
 
     //进度提示，后面可据此更新progressBar
     ui->textEdit_log->append("归一化完成..." );
-    // 保持UI响应：归一化完成后刷新界面
+    //更新进度条
+    progressValue_calcu = 3;
+    m_orangeBar->setProgress(static_cast<int>(progressValue_calcu));
     QApplication::processEvents();
 
     // 维度校准（补0对齐）- 对每一帧和每一通道进行处理
@@ -164,15 +200,12 @@ void DarkSectioning::process()
 
     // 进度提示，后面可据此更新progressBar
     ui->textEdit_log->append("维度校准完成..." );
-    // 保持UI响应：维度校准完成后刷新界面
+    //更新进度条
+    progressValue_calcu = 6;
+    m_orangeBar->setProgress(static_cast<int>(progressValue_calcu));
     QApplication::processEvents();
 
-    //重建参数
-    int background = 1; // 0-middle,1-severve
-    int pad = 1;        //1-sysemtic对称填充,0-pad0零填充
-    int denoise = 0;    // Guassion denoise，是否进行高斯去噪
-    int thres = 70;     // Threshold to distinguish background and information，划分信息和背景的阈值
-    double divide = 0.5; //划分高频/低频部分的边界
+
 
     // 预处理：通道级边缘填充
     int pad_size = 15; // 用于边缘渐变的填充大小
@@ -200,7 +233,9 @@ void DarkSectioning::process()
 
     // 进度提示，后面可据此更新progressBar
     ui->textEdit_log->append("边缘填充完成..." );
-    // 保持UI响应：边缘填充完成后刷新界面
+    //更新进度条
+    progressValue_calcu = 9;
+    m_orangeBar->setProgress(static_cast<int>(progressValue_calcu));
     QApplication::processEvents();
 
     // 高低频分离：参数初始化
@@ -217,22 +252,7 @@ void DarkSectioning::process()
     params.pixelsize = 65;
     params.factor = 2;
 
-    // 背景设置
-    int maxtime;
-    std::vector<double> deg_matrix, dep_matrix, hl_matrix;
 
-    // 0-middle,1-severve
-    if (background == 1) {
-        maxtime = 2;
-        deg_matrix = {6, 3, 1.2};
-        dep_matrix = {3, 3, 2};
-        hl_matrix = {1, 1, 1};
-    } else if (background == 0) {
-        maxtime = 1;
-        deg_matrix = {6};
-        dep_matrix = {3};
-        hl_matrix = {1};
-    }
 
     // Dark sectioning 主处理流程
     for (int time = 0; time < maxtime; time++) {
@@ -240,11 +260,9 @@ void DarkSectioning::process()
         double deg = deg_matrix[time];   // 3-10，极通滤波器的截止频率
         double dep = dep_matrix[time];   // 0.7-2，去雾阈值
         double hl = hl_matrix[maxtime - 1];    // 3-8，加权因子，用于低通滤波器的权重计算
-
         // 进度提示，后面可据此更新progressBar
         ui->textEdit_log->append("正在第 " + QString::number(time + 1) + "/" + QString::number(maxtime) + " 次处理..."); 
         QApplication::processEvents();
-
         // 对每个通道和每一帧进行处理
         for (int c = 0; c < Nc; c++) {
             // 进度提示，后面可据此更新progressBar
@@ -285,10 +303,15 @@ void DarkSectioning::process()
                 Lo_process_stack[c][z] = Lo_process.clone();
                 Hi_stack[c][z] = Hi.clone();
                 
+                //更新进度条
+                progressValue_calcu += progressValue_step;
+                m_orangeBar->setProgress(static_cast<int>(progressValue_calcu));
                 // 保持UI响应：每处理完一帧刷新一次界面
                 QApplication::processEvents();
             }
         }
+
+
 
         // 更新图像并重新填充边缘
         for (int c = 0; c < Nc; c++) {
@@ -308,6 +331,11 @@ void DarkSectioning::process()
         } // 更新图像并重新填充边缘
 
     }// Dark sectioning 主处理流程
+    ////////////////////////// Dark sectioning 主处理流程结束于此/////////////////////////////////////
+
+        progressValue_calcu = 96;
+        m_orangeBar->setProgress(static_cast<int>(progressValue_calcu));
+        QApplication::processEvents();
 
     // 后处理优化：多通道遍历，用高斯去噪（以后或许可以换成引导滤波去噪？）
     std::vector<std::vector<cv::Mat>> result_final(Nc, std::vector<cv::Mat>(Nz));
@@ -359,7 +387,9 @@ void DarkSectioning::process()
 
     // 进度提示，后面可据此更新progressBar
     ui->textEdit_log->append("后处理优化完成..." );
-    // 保持UI响应：边缘填充完成后刷新界面
+    //更新进度条
+    progressValue_calcu = 99;
+    m_orangeBar->setProgress(static_cast<int>(progressValue_calcu));
     QApplication::processEvents();
 
     // 后处理优化：动态范围归一化和最终结果输出
@@ -435,6 +465,10 @@ void DarkSectioning::process()
     // 输出保存路径信息
     ui->textEdit_log->append("输出路径： " + QString::fromStdString(outputPath));
     ui->textEdit_log->append("图像处理完成!");
+    //更新进度条
+    progressValue_calcu = 100;
+    m_orangeBar->setProgress(static_cast<int>(progressValue_calcu));
+    QApplication::processEvents();
 
     // 计时结束
     auto end = std::chrono::high_resolution_clock::now();

@@ -112,6 +112,11 @@ public:
     // 调用时机：OrangeWidget的同步帧按钮点击时调用
     bool toggleSyncMode();
 
+    // 设置进度条值
+    // 参数：value - 进度百分比（0-100）
+    // 调用时机：DarkSectioning在各进度更新点直接调用
+    void setProgress(int value);
+
 signals:
     // ==================== 信号（OrangeBar发射，OrangeWidget接收） ====================
 

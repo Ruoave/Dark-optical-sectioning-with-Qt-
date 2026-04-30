@@ -620,6 +620,17 @@ void OrangeWidget::finishProcessing(int originalFrames, int processedFrames)
 }
 
 
+// ============================================================================
+// 【获取OrangeBar指针】
+// 公共接口函数：供DarkSectioning直接调用setProgress等接口
+// 返回值：OrangeBar控件指针（即ui->widget_orangeBarPlaceholder提升后的对象）
+// ============================================================================
+OrangeBar* OrangeWidget::orangeBar() const
+{
+    return ui->widget_orangeBarPlaceholder;
+}
+
+
 // 强制刷新图像显示（对外公开接口，内部调用doUpdateImageDisplay核心实现）
 // 功能：根据当前的帧索引（currentOriginalFrame和currentProcessedFrame），
 //       从对应的文件中读取指定帧的图像数据，等比缩放后显示到两个QLabel上

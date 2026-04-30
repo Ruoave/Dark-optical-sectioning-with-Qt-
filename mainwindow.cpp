@@ -37,6 +37,9 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     // 第1步：调用Qt Designer生成的UI设置
     ui->setupUi(this);
+
+    // 设置DarkSectioning的OrangeBar指针（供进度更新时直接调用setProgress）
+    darkSectioning->setOrangeBar(ui->widget_orangePlaceholder->orangeBar());
     
 
     //第2步：主窗口按设计图分为5个区域：红区、蓝区、紫区、橙区、绿区

@@ -815,3 +815,15 @@ void OrangeBar::updateFrameLabels()
     ui->label_original->setText(QString("/%1").arg(m_totalOriginalFrames));      // 处理前标签："/N"
     ui->label_progressed->setText(QString("/%1").arg(m_totalProcessedFrames));   // 处理后标签："/N"
 }
+
+
+// ============================================================================
+// 【设置进度条值】
+// 公共接口函数：供DarkSectioning在各进度更新点直接调用
+// 参数：value - 进度百分比（0-100）
+// 功能：设置progressBar的当前值，进度条会自动更新显示
+// ============================================================================
+void OrangeBar::setProgress(int value)
+{
+    ui->progressBar->setValue(value);
+}

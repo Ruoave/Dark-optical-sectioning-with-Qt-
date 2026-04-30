@@ -185,6 +185,10 @@ public:
     //   processedFrames - 处理后图片的总帧数
     void finishProcessing(int originalFrames, int processedFrames);
     
+    // 获取OrangeBar指针（供DarkSectioning直接调用setProgress等接口）
+    // 返回值：OrangeBar控件指针
+    OrangeBar* orangeBar() const;
+    
     // 强制刷新图像显示（根据当前帧索引重新读取并显示图片）
     // 在窗口resize或帧切换时自动调用
     void updateImageDisplay();
