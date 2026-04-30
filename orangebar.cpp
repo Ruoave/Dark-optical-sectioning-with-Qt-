@@ -6,6 +6,7 @@
 #include "orangebar.h"
 #include "ui_orangebar.h"
 #include "qtmaterialslider.h"
+#include "qtmaterialautocomplete.h"
 
 // Qt标准库头文件引入
 #include <QApplication>
@@ -53,14 +54,12 @@ OrangeBar::~OrangeBar()
 void OrangeBar::initSliders()
 {
     // ---------- 初始化处理前图片帧滑块 ----------
-    // ui->sliderOriginal 已通过方法A（控件提升法）在.ui中提升为QtMaterialSlider
     ui->sliderOriginal->blockSignals(true);      // 阻止信号发射（防止初始化时触发槽函数）
     ui->sliderOriginal->setRange(0, 0);          // 初始范围设为0-0（无数据时无效状态）
     ui->sliderOriginal->setValue(0);             // 初始值设为0（第一帧）
     ui->sliderOriginal->blockSignals(false);     // 恢复信号发射
 
     // ---------- 初始化处理后图片帧滑块 ----------
-    // ui->sliderProcessed 已通过方法A（控件提升法）在.ui中提升为QtMaterialSlider
     ui->sliderProcessed->blockSignals(true);     // 阻止信号发射
     ui->sliderProcessed->setRange(0, 0);         // 初始范围设为0-0（无数据时无效状态）
     ui->sliderProcessed->setValue(0);            // 初始值设为0（第一帧）
@@ -71,10 +70,20 @@ void OrangeBar::initSliders()
     //   - 已滚过轨道(fg)：使用thumbColor()绘制
     //   - 未滚过轨道(bg)：使用trackColor()绘制（由状态机控制fillColor属性）
     //   - 圆钮(thumb)：使用thumbColor()绘制
-    // 因此setThumbColor同时控制圆钮和已滚过轨道的颜色
     // 未滚过轨道保留Material主题默认深灰色，不设置trackColor
     ui->sliderOriginal->setThumbColor(QColor("#5aafff"));    // 圆钮+已滚过轨道设为#5aafff
     ui->sliderProcessed->setThumbColor(QColor("#5aafff"));   // 圆钮+已滚过轨道设为#5aafff
+
+    // ---------- 设置文本输入框颜色 ----------
+    // QtMaterialAutoComplete继承自QtMaterialTextField
+    // 底部色条颜色机制（见qtmaterialtextfield.cpp的paintEvent）：
+    //   - 未选中时的底线：使用inputLineColor()绘制（默认深灰色）
+    //   - 选中时的底部高亮条：使用inkColor()绘制（聚焦后progress>0时显示）
+    //   - 选中时浮动标签颜色：也使用inkColor()（见状态机setupProperties）
+    // 因此setInkColor同时控制选中高亮条和浮动标签的颜色
+    // inputLineColor不设置，保留Material主题默认深灰色
+    ui->lineEdit_original->setInkColor(QColor("#5aafff"));     // 选中后底部高亮条+浮动标签设为#5aafff
+    ui->lineEdit_progressed->setInkColor(QColor("#5aafff"));   // 选中后底部高亮条+浮动标签设为#5aafff
 
     // 修复滑块overlay控件的Z-order图层顺序
     // 必须在initSliders()中调用（滑块构造时overlay已创建完成）
@@ -439,12 +448,11 @@ void OrangeBar::onSliderProcessedValueChanged(int value)
 // 私有辅助函数：在同步模式下，将另一个滑块同步到源滑块的值
 // 参数：sourceSlider - 触发同步的源滑块指针（sliderOriginal或sliderProcessed）
 // 功能：
-//   - 如果sourceSlider是sliderOriginal，则将sliderProcessed设为相同值
-//   - 如果sourceSlider是sliderProcessed，则将sliderOriginal设为相同值
+//   - 在同步模式下，将另一个滑块同步到源滑块的值
 //   - 使用blockSignals防止被同步的滑块发射valueChanged信号（避免循环触发导致无限递归）
 // 说明：
 //   此函数仅在m_isSyncMode为true时被调用（由onSliderXxxValueChanged内部判断）
-//   调用前已确认同步模式开启，无需再次检查
+//   调用前已确认同步模式开启，无需内置检查
 // ============================================================================
 void OrangeBar::syncSlider(QtMaterialSlider *sourceSlider)
 {
@@ -539,73 +547,30 @@ void OrangeBar::updateSliderThumbs()
 
 // ============================================================================
 // 【修复滑块overlay控件的Z-order图层顺序】
-// 私有辅助函数：修复QtMaterialSlider的thumb被track遮挡的显示bug
-// 根因分析：
-//   QtMaterialSlider使用overlay widget机制绘制thumb和track：
-//     - QtMaterialSliderThumb继承自QtMaterialOverlayWidget(QWidget)
-//     - QtMaterialSliderTrack继承自QtMaterialOverlayWidget(QWidget)
-//     - 两者的parent都是slider->parentWidget()（即OrangeBar），不是slider自身
-//     - 它们是OrangeBar的直接子控件，覆盖在OrangeBar整个区域上绘制
-//   创建顺序（见qtmaterialslider.cpp的init()）：
-//     1. thumb = new QtMaterialSliderThumb(q)    → parent = q->parentWidget() = OrangeBar
-//     2. track = new QtMaterialSliderTrack(thumb, q) → parent = q->parentWidget() = OrangeBar
-//   Qt子控件绘制规则：后创建的控件绘制在上层（Z-order更高）
-//   因此track（灰色未选中部分）绘制在thumb（彩色圆钮）之上
-// 为什么独立OrangeBar之前没有这个bug：
-//   独立前slider直接位于OrangeWidget中，thumb/track是OrangeWidget的子控件
-//   OrangeWidget中有大量其他子控件（label、button等），这些控件的创建时机
-//   和布局管理可能恰好让thumb的Z-order高于track
-//   独立后OrangeBar作为新容器，子控件更少，Z-order完全由创建顺序决定
-// 解决方案：
-//   使用QWidget::raise()将thumb overlay提升到track overlay之上
-//   raise()将该控件移到父控件子列表末尾，使其绘制在最上层
-//   findChildren<QWidget*>()遍历OrangeBar的所有子控件找到overlay
-//   通过几何特征区分thumb和track（两者都是QtMaterialOverlayWidget类型）
+// 根因：QtMaterialSlider的thumb和track都是OrangeBar的overlay子控件，
+//       track在thumb之后创建，Qt按创建顺序绘制，导致track遮挡thumb。
+// 解决：QWidget::raise()将thumb overlay提升到track overlay之上
 // ============================================================================
 void OrangeBar::fixSliderOverlayZOrder()
 {
-    // 获取OrangeBar的所有直接子控件（包括layout管理的控件和overlay控件）
-    const QList<QWidget *> children = this->findChildren<QWidget *>();
+    const QList<QWidget *> children = this->findChildren<QWidget *>();  // 获取所有子控件
+    QMap<QWidget *, QWidget *> sliderThumbMap;  // key:slider指针, value:thumb overlay指针
 
-    // 用于收集每个滑块对应的thumb和track overlay
-    // key: slider指针, value: thumb overlay指针
-    QMap<QWidget *, QWidget *> sliderThumbMap;
-
-    // 遍历所有子控件，识别overlay控件
     for (QWidget *child : children) {
-        // 通过类名判断是否为overlay控件
-        // QtMaterialSliderThumb的类名字符串为"QtMaterialSliderThumb"
-        // QtMaterialSliderTrack的类名字符串为"QtMaterialSliderTrack"
-        QString className = child->metaObject()->className();
-
+        QString className = child->metaObject()->className();  // 获取类名
         if (className == QLatin1String("QtMaterialSliderThumb")) {
-            // 找到thumb overlay，记录它所属的slider
-            // thumb的m_slider成员指向其所属的QtMaterialSlider
-            // 但m_slider是private的，无法直接访问
-            // 改用方式：thumb覆盖在slider上方，其x坐标范围与slider重叠
-            // 更可靠的方式：通过child数量判断——每个slider对应1个thumb+1个track
-            // 这里用简单策略：按发现顺序配对
-
-            // 由于无法直接访问私有成员m_slider，
-            // 改用另一种方法：检查哪个slider尚未关联thumb
+            // 按发现顺序配对：第一个thumb归sliderOriginal，第二个归sliderProcessed
             if (!sliderThumbMap.contains(ui->sliderOriginal)) {
-                // 第一个发现的thumb归sliderOriginal
                 sliderThumbMap.insert(ui->sliderOriginal, child);
             } else if (!sliderThumbMap.contains(ui->sliderProcessed)) {
-                // 第二个发现的thumb归sliderProcessed
                 sliderThumbMap.insert(ui->sliderProcessed, child);
             }
         }
     }
 
-    // 对每个滑块，将其thumb overlay raise到最上层
-    // 这样thumb就会绘制在track overlay之上
     for (auto it = sliderThumbMap.constBegin(); it != sliderThumbMap.constEnd(); ++it) {
-        QWidget *thumbOverlay = it.value();
-        if (thumbOverlay) {
-            // raise()将控件提升到父控件子控件列表的末尾
-            // 在下一次绘制时，该控件将绘制在所有兄弟控件之上
-            thumbOverlay->raise();
+        if (it.value()) {
+            it.value()->raise();  // 将thumb提升到track之上
         }
     }
 }

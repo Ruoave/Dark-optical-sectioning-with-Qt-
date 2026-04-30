@@ -5,6 +5,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "params.h"
+#include "qtmaterialautocomplete.h"
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <chrono>

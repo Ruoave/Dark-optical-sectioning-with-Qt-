@@ -27,7 +27,7 @@
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,0,1,2,1,0,0">
    <item>
-    <widget class="QLineEdit" name="lineEdit_original">
+    <widget class="QtMaterialAutoComplete" name="lineEdit_original">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
        <horstretch>0</horstretch>
@@ -160,7 +160,7 @@ QProgressBar::chunk {
     </widget>
    </item>
    <item>
-    <widget class="QLineEdit" name="lineEdit_progressed">
+    <widget class="QtMaterialAutoComplete" name="lineEdit_progressed">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
        <horstretch>0</horstretch>
@@ -203,6 +203,11 @@ QProgressBar::chunk {
    <class>QtMaterialSlider</class>
    <extends>QSlider</extends>
    <header location="global">qtmaterialslider.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QtMaterialAutoComplete</class>
+   <extends>QLineEdit</extends>
+   <header location="global">qtmaterialautocomplete.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
