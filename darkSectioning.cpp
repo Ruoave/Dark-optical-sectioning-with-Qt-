@@ -162,6 +162,7 @@ void DarkSectioning::process()
         }
     }
 
+    // 进度提示，后面可据此更新progressBar
     ui->textEdit_log->append("维度校准完成..." );
     // 保持UI响应：维度校准完成后刷新界面
     QApplication::processEvents();
@@ -355,6 +356,11 @@ void DarkSectioning::process()
             }
         }
     }
+
+    // 进度提示，后面可据此更新progressBar
+    ui->textEdit_log->append("后处理优化完成..." );
+    // 保持UI响应：边缘填充完成后刷新界面
+    QApplication::processEvents();
 
     // 后处理优化：动态范围归一化和最终结果输出
     // 清空成员变量并保存结果到成员变量（供MainWindow访问）

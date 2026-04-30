@@ -3,9 +3,8 @@
 
 #include <QWidget>
 
-// Material组件头文件引入（严格使用libs文件夹下的公共接口头文件）
-// OrangeBar内部使用QtMaterialSlider（已通过方法A在.ui中提升）
 #include "qtmaterialslider.h"
+#include "qtmaterialautocomplete.h"
 
 namespace Ui {
 class OrangeBar;
@@ -188,6 +187,16 @@ private slots:
     // 功能：处理同步模式下的滑块联动，发射processedFrameChanged和processedSliderSelected信号
     void onSliderProcessedValueChanged(int value);
 
+    // 处理前lineEdit回车/离焦验证槽函数
+    // 信号源：ui->lineEdit_original的editingFinished信号
+    // 功能：验证输入是否为1~总帧数之间的整数，合法则跳帧，不合法则回退到当前帧显示
+    void onLineEditOriginalEditingFinished();
+
+    // 处理后lineEdit回车/离焦验证槽函数
+    // 信号源：ui->lineEdit_progressed的editingFinished信号
+    // 功能：验证输入是否为1~总帧数之间的整数，合法则跳帧，不合法则回退到当前帧显示
+    void onLineEditProgressedEditingFinished();
+
 private:
     Ui::OrangeBar *ui;                          // UI界面指针（来自Qt Designer生成的ui_orangebar.h）
 
@@ -214,6 +223,29 @@ private:
     //       track在thumb之后创建，导致灰色未选中轨道绘制在thumb圆钮之上
     // 解决：将thumb overlay提升到track overlay之上，确保thumb始终可见
     void fixSliderOverlayZOrder();
+
+    // 从slider值同步到lineEdit显示文本（0-based→1-based转换）
+    // 参数：slider - 源滑块指针，lineEdit - 目标输入框指针
+    // 功能：将slider的0-based值转为1-based文本显示在lineEdit中，并调整宽度
+    // 调用时机：slider值变化时、输入无效回退时、finishProcessing初始化时
+    void updateLineEditFromSlider(QtMaterialSlider *slider, QtMaterialAutoComplete *lineEdit);
+
+    // 根据lineEdit文本内容自动调整宽度
+    // 参数：lineEdit - 需要调整宽度的输入框指针
+    // 功能：计算文本像素宽度+内边距，与最小宽度36取较大值，调用setFixedWidth精确控制
+    // 调用时机：确认输入合法后（editingFinished验证通过时）
+    void adjustLineEditWidth(QtMaterialAutoComplete *lineEdit);
+
+    // 验证lineEdit输入并返回合法的0-based帧索引
+    // 参数：lineEdit - 输入框指针，totalFrames - 总帧数（1-based上限）
+    // 返回值：合法返回0-based帧索引，不合法（非数字/空）返回-1
+    // 规则：<1自动修正为1，>totalFrames自动修正为totalFrames
+    int validateLineEditInput(QtMaterialAutoComplete *lineEdit, int totalFrames);
+
+    // 更新label_original和label_progressed显示的总帧数文本（如"/10"）
+    // 功能：根据m_totalOriginalFrames和m_totalProcessedFrames更新QLabel文本
+    // 调用时机：finishProcessing、setTotalOriginalFrames中
+    void updateFrameLabels();
 };
 
 #endif // ORANGEBAR_H

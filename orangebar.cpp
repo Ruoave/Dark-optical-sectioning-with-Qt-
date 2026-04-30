@@ -10,7 +10,9 @@
 
 // Qt标准库头文件引入
 #include <QApplication>
-#include <QTimer>          // QTimer::singleShot：延迟执行thumb位置更新（等layout完成几何调整）
+#include <QTimer>
+#include <QIntValidator>
+#include <QRegularExpressionValidator>
 
 
 // ============================================================================
@@ -85,6 +87,28 @@ void OrangeBar::initSliders()
     ui->lineEdit_original->setInkColor(QColor("#5aafff"));     // 选中后底部高亮条+浮动标签设为#5aafff
     ui->lineEdit_progressed->setInkColor(QColor("#5aafff"));   // 选中后底部高亮条+浮动标签设为#5aafff
 
+    // ---------- 初始化帧号输入框 ----------
+    // 设置只允许输入数字的验证器（QRegularExpressionValidator: 仅允许0-9数字和空字符串）
+    // 注意：QIntValidator允许输入负号，不符合"只能输入数字"的需求，因此使用正则验证器
+    QRegularExpressionValidator *digitOnlyValidator = new QRegularExpressionValidator(
+        QRegularExpression("\\d*"), this);                     // 正则\d*：匹配0个或多个数字
+    ui->lineEdit_original->setValidator(digitOnlyValidator);   // 设置处理前输入框的数字验证器
+    ui->lineEdit_progressed->setValidator(                     // 设置处理后输入框的数字验证器
+        new QRegularExpressionValidator(QRegularExpression("\\d*"), this));
+
+    // 设置输入框居中对齐（帧号居中显示更美观）
+    ui->lineEdit_original->setAlignment(Qt::AlignCenter);      // 处理前帧号居中
+    ui->lineEdit_progressed->setAlignment(Qt::AlignCenter);    // 处理后帧号居中
+
+    // 设置初始固定宽度为36px（最小宽度，后续根据帧号位数动态调整）
+    // 使用setFixedWidth而非setMinimumWidth：精确控制宽度，防止lineEdit挤压其他控件
+    ui->lineEdit_original->setFixedWidth(36);                  // 处理前输入框初始宽度36px
+    ui->lineEdit_progressed->setFixedWidth(36);                // 处理后输入框初始宽度36px
+
+    // 初始状态下无图像数据，lineEdit显示空文本（setEnabled(false)由startProcessing管理）
+    ui->lineEdit_original->setText("");                        // 处理前输入框初始为空
+    ui->lineEdit_progressed->setText("");                      // 处理后输入框初始为空
+
     // 修复滑块overlay控件的Z-order图层顺序
     // 必须在initSliders()中调用（滑块构造时overlay已创建完成）
     // 修复原因：QtMaterialSlider的thumb/track是overlay widget，track后创建导致覆盖thumb
@@ -111,6 +135,18 @@ void OrangeBar::connectSignals()
     // 槽函数：onSliderProcessedValueChanged（处理同步逻辑、发射外部信号）
     connect(ui->sliderProcessed, &QtMaterialSlider::valueChanged,
             this, &OrangeBar::onSliderProcessedValueChanged);
+
+    // ---------- 处理前lineEdit回车/离焦信号槽连接 ----------
+    // 信号源：ui->lineEdit_original的editingFinished信号（回车键或失去焦点时发射）
+    // 槽函数：onLineEditOriginalEditingFinished（验证输入、合法跳帧/非法回退）
+    connect(ui->lineEdit_original, &QtMaterialAutoComplete::editingFinished,
+            this, &OrangeBar::onLineEditOriginalEditingFinished);
+
+    // ---------- 处理后lineEdit回车/离焦信号槽连接 ----------
+    // 信号源：ui->lineEdit_progressed的editingFinished信号（回车键或失去焦点时发射）
+    // 槽函数：onLineEditProgressedEditingFinished（验证输入、合法跳帧/非法回退）
+    connect(ui->lineEdit_progressed, &QtMaterialAutoComplete::editingFinished,
+            this, &OrangeBar::onLineEditProgressedEditingFinished);
 }
 
 
@@ -125,6 +161,10 @@ void OrangeBar::startProcessing()
     // 禁用两个帧滑块（禁用后滑块仍可见但不可交互，避免布局跳动）
     ui->sliderOriginal->setEnabled(false);         // 禁用处理前图片滑块
     ui->sliderProcessed->setEnabled(false);        // 禁用处理后图片滑块
+
+    // 禁用两个帧号输入框（处理过程中不允许用户手动输入帧号）
+    ui->lineEdit_original->setEnabled(false);      // 禁用处理前帧号输入框
+    ui->lineEdit_progressed->setEnabled(false);    // 禁用处理后帧号输入框
 
     // 强制立即刷新UI界面（确保上述变更立刻显示给用户）
     QApplication::processEvents();
@@ -160,6 +200,7 @@ void OrangeBar::finishProcessing(int originalFrames, int processedFrames)
         ui->sliderOriginal->setRange(0, m_totalOriginalFrames - 1);  // 设置范围：0 到 总帧数-1
         ui->sliderOriginal->setValue(0);          // 重置滑块位置到第一帧（索引0）
         ui->sliderOriginal->setEnabled(true);     // 启用滑块（之前被startProcessing()禁用了）
+        ui->lineEdit_original->setEnabled(true);  // 启用处理前帧号输入框
     }
 
     // ---------- 配置处理后图片滑块 ----------
@@ -168,11 +209,17 @@ void OrangeBar::finishProcessing(int originalFrames, int processedFrames)
         ui->sliderProcessed->setRange(0, m_totalProcessedFrames - 1);  // 设置范围
         ui->sliderProcessed->setValue(0);         // 重置到第一帧
         ui->sliderProcessed->setEnabled(true);    // 启用滑块（之前被startProcessing()禁用了）
+        ui->lineEdit_progressed->setEnabled(true); // 启用处理后帧号输入框
     }
 
     // 恢复两个滑块的信号发射
     ui->sliderOriginal->blockSignals(false);
     ui->sliderProcessed->blockSignals(false);
+
+    // 更新帧号标签显示（如"/10"）和lineEdit显示（如"1"）
+    updateFrameLabels();
+    updateLineEditFromSlider(ui->sliderOriginal, ui->lineEdit_original);    // 处理前：slider值0→显示"1"
+    updateLineEditFromSlider(ui->sliderProcessed, ui->lineEdit_progressed); // 处理后：slider值0→显示"1"
 
     // 手动发射帧变化信号，通知OrangeWidget更新帧索引和刷新图像显示
     // 参数0表示重置到第一帧
@@ -230,7 +277,12 @@ void OrangeBar::setTotalOriginalFrames(int frames)
         ui->sliderOriginal->setValue(0);           // 重置到第一帧
         ui->sliderOriginal->blockSignals(false);   // 恢复信号发射
         ui->sliderOriginal->setEnabled(true);      // 启用滑块
+        ui->lineEdit_original->setEnabled(true);   // 启用处理前帧号输入框
     }
+
+    // 更新帧号标签显示（如"/10"）和lineEdit显示
+    updateFrameLabels();
+    updateLineEditFromSlider(ui->sliderOriginal, ui->lineEdit_original);
 }
 
 
@@ -414,7 +466,10 @@ void OrangeBar::onSliderOriginalValueChanged(int value)
         syncSlider(ui->sliderOriginal);           // 同步processedSlider到originalSlider的值
     }
 
-    // 第3步：发射帧变化信号（通知OrangeWidget更新帧索引并刷新图像显示）
+    // 第3步：更新处理前帧号输入框显示（slider 0-based → lineEdit 1-based）
+    updateLineEditFromSlider(ui->sliderOriginal, ui->lineEdit_original);
+
+    // 第4步：发射帧变化信号（通知OrangeWidget更新帧索引并刷新图像显示）
     emit originalFrameChanged(value);
 }
 
@@ -438,7 +493,10 @@ void OrangeBar::onSliderProcessedValueChanged(int value)
         syncSlider(ui->sliderProcessed);          // 同步originalSlider到processedSlider的值
     }
 
-    // 第3步：发射帧变化信号（通知OrangeWidget更新帧索引并刷新图像显示）
+    // 第3步：更新处理后帧号输入框显示（slider 0-based → lineEdit 1-based）
+    updateLineEditFromSlider(ui->sliderProcessed, ui->lineEdit_progressed);
+
+    // 第4步：发射帧变化信号（通知OrangeWidget更新帧索引并刷新图像显示）
     emit processedFrameChanged(value);
 }
 
@@ -465,11 +523,15 @@ void OrangeBar::syncSlider(QtMaterialSlider *sourceSlider)
         ui->sliderProcessed->blockSignals(true);  // 阻止信号（防止触发onSliderProcessedValueChanged导致循环）
         ui->sliderProcessed->setValue(value);     // 设置处理后滑块为相同值
         ui->sliderProcessed->blockSignals(false); // 恢复信号发射
+        // 同步处理后帧号输入框显示（blockSignals阻止了valueChanged，需手动更新lineEdit）
+        updateLineEditFromSlider(ui->sliderProcessed, ui->lineEdit_progressed);
     } else if (sourceSlider == ui->sliderProcessed) {
         // 源是处理后滑块 -> 同步处理前滑块
         ui->sliderOriginal->blockSignals(true);   // 阻止信号（防止触发onSliderOriginalValueChanged导致循环）
         ui->sliderOriginal->setValue(value);      // 设置处理前滑块为相同值
         ui->sliderOriginal->blockSignals(false);  // 恢复信号发射
+        // 同步处理前帧号输入框显示（blockSignals阻止了valueChanged，需手动更新lineEdit）
+        updateLineEditFromSlider(ui->sliderOriginal, ui->lineEdit_original);
     }
 }
 
@@ -573,4 +635,183 @@ void OrangeBar::fixSliderOverlayZOrder()
             it.value()->raise();  // 将thumb提升到track之上
         }
     }
+}
+
+
+// ============================================================================
+// 【从slider值同步到lineEdit显示文本】
+// 私有辅助函数：将slider的0-based值转为1-based文本显示在lineEdit中
+// 参数：slider - 源滑块指针，lineEdit - 目标输入框指针
+// 功能：
+//   1. 将slider的0-based值+1转为1-based帧号文本
+//   2. 设置到lineEdit中显示
+//   3. 调用adjustLineEditWidth根据文本长度调整输入框宽度
+// 调用时机：
+//   - slider值变化时（onSliderXxxValueChanged中调用）
+//   - 输入无效回退时（onLineEditXxxEditingFinished中调用）
+//   - finishProcessing/setTotalOriginalFrames初始化时
+//   - syncSlider同步时（blockSignals阻止了valueChanged，需手动调用）
+// ============================================================================
+void OrangeBar::updateLineEditFromSlider(QtMaterialSlider *slider, QtMaterialAutoComplete *lineEdit)
+{
+    // slider值是0-based（0=第一帧），lineEdit显示1-based（1=第一帧）
+    int frame1Based = slider->value() + 1;                     // 0-based转1-based
+    lineEdit->setText(QString::number(frame1Based));           // 设置lineEdit显示文本
+    adjustLineEditWidth(lineEdit);                             // 根据文本长度调整宽度
+}
+
+
+// ============================================================================
+// 【根据lineEdit文本内容自动调整宽度】
+// 私有辅助函数：计算文本像素宽度+内边距，与最小宽度36取较大值
+// 参数：lineEdit - 需要调整宽度的输入框指针
+// 功能：
+//   1. 使用fontMetrics计算当前文本的像素宽度
+//   2. 加上左右内边距（QtMaterialTextField内部有padding）
+//   3. 与最小宽度36px取较大值
+//   4. 调用setFixedWidth精确控制宽度（同时设置min和max，防止挤压其他控件）
+// 设计说明：
+//   - 使用setFixedWidth而非setMinimumWidth：确保宽度精确等于计算值
+//   - setFixedWidth内部同时调用setMinimumWidth和setMaximumWidth
+//   - 布局必须给控件恰好这个宽度，不会挤压其他控件也不会被拉伸
+// ============================================================================
+void OrangeBar::adjustLineEditWidth(QtMaterialAutoComplete *lineEdit)
+{
+    // 获取文本的像素宽度（horizontalAdvance在Qt5.11+可用，替代已废弃的width()）
+    int textWidth = lineEdit->fontMetrics().horizontalAdvance(lineEdit->text());
+    // 内边距：QtMaterialTextField内部左右各有约8px的padding，加上边框余量
+    const int padding = 20;
+    // 最终宽度 = max(最小宽度36px, 文本像素宽度+内边距)
+    int width = qMax(36, textWidth + padding);
+    lineEdit->setFixedWidth(width);                            // 精确设置宽度
+}
+
+
+// ============================================================================
+// 【验证lineEdit输入并返回合法的0-based帧索引】
+// 私有辅助函数：验证用户输入是否为合法帧号
+// 参数：lineEdit - 输入框指针，totalFrames - 总帧数（1-based上限）
+// 返回值：
+//   - 合法：返回0-based帧索引（0 ~ totalFrames-1）
+//   - 不合法（空字符串/非数字）：返回-1
+// 验证规则：
+//   1. 空字符串 → 不合法（返回-1，回退到当前帧）
+//   2. 非数字文本 → 不合法（返回-1，回退到当前帧）
+//      注意：由于设置了QRegularExpressionValidator("\\d*")，实际不会出现非数字输入
+//      但此处仍做防御性检查，以防验证器被移除或绕过
+//   3. 值 < 1 → 自动修正为1（返回0-based的0）
+//   4. 值 > totalFrames → 自动修正为totalFrames（返回0-based的totalFrames-1）
+//   5. 值在1~totalFrames之间 → 合法，返回0-based的value-1
+// ============================================================================
+int OrangeBar::validateLineEditInput(QtMaterialAutoComplete *lineEdit, int totalFrames)
+{
+    QString text = lineEdit->text().trimmed();                  // 去除首尾空白字符
+
+    // 规则1：空字符串 → 不合法
+    if (text.isEmpty()) {
+        return -1;
+    }
+
+    // 规则2：尝试转换为整数，失败则不合法
+    bool ok;
+    int value = text.toInt(&ok);
+    if (!ok) {
+        return -1;                                              // 非数字输入（防御性检查）
+    }
+
+    // 规则3：值 < 1 → 自动修正为1
+    if (value < 1) {
+        value = 1;
+    }
+
+    // 规则4：值 > totalFrames → 自动修正为totalFrames
+    // 仅在totalFrames > 0时执行（避免无数据时除零或无效比较）
+    if (totalFrames > 0 && value > totalFrames) {
+        value = totalFrames;
+    }
+
+    // 规则5：合法值，转换为0-based返回
+    return value - 1;
+}
+
+
+// ============================================================================
+// 【处理前lineEdit回车/离焦验证槽函数】
+// 私有槽函数：响应ui->lineEdit_original的editingFinished信号
+// 信号源：ui->lineEdit_original的editingFinished信号（回车键或失去焦点时发射）
+// 功能：
+//   1. 验证输入是否为1~m_totalOriginalFrames之间的整数
+//   2. 合法：设置sliderOriginal值 → 触发valueChanged → 跳帧+更新显示
+//   3. 不合法：回退lineEdit显示到当前slider值（不发生跳帧事件）
+// 信号流：
+//   合法输入 → sliderOriginal.setValue(validFrame)
+//     → valueChanged → onSliderOriginalValueChanged
+//       → syncSlider(同步模式) → updateLineEditFromSlider
+//       → emit originalFrameChanged → OrangeWidget.updateImageDisplay → readTiffFrame
+//   不合法输入 → updateLineEditFromSlider回退显示 → 不发射任何信号
+// ============================================================================
+void OrangeBar::onLineEditOriginalEditingFinished()
+{
+    // 验证输入，返回0-based帧索引（-1表示不合法）
+    int frame = validateLineEditInput(ui->lineEdit_original, m_totalOriginalFrames);
+
+    if (frame >= 0) {
+        // 输入合法：检查是否与当前帧相同
+        if (frame == ui->sliderOriginal->value()) {
+            // 帧号未变，仅调整宽度（setValue相同值不会触发valueChanged）
+            adjustLineEditWidth(ui->lineEdit_original);
+        } else {
+            // 帧号改变，设置slider值（会触发valueChanged → 跳帧+更新显示）
+            ui->sliderOriginal->setValue(frame);
+        }
+    } else {
+        // 输入不合法（空/非数字）：回退到当前slider值显示，不发生跳帧
+        updateLineEditFromSlider(ui->sliderOriginal, ui->lineEdit_original);
+    }
+}
+
+
+// ============================================================================
+// 【处理后lineEdit回车/离焦验证槽函数】
+// 私有槽函数：响应ui->lineEdit_progressed的editingFinished信号
+// 信号源：ui->lineEdit_progressed的editingFinished信号（回车键或失去焦点时发射）
+// 功能：与onLineEditOriginalEditingFinished逻辑完全对称，作用于处理后控件
+// ============================================================================
+void OrangeBar::onLineEditProgressedEditingFinished()
+{
+    // 验证输入，返回0-based帧索引（-1表示不合法）
+    int frame = validateLineEditInput(ui->lineEdit_progressed, m_totalProcessedFrames);
+
+    if (frame >= 0) {
+        // 输入合法：检查是否与当前帧相同
+        if (frame == ui->sliderProcessed->value()) {
+            // 帧号未变，仅调整宽度
+            adjustLineEditWidth(ui->lineEdit_progressed);
+        } else {
+            // 帧号改变，设置slider值（会触发valueChanged → 跳帧+更新显示）
+            ui->sliderProcessed->setValue(frame);
+        }
+    } else {
+        // 输入不合法：回退到当前slider值显示，不发生跳帧
+        updateLineEditFromSlider(ui->sliderProcessed, ui->lineEdit_progressed);
+    }
+}
+
+
+// ============================================================================
+// 【更新帧号标签显示】
+// 私有辅助函数：根据m_totalOriginalFrames和m_totalProcessedFrames更新QLabel文本
+// 功能：
+//   - label_original显示处理前总帧数（如"/10"）
+//   - label_progressed显示处理后总帧数（如"/8"）
+// 调用时机：finishProcessing、setTotalOriginalFrames中
+// 说明：
+//   - 总帧数为0时显示"/0"（无数据状态）
+//   - QLabel的sizePolicy默认为Preferred，会根据文本长度自动调整宽度
+//     无需手动设置宽度，文本从"/0"变为"/100"时QLabel自动变宽
+// ============================================================================
+void OrangeBar::updateFrameLabels()
+{
+    ui->label_original->setText(QString("/%1").arg(m_totalOriginalFrames));      // 处理前标签："/N"
+    ui->label_progressed->setText(QString("/%1").arg(m_totalProcessedFrames));   // 处理后标签："/N"
 }
