@@ -82,7 +82,7 @@ void separateHiLo(Mat image, Params params, double deg, double divide, Mat& Hi, 
     Mat dft_ifft2ed;  // dft_ifft2ed;用于存储对MYifftshifted进行逆傅里叶变换的结果
     dft(MYifftshifted, dft_ifft2ed, DFT_INVERSE | DFT_REAL_OUTPUT | DFT_SCALE);  // 对应 Matlab的ifft2和real; 标志位DFT_INVERSE意为逆傅里叶，DFT_REAL_OUTPUT为去除残余虚部，DFT_SCALE为归一化(因为ifft2自带归一化，为了与之一致)
 
-    // 对应Matlab: Lo = real(ifft2(ifftshift(fft_image.*fftshift(lp))));放法同上
+    // 对应Matlab: Lo = real(ifft2(ifftshift(fft_image.*fftshift(lp))));方法同上
     Mat lp_MYfftshift;
     MYfftshift(lp, lp_MYfftshift);
     Mat lp_MYfftshift_complex;

@@ -240,14 +240,8 @@ void DarkSectioning::process()
 
     // 高低频分离：参数初始化
     Params params;
-    if (!imageStack_padded.empty() && !imageStack_padded[0].empty()) {
-        params.Nx = imageStack_padded[0][0].rows;
-        params.Ny = imageStack_padded[0][0].cols;
-    } else {
-        params.Nx = Nx;
-        params.Ny = Ny;
-    }
-    params.NA = 1.49;
+    params.Nx = imageStack_padded[0][0].rows;
+    params.Ny = imageStack_padded[0][0].cols;
     params.emwavelength = 610;
     params.pixelsize = 65;
     params.factor = 2;
