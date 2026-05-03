@@ -46,10 +46,10 @@ GreenWidget::GreenWidget(QWidget *parent) :
     // ========== QTabWidget 样式表设置 ==========
     // 设置 tabWidget 的整体外观
     ui->tabWidget->setStyleSheet(
-        // ---------- QTabWidget 整体：底部留出空间供标签下沉显示 ----------
-        // "QTabWidget {"
-        // "   border: 2px solid #55aaff;"            // 选中边框：#55aaff 蓝色（2px加粗更醒目）
-        // "}"
+        //---------- QTabWidget 整体：底部留出空间供标签下沉显示 ----------
+        "QTabWidget {"
+        "   border: 2px solid #55aaff;"            // 选中边框：#55aaff 蓝色（2px加粗更醒目）
+        "}"
 
         // ---------- 标签栏整体容器（面板区域） ----------
         "QTabWidget::pane {"
@@ -73,6 +73,7 @@ GreenWidget::GreenWidget(QWidget *parent) :
         "   border-top-left-radius: 0px;"          // 左上角无圆角（贴合面板顶部）
         "   border-top-right-radius: 0px;"         // 右上角无圆角（贴合面板顶部）
         "   padding: 2px 8px;"                     // 内边距：上下2px、左右8px
+        "   outline: none;"                        // 去掉焦点虚线框
         "}"
 
         // ---------- 选中状态的标签（带下沉效果） ----------
