@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>350</width>
+    <width>360</width>
     <height>360</height>
    </rect>
   </property>
@@ -18,7 +18,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>350</width>
+     <width>360</width>
      <height>356</height>
     </rect>
    </property>
@@ -97,7 +97,7 @@
        <x>210</x>
        <y>0</y>
        <width>96</width>
-       <height>41</height>
+       <height>40</height>
       </rect>
      </property>
      <property name="font">
@@ -139,39 +139,7 @@
     <widget class="QLabel" name="synPad">
      <property name="geometry">
       <rect>
-       <x>210</x>
-       <y>40</y>
-       <width>96</width>
-       <height>41</height>
-      </rect>
-     </property>
-     <property name="font">
-      <font>
-       <family>微软雅黑</family>
-       <pointsize>10</pointsize>
-       <weight>75</weight>
-       <italic>false</italic>
-       <bold>true</bold>
-       <underline>false</underline>
-      </font>
-     </property>
-     <property name="toolTip">
-      <string/>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Plain</enum>
-     </property>
-     <property name="text">
-      <string>对称填充</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
-    </widget>
-    <widget class="QLabel" name="zeroPad">
-     <property name="geometry">
-      <rect>
-       <x>40</x>
+       <x>20</x>
        <y>40</y>
        <width>96</width>
        <height>40</height>
@@ -194,7 +162,7 @@
       <enum>QFrame::Plain</enum>
      </property>
      <property name="text">
-      <string>0填充</string>
+      <string>对称填充</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -534,9 +502,41 @@
       <rect>
        <x>0</x>
        <y>260</y>
-       <width>350</width>
+       <width>360</width>
        <height>56</height>
       </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="zeroPad">
+     <property name="geometry">
+      <rect>
+       <x>210</x>
+       <y>40</y>
+       <width>96</width>
+       <height>40</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>微软雅黑</family>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <italic>false</italic>
+       <bold>true</bold>
+       <underline>false</underline>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="text">
+      <string>0填充</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
      </property>
     </widget>
    </widget>

@@ -15,7 +15,7 @@ GreenWidget::GreenWidget(QWidget *parent) :
     // ========== 去噪方式单选按钮组（在 widget_denoiseRadioButtonPlaceholder 占位容器中添加） ==========
     // 为占位容器创建水平布局，三个单选按钮从左到右排列
     QHBoxLayout *hLayout_denoiseRadioBtn = new QHBoxLayout(ui->widget_denoiseRadioButtonPlaceholder);
-    hLayout_denoiseRadioBtn->setSpacing(8);        // 控件之间的间距为8像素
+    hLayout_denoiseRadioBtn->setSpacing(10);        // 控件之间的间距为8像素
     hLayout_denoiseRadioBtn->setContentsMargins(0, 0, 0, 0);  // 去掉四周边距
 
     // 第一个单选按钮：高斯平滑（默认选中）
