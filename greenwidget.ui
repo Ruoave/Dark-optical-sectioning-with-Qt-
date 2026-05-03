@@ -38,7 +38,7 @@
     <enum>QTabWidget::Triangular</enum>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <property name="iconSize">
     <size>
@@ -57,16 +57,508 @@
    </property>
    <widget class="QWidget" name="basicPara">
     <attribute name="title">
-     <string>基本设置</string>
+     <string>基本参数设置</string>
     </attribute>
+    <widget class="QLabel" name="notSevereLabel">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>0</y>
+       <width>96</width>
+       <height>40</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>微软雅黑</family>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <italic>false</italic>
+       <bold>true</bold>
+       <underline>false</underline>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="text">
+      <string>离焦不严重</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="isSevereLabel">
+     <property name="geometry">
+      <rect>
+       <x>210</x>
+       <y>0</y>
+       <width>96</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>微软雅黑</family>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <italic>false</italic>
+       <bold>true</bold>
+       <underline>false</underline>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="text">
+      <string>离焦严重</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QtMaterialToggle" name="isSevere_para_background">
+     <property name="geometry">
+      <rect>
+       <x>130</x>
+       <y>0</y>
+       <width>80</width>
+       <height>40</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QLabel" name="synPad">
+     <property name="geometry">
+      <rect>
+       <x>210</x>
+       <y>40</y>
+       <width>96</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>微软雅黑</family>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <italic>false</italic>
+       <bold>true</bold>
+       <underline>false</underline>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="text">
+      <string>对称填充</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="zeroPad">
+     <property name="geometry">
+      <rect>
+       <x>40</x>
+       <y>40</y>
+       <width>96</width>
+       <height>40</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>微软雅黑</family>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <italic>false</italic>
+       <bold>true</bold>
+       <underline>false</underline>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="text">
+      <string>0填充</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QtMaterialToggle" name="padMethodSelect_para_pad">
+     <property name="geometry">
+      <rect>
+       <x>130</x>
+       <y>40</y>
+       <width>80</width>
+       <height>40</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QtMaterialAutoComplete" name="Line_para_emwave">
+     <property name="geometry">
+      <rect>
+       <x>144</x>
+       <y>80</y>
+       <width>80</width>
+       <height>36</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="emwaveLabel">
+     <property name="geometry">
+      <rect>
+       <x>8</x>
+       <y>80</y>
+       <width>120</width>
+       <height>36</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>微软雅黑</family>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <italic>false</italic>
+       <bold>true</bold>
+       <underline>false</underline>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="text">
+      <string>发射波长</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="NALabel">
+     <property name="geometry">
+      <rect>
+       <x>8</x>
+       <y>120</y>
+       <width>120</width>
+       <height>36</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>微软雅黑</family>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <italic>false</italic>
+       <bold>true</bold>
+       <underline>false</underline>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="text">
+      <string>数值孔径</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QtMaterialAutoComplete" name="Line_para_NA">
+     <property name="geometry">
+      <rect>
+       <x>144</x>
+       <y>120</y>
+       <width>80</width>
+       <height>36</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="pixelLabel">
+     <property name="geometry">
+      <rect>
+       <x>8</x>
+       <y>160</y>
+       <width>120</width>
+       <height>36</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>微软雅黑</family>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <italic>false</italic>
+       <bold>true</bold>
+       <underline>false</underline>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="text">
+      <string>像素尺寸</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QtMaterialAutoComplete" name="Line_para_pixelsize">
+     <property name="geometry">
+      <rect>
+       <x>144</x>
+       <y>160</y>
+       <width>80</width>
+       <height>36</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="units">
+     <property name="geometry">
+      <rect>
+       <x>250</x>
+       <y>80</y>
+       <width>36</width>
+       <height>36</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>微软雅黑</family>
+       <pointsize>10</pointsize>
+       <weight>50</weight>
+       <italic>false</italic>
+       <bold>false</bold>
+       <underline>false</underline>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="text">
+      <string>nm</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="units_2">
+     <property name="geometry">
+      <rect>
+       <x>250</x>
+       <y>120</y>
+       <width>36</width>
+       <height>36</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>微软雅黑</family>
+       <pointsize>10</pointsize>
+       <weight>50</weight>
+       <italic>false</italic>
+       <bold>false</bold>
+       <underline>false</underline>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="text">
+      <string>nm</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="units_3">
+     <property name="geometry">
+      <rect>
+       <x>250</x>
+       <y>160</y>
+       <width>36</width>
+       <height>36</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>微软雅黑</family>
+       <pointsize>10</pointsize>
+       <weight>50</weight>
+       <italic>false</italic>
+       <bold>false</bold>
+       <underline>false</underline>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="text">
+      <string>nm</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="units_4">
+     <property name="geometry">
+      <rect>
+       <x>250</x>
+       <y>200</y>
+       <width>36</width>
+       <height>36</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>微软雅黑</family>
+       <pointsize>10</pointsize>
+       <weight>50</weight>
+       <italic>false</italic>
+       <bold>false</bold>
+       <underline>false</underline>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="text">
+      <string>nm</string>
+     </property>
+    </widget>
+    <widget class="QtMaterialAutoComplete" name="Line_para_factor">
+     <property name="geometry">
+      <rect>
+       <x>144</x>
+       <y>200</y>
+       <width>80</width>
+       <height>36</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="factorLabel">
+     <property name="geometry">
+      <rect>
+       <x>8</x>
+       <y>200</y>
+       <width>120</width>
+       <height>36</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>微软雅黑</family>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <italic>false</italic>
+       <bold>true</bold>
+       <underline>false</underline>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="text">
+      <string>分辨率比例因子</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="denoiseMethedLabel">
+     <property name="geometry">
+      <rect>
+       <x>4</x>
+       <y>248</y>
+       <width>80</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>微软雅黑</family>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <italic>false</italic>
+       <bold>true</bold>
+       <underline>false</underline>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="text">
+      <string>去噪方式:</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+    <widget class="QWidget" name="widget_denoiseRadioButtonPlaceholder" native="true">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>260</y>
+       <width>350</width>
+       <height>56</height>
+      </rect>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="exclusivePara">
     <attribute name="title">
-     <string>高级调节</string>
+     <string>高级算法参数</string>
     </attribute>
    </widget>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QtMaterialToggle</class>
+   <extends>QCheckBox</extends>
+   <header>qtmaterialtoggle.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QtMaterialAutoComplete</class>
+   <extends>QLineEdit</extends>
+   <header location="global">qtmaterialautocomplete.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

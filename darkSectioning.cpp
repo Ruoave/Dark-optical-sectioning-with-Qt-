@@ -242,6 +242,7 @@ void DarkSectioning::process()
     Params params;
     params.Nx = imageStack_padded[0][0].rows;
     params.Ny = imageStack_padded[0][0].cols;
+    params.NA = 1.49;
     params.emwavelength = 610;
     params.pixelsize = 65;
     params.factor = 2;

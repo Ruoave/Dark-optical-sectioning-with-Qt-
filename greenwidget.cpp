@@ -3,6 +3,8 @@
 
 #include <QFont>
 #include <QTabBar>
+#include <QHBoxLayout>
+#include <qtmaterialradiobutton.h>
 
 GreenWidget::GreenWidget(QWidget *parent) :
     QWidget(parent),
@@ -10,7 +12,35 @@ GreenWidget::GreenWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    // ========== 设置 Tab 标签栏字体（必须用 C++ 代码设置） ==========
+    // ========== 去噪方式单选按钮组（在 widget_denoiseRadioButtonPlaceholder 占位容器中添加） ==========
+    // 为占位容器创建水平布局，三个单选按钮从左到右排列
+    QHBoxLayout *hLayout_denoiseRadioBtn = new QHBoxLayout(ui->widget_denoiseRadioButtonPlaceholder);
+    hLayout_denoiseRadioBtn->setSpacing(8);        // 控件之间的间距为8像素
+    hLayout_denoiseRadioBtn->setContentsMargins(0, 0, 0, 0);  // 去掉四周边距
+
+    // 第一个单选按钮：高斯平滑（默认选中）
+    QtMaterialRadioButton *denoiseMethodGauss_para_denoise = new QtMaterialRadioButton(ui->widget_denoiseRadioButtonPlaceholder);
+    denoiseMethodGauss_para_denoise->setText("高斯平滑");  // 设置显示文本
+    denoiseMethodGauss_para_denoise->setChecked(true);     // 设置为默认选中状态
+    denoiseMethodGauss_para_denoise->setFont(QFont("微软雅黑", 9));  // 设置字体：微软雅黑10号，与"去噪方式"标签同字号，不加粗
+    //denoiseMethodGauss_para_denoise->setStyleSheet("padding-left: 2px; margin-left: -8px;");  // 压缩左侧内边距，减小圆钮与文本的视觉距离
+
+    // 第二个单选按钮：中值滤波（不默认选中，同一组内只能有一个选中）
+    QtMaterialRadioButton *denoiseMethodMid_para_denoise = new QtMaterialRadioButton(ui->widget_denoiseRadioButtonPlaceholder);
+    denoiseMethodMid_para_denoise->setText("中值滤波");    // 设置显示文本
+    denoiseMethodMid_para_denoise->setFont(QFont("微软雅黑", 9));   // 设置字体：微软雅黑9号
+    //denoiseMethodMid_para_denoise->setStyleSheet("padding-left: 2px; margin-left: -8px;");   // 压缩左侧内边距
+
+    // 第三个单选按钮：不去噪（不默认选中，同一组内只能有一个选中）
+    QtMaterialRadioButton *denoiseMethodNo_para_denoise = new QtMaterialRadioButton(ui->widget_denoiseRadioButtonPlaceholder);
+    denoiseMethodNo_para_denoise->setText("不去噪");      // 设置显示文本
+    denoiseMethodNo_para_denoise->setFont(QFont("微软雅黑", 9));   // 设置字体：微软雅黑9号
+    //denoiseMethodNo_para_denoise->setStyleSheet("padding-left: 2px; margin-left: -8px;");   // 压缩左侧内边距
+
+    // 将三个单选按钮依次添加到水平布局中（从左到右排列）
+    hLayout_denoiseRadioBtn->addWidget(denoiseMethodGauss_para_denoise);   // 左侧：高斯平滑
+    hLayout_denoiseRadioBtn->addWidget(denoiseMethodMid_para_denoise);     // 中间：中值滤波
+    hLayout_denoiseRadioBtn->addWidget(denoiseMethodNo_para_denoise);      // 右侧：不去噪
 
 
     // ========== QTabWidget 样式表设置 ==========
@@ -30,10 +60,10 @@ GreenWidget::GreenWidget(QWidget *parent) :
 
         // ---------- 标签按钮通用样式（未选中状态） ----------
         "QTabBar::tab {"
-        "   min-width: 120px;"                     // 最小宽度：120像素
-        "   max-width: 120px;"                     // 最大宽度：120像素（固定宽度）
+        "   min-width: 136px;"                     // 最小宽度：140像素
+        "   max-width: 136px;"                     // 最大宽度：140像素（固定宽度）
         "   height: 24px;"                         // 高度：24像素
-        "   font-size: 20px;"                      // 文字大小（实际字体由C++代码设置）
+        "   font-size: 18px;"                      // 文字大小（实际字体由C++代码设置）
         "   font-family: \"Microsoft YaHei\";"     // 字体：微软雅黑
         "   color: #888888;"                       // 未选中文字颜色：中灰色
         "   background-color: #e0e0e0;"            // 未选中背景色：浅灰色
