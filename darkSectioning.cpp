@@ -339,7 +339,7 @@ void DarkSectioning::process()
             if (denoise == 0) {
                 // 不需要去噪，直接使用原始图像
                 result_final[c][z] = result_stack[c][z].clone();
-            } else {
+            } else if(denoise == 1){
                 // 需要去噪，执行填充-去噪-裁剪流程
                 cv::Mat temp;
                 if (pad == 1) {
@@ -354,6 +354,29 @@ void DarkSectioning::process()
 
                 // 高斯去噪
                 cv::GaussianBlur(temp, temp, cv::Size(2, 2), 1, 1, cv::BORDER_REPLICATE);
+
+                // 边缘裁剪
+                int crop_rows = std::floor(Nx / pad_size) + 1;
+                int crop_cols = std::floor(Ny / pad_size) + 1;
+                int start_row = crop_rows;
+                int start_col = crop_cols;
+
+                result_final[c][z] = temp(cv::Rect(start_col, start_row, Ny, Nx)).clone();
+            }else if(denoise == 2){
+                // 中值滤波去噪，执行填充-去噪-裁剪流程
+                cv::Mat temp;
+                if (pad == 1) {
+                    int pad_rows = std::floor(Nx / pad_size) + 1;
+                    int pad_cols = std::floor(Ny / pad_size) + 1;
+                    cv::copyMakeBorder(result_stack[c][z], temp, pad_rows, pad_rows, pad_cols, pad_cols, cv::BORDER_REFLECT_101);
+                } else {
+                    int pad_rows = std::floor(Nx / pad_size) + 1;
+                    int pad_cols = std::floor(Ny / pad_size) + 1;
+                    cv::copyMakeBorder(result_stack[c][z], temp, pad_rows, pad_rows, pad_cols, pad_cols, cv::BORDER_CONSTANT, cv::Scalar(0));
+                }
+
+                // 中值滤波去噪
+                cv::medianBlur(temp, temp, 3);
 
                 // 边缘裁剪
                 int crop_rows = std::floor(Nx / pad_size) + 1;
