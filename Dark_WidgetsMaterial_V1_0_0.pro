@@ -55,7 +55,8 @@ HEADERS += \
     darkSectioning.h \
     orangebar.h \
     orangewidget.h \
-    params.h \
+    paramsBasic.h \
+    paramsExpert.h \
     qt_readTiffFrame.h \
     ViewMat.h \
     port_matlab2opencv.h

@@ -4,7 +4,7 @@
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "params.h"
+#include "paramsBasic.h"
 #include "qtmaterialautocomplete.h"
 #include <opencv2/opencv.hpp>
 #include <iostream>
@@ -55,6 +55,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // 2.4：【绿区】GreenWidget已通过方法B（容器提升法）在.ui中提升
     // ui->widget_greenPlaceholder 的类型已是 GreenWidget*，由uic在setupUi时自动创建
+
+    // 用 ParamsBasic 默认值初始化 GreenWidget 控件显示（程序启动时控件显示默认值）
+    ParamsBasic defaults;  // 此对象自带默认值：background=1, pad=1, denoise=0, NA=1.49, emwavelength=610, pixelsize=65, factor=2
+    ui->widget_greenPlaceholder->setBackground(defaults.background);
+    ui->widget_greenPlaceholder->setPad(defaults.pad);
+    ui->widget_greenPlaceholder->setDenoise(defaults.denoise);
+    ui->widget_greenPlaceholder->setNA(defaults.NA);
+    ui->widget_greenPlaceholder->setEmwavelength(defaults.emwavelength);
+    ui->widget_greenPlaceholder->setPixelsize(defaults.pixelsize);
+    ui->widget_greenPlaceholder->setFactor(defaults.factor);
     
     // 2.5：【橙区】OrangeWidget已通过方法B（容器提升法）在.ui中提升
     // ui->widget_orangePlaceholder 的类型已是 OrangeWidget*，由uic在setupUi时自动创建
@@ -188,7 +198,18 @@ void MainWindow::on_pushButton_run_clicked()
     // 强制刷新UI（确保界面立刻更新）
     QApplication::processEvents();
     
-    // ========== 第3步：调用原有的DarkSectioning处理函数（保持原有业务逻辑不变） ==========
+    // ========== 第3步：从 GreenWidget 控件读取当前参数值，写入 DarkSectioning 的 paramsBasicSet ==========
+    
+    // 从 GreenWidget 控件读取用户当前设置的值，写入 DarkSectioning 的参数
+    darkSectioning->paramsBasicSet.background = ui->widget_greenPlaceholder->getBackground();
+    darkSectioning->paramsBasicSet.pad = ui->widget_greenPlaceholder->getPad();
+    darkSectioning->paramsBasicSet.denoise = ui->widget_greenPlaceholder->getDenoise();
+    darkSectioning->paramsBasicSet.NA = ui->widget_greenPlaceholder->getNA();
+    darkSectioning->paramsBasicSet.emwavelength = ui->widget_greenPlaceholder->getEmwavelength();
+    darkSectioning->paramsBasicSet.pixelsize = ui->widget_greenPlaceholder->getPixelsize();
+    darkSectioning->paramsBasicSet.factor = ui->widget_greenPlaceholder->getFactor();
+    
+    // ========== 第4步：调用原有的DarkSectioning处理函数（保持原有业务逻辑不变） ==========
     
     // darkSectioning->process() 内部会：
     // 1. 读取输入文件并执行Dark Sectioning算法
@@ -198,7 +219,7 @@ void MainWindow::on_pushButton_run_clicked()
     
     QApplication::processEvents();
     
-    // ========== 第4步：构建输出文件路径并传递给橙区 ==========
+    // ========== 第5步：构建输出文件路径并传递给橙区 ==========
     
     QString outputDir = ui->lineEdit_outputPath->text();  // 获取输出目录
     if (outputDir.isEmpty()) {
@@ -220,7 +241,7 @@ void MainWindow::on_pushButton_run_clicked()
     // 将输出文件路径传递给橙区（橙区需要此路径来显示处理后图片）
     ui->widget_orangePlaceholder->setOutputFilePath(outputFilePath);
     
-    // ========== 第5步：获取帧数信息并通知橙区处理完成 ==========
+    // ========== 第6步：获取帧数信息并通知橙区处理完成 ==========
     
     // 从darkSectioning的业务对象中读取帧数统计信息
     int totalOriginalFrames = darkSectioning->imageStack.size();      // 处理前总帧数

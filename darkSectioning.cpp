@@ -4,8 +4,8 @@
 #include <QFileInfo>     // 添加：用于文件路径操作
 
 // 外部函数声明
-void separateHiLo(cv::Mat image, Params params, double deg, double divide, cv::Mat& Hi, cv::Mat& Lo, cv::Mat& lp, cv::Mat& EL);
-int confirm_block(Params params, cv::Mat lp);
+void separateHiLo(cv::Mat image, ParamsBasic paramsBasicSet, double deg, double divide, cv::Mat& Hi, cv::Mat& Lo, cv::Mat& lp, cv::Mat& EL);
+int confirm_block(ParamsBasic paramsBasicSet, cv::Mat lp);
 cv::Mat dehaze_fast2(cv::Mat image, double omega, int win_size, cv::Mat EL, double dep, int thres);
 
 DarkSectioning::DarkSectioning(Ui::MainWindow *ui)
@@ -41,10 +41,10 @@ void DarkSectioning::process()
     auto start = std::chrono::high_resolution_clock::now();
 
 
-        //重建参数
-    int background = 1; // 0-middle,1-severve
-    int pad = 1;        //1-sysemtic对称填充,0-pad0零填充
-    int denoise = 0;    // Guassion denoise，是否进行高斯去噪
+        //重建参数：从 paramsBasicSet 成员变量读取（由 MainWindow 在运行前从 GreenWidget 控件设置）
+    int background = paramsBasicSet.background; // 0-离焦不严重, 1-离焦严重
+    int pad = paramsBasicSet.pad;               // 1-对称填充, 0-零填充
+    int denoise = paramsBasicSet.denoise;       // 0-不去噪, 1-高斯平滑, 2-中值滤波
     int thres = 70;     // Threshold to distinguish background and information，划分信息和背景的阈值
     double divide = 0.5; //划分高频/低频部分的边界
 
@@ -238,14 +238,9 @@ void DarkSectioning::process()
     m_orangeBar->setProgress(static_cast<int>(progressValue_calcu));
     QApplication::processEvents();
 
-    // 高低频分离：参数初始化
-    Params params;
-    params.Nx = imageStack_padded[0][0].rows;
-    params.Ny = imageStack_padded[0][0].cols;
-    params.NA = 1.49;
-    params.emwavelength = 610;
-    params.pixelsize = 65;
-    params.factor = 2;
+    // 高低频分离：参数初始化（使用 paramsBasicSet 成员变量，NA/emwavelength/pixelsize/factor 已由 MainWindow 设置）
+    paramsBasicSet.Nx = imageStack_padded[0][0].rows;
+    paramsBasicSet.Ny = imageStack_padded[0][0].cols;
 
 
 
@@ -269,11 +264,11 @@ void DarkSectioning::process()
                 QApplication::processEvents();
                 // 高低频分离：分离频谱
                 cv::Mat Hi, Lo, lp, EL;
-                separateHiLo(imageStack_padded[c][z], params, deg, divide, Hi, Lo, lp, EL);
+                separateHiLo(imageStack_padded[c][z], paramsBasicSet, deg, divide, Hi, Lo, lp, EL);
                 //imageStack_padded[c][z]是经过处理的单通道二维mat了,separateHiLo的输入输出后续都可以直接当灰白单帧图像处理
 
                 //腐蚀核尺寸确定：暗通道通过形态学腐蚀得到，该步为形态学腐蚀核尺寸确定步骤
-                int block_size = confirm_block(params, lp);
+                int block_size = confirm_block(paramsBasicSet, lp);
 
                 // 暗通道去雾：对低频部分进行去雾处理
                 cv::Mat Lo_process = dehaze_fast2(Lo, 0.95, block_size, EL, dep, thres);

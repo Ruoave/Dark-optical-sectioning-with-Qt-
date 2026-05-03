@@ -1,7 +1,7 @@
 #include <vector>
 #include <complex>
 #include <opencv2/opencv.hpp>
-#include "params.h"
+#include "paramsBasic.h"
 #include <ViewMat.h>
 #include "port_matlab2opencv.h"
 
@@ -23,16 +23,16 @@ using namespace std;
 Mat lpgauss(int H, int W, double SIGMA);
 Mat hpgauss(int H, int W, double SIGMA);
 
-void separateHiLo(Mat image, Params params, double deg, double divide, Mat& Hi, Mat& Lo, Mat& lp, Mat& EL)
+void separateHiLo(Mat image, ParamsBasic paramsBasicSet, double deg, double divide, Mat& Hi, Mat& Lo, Mat& lp, Mat& EL)
 {
     
     // 高低频分离：参数初始化
-    int Nx = params.Nx;
-    int Ny = params.Ny;
-    double NA = params.NA;  //NA: 物镜的数值孔径
-    double emwavelength = params.emwavelength;  //emwavelength: 光波长
-    double factor = params.factor;  //factor: 光波长与像素大小的比例
-    double pixel_size = params.pixelsize;  //pixelsize: 像素大小
+    int Nx = paramsBasicSet.Nx;
+    int Ny = paramsBasicSet.Ny;
+    double NA = paramsBasicSet.NA;  //NA: 物镜的数值孔径
+    double emwavelength = paramsBasicSet.emwavelength;  //emwavelength: 光波长
+    double factor = paramsBasicSet.factor;  //factor: 光波长与像素大小的比例
+    double pixel_size = paramsBasicSet.pixelsize;  //pixelsize: 像素大小
 
     // 高低频分离：截止频率计算
     double res = 0.5 * emwavelength / NA / factor;     // 分辨率

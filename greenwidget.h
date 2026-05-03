@@ -2,6 +2,7 @@
 #define GREENWIDGET_H
 
 #include <QWidget>
+#include <qtmaterialradiobutton.h>
 
 namespace Ui {
 class GreenWidget;
@@ -15,8 +16,31 @@ public:
     explicit GreenWidget(QWidget *parent = nullptr);
     ~GreenWidget();
 
+    // ========== getter 方法：供 MainWindow 读取控件当前值 ==========
+    int getBackground() const;       // 读取 toggle 状态 → 返回 0(不严重) 或 1(严重)
+    int getPad() const;              // 读取 toggle 状态 → 返回 0(零填充) 或 1(对称填充)
+    int getDenoise() const;          // 读取三个单选按钮 → 返回 0(不去噪)/1(高斯)/2(中值)
+    double getNA() const;            // 读取输入框文本 → 返回 double
+    double getEmwavelength() const;  // 读取输入框文本 → 返回 double
+    double getPixelsize() const;     // 读取输入框文本 → 返回 double
+    int getFactor() const;           // 读取输入框文本 → 返回 int
+
+    // ========== setter 方法：供 MainWindow 设置控件默认值 ==========
+    void setBackground(int value);       // 1→setChecked(true), 0→setChecked(false)
+    void setPad(int value);              // 1→setChecked(true), 0→setChecked(false)
+    void setDenoise(int value);          // 0→No选中, 1→Gauss选中, 2→Mid选中
+    void setNA(double value);            // setText(QString::number(value))
+    void setEmwavelength(double value);  // setText(QString::number(value))
+    void setPixelsize(double value);     // setText(QString::number(value))
+    void setFactor(int value);           // setText(QString::number(value))
+
 private:
     Ui::GreenWidget *ui;
+
+    // 去噪方式单选按钮成员变量（构造函数中动态创建，getter/setter 需要访问）
+    QtMaterialRadioButton *denoiseMethodGauss_para_denoise;  // 高斯平滑单选按钮
+    QtMaterialRadioButton *denoiseMethodMid_para_denoise;    // 中值滤波单选按钮
+    QtMaterialRadioButton *denoiseMethodNo_para_denoise;     // 不去噪单选按钮
 };
 
 #endif // GREENWIDGET_H

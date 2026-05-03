@@ -1,4 +1,4 @@
-#include "params.h"
+#include "paramsBasic.h"
 #include <opencv2/opencv.hpp>
 #include "port_matlab2opencv.h"
 #include "ViewMat.h"
@@ -29,10 +29,10 @@ Mat PSF_Generator(double lambada, double pixelsize, double NA, int w, double fac
 //   lp - 低通滤波器
 // 输出：
 //   block_size - 块大小
-int confirm_block(Params params, Mat lp) {
+int confirm_block(ParamsBasic paramsBasicSet, Mat lp) {
     // 生成点扩散函数（PSF）
     // 对应Matlab代码：PSF = PSF_Generator(params.emwavelength,params.pixelsize,params.NA,params.Nx,params.factor);
-    Mat PSF = PSF_Generator(params.emwavelength, params.pixelsize, params.NA, params.Nx, params.factor);
+    Mat PSF = PSF_Generator(paramsBasicSet.emwavelength, paramsBasicSet.pixelsize, paramsBasicSet.NA, paramsBasicSet.Nx, paramsBasicSet.factor);
     
     // 计算低通滤波后的PSF
     // 对应Matlab代码：PSF_Lo = abs(ifft2(fftshift(fft2(PSF)).*fftshift(lp)));
@@ -65,17 +65,16 @@ int confirm_block(Params params, Mat lp) {
     Mat PSF_Lo_scale = PSF_Lo/maxVal;
 
     // 确定块大小
-    int center = static_cast<int>(floor(params.Nx / 2.0));
-    center = center-1 ;//因为Nx是size_x，但Mat行号列号从0开始,所以也不能直接用floor(params.Nx / 2.0)当中心行/列号
+    int center = static_cast<int>(floor(paramsBasicSet.Nx / 2.0));
+    center = center-1 ;//因为Nx是size_x，但Mat行号列号从0开始,所以也不能直接用floor(paramsBasicSet.Nx / 2.0)当中心行/列号
     int count_x = center;
-    for (; count_x < params.Nx; count_x++) {
+    for (; count_x < paramsBasicSet.Nx; count_x++) {
 
         if (PSF_Lo_scale.at<double>(count_x, center) < 0.01) {
             break;
         }
     }
     
-    // 计算块大小,对应Matlab代码：block_size = count_x-floor(params.Nx/2);
     int block_size = count_x - center;
     
     return block_size;

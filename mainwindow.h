@@ -4,7 +4,7 @@
 #include <QMainWindow>
 
 #include "ui_mainwindow.h"
-#include "params.h"
+#include "paramsBasic.h"
 #include "darkSectioning.h"
 #include <opencv2/opencv.hpp>
 #include <iostream>
