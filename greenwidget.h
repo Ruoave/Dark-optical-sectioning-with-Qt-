@@ -34,13 +34,15 @@ public:
     void setPixelsize(double value);     // setText(QString::number(value))
     void setFactor(int value);           // setText(QString::number(value))
 
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
 private:
     Ui::GreenWidget *ui;
 
-    // 去噪方式单选按钮成员变量（构造函数中动态创建，getter/setter 需要访问）
-    QtMaterialRadioButton *denoiseMethodGauss_para_denoise;  // 高斯平滑单选按钮
-    QtMaterialRadioButton *denoiseMethodMid_para_denoise;    // 中值滤波单选按钮
-    QtMaterialRadioButton *denoiseMethodNo_para_denoise;     // 不去噪单选按钮
+    QtMaterialRadioButton *denoiseMethodGauss_para_denoise;
+    QtMaterialRadioButton *denoiseMethodMid_para_denoise;
+    QtMaterialRadioButton *denoiseMethodNo_para_denoise;
 };
 
 #endif // GREENWIDGET_H

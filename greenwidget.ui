@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>360</width>
-    <height>360</height>
+    <height>380</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,7 +19,7 @@
      <x>0</x>
      <y>0</y>
      <width>360</width>
-     <height>356</height>
+     <height>376</height>
     </rect>
    </property>
    <property name="sizePolicy">
@@ -65,7 +65,7 @@
        <x>20</x>
        <y>0</y>
        <width>96</width>
-       <height>40</height>
+       <height>50</height>
       </rect>
      </property>
      <property name="font">
@@ -97,7 +97,7 @@
        <x>210</x>
        <y>0</y>
        <width>96</width>
-       <height>40</height>
+       <height>50</height>
       </rect>
      </property>
      <property name="font">
@@ -129,7 +129,7 @@
        <x>130</x>
        <y>0</y>
        <width>80</width>
-       <height>40</height>
+       <height>50</height>
       </rect>
      </property>
      <property name="text">
@@ -140,9 +140,9 @@
      <property name="geometry">
       <rect>
        <x>20</x>
-       <y>40</y>
+       <y>50</y>
        <width>96</width>
-       <height>40</height>
+       <height>50</height>
       </rect>
      </property>
      <property name="font">
@@ -172,9 +172,9 @@
      <property name="geometry">
       <rect>
        <x>130</x>
-       <y>40</y>
+       <y>50</y>
        <width>80</width>
-       <height>40</height>
+       <height>50</height>
       </rect>
      </property>
      <property name="text">
@@ -185,7 +185,7 @@
      <property name="geometry">
       <rect>
        <x>144</x>
-       <y>80</y>
+       <y>100</y>
        <width>80</width>
        <height>36</height>
       </rect>
@@ -195,7 +195,7 @@
      <property name="geometry">
       <rect>
        <x>8</x>
-       <y>80</y>
+       <y>100</y>
        <width>120</width>
        <height>36</height>
       </rect>
@@ -204,9 +204,9 @@
       <font>
        <family>微软雅黑</family>
        <pointsize>10</pointsize>
-       <weight>75</weight>
+       <weight>50</weight>
        <italic>false</italic>
-       <bold>true</bold>
+       <bold>false</bold>
        <underline>false</underline>
       </font>
      </property>
@@ -227,7 +227,7 @@
      <property name="geometry">
       <rect>
        <x>8</x>
-       <y>120</y>
+       <y>140</y>
        <width>120</width>
        <height>36</height>
       </rect>
@@ -236,9 +236,9 @@
       <font>
        <family>微软雅黑</family>
        <pointsize>10</pointsize>
-       <weight>75</weight>
+       <weight>50</weight>
        <italic>false</italic>
-       <bold>true</bold>
+       <bold>false</bold>
        <underline>false</underline>
       </font>
      </property>
@@ -259,7 +259,7 @@
      <property name="geometry">
       <rect>
        <x>144</x>
-       <y>120</y>
+       <y>140</y>
        <width>80</width>
        <height>36</height>
       </rect>
@@ -269,7 +269,7 @@
      <property name="geometry">
       <rect>
        <x>8</x>
-       <y>160</y>
+       <y>180</y>
        <width>120</width>
        <height>36</height>
       </rect>
@@ -278,9 +278,9 @@
       <font>
        <family>微软雅黑</family>
        <pointsize>10</pointsize>
-       <weight>75</weight>
+       <weight>50</weight>
        <italic>false</italic>
-       <bold>true</bold>
+       <bold>false</bold>
        <underline>false</underline>
       </font>
      </property>
@@ -301,7 +301,7 @@
      <property name="geometry">
       <rect>
        <x>144</x>
-       <y>160</y>
+       <y>180</y>
        <width>80</width>
        <height>36</height>
       </rect>
@@ -311,7 +311,7 @@
      <property name="geometry">
       <rect>
        <x>250</x>
-       <y>80</y>
+       <y>100</y>
        <width>36</width>
        <height>36</height>
       </rect>
@@ -340,7 +340,7 @@
      <property name="geometry">
       <rect>
        <x>250</x>
-       <y>120</y>
+       <y>140</y>
        <width>36</width>
        <height>36</height>
       </rect>
@@ -369,7 +369,7 @@
      <property name="geometry">
       <rect>
        <x>250</x>
-       <y>160</y>
+       <y>180</y>
        <width>36</width>
        <height>36</height>
       </rect>
@@ -398,7 +398,7 @@
      <property name="geometry">
       <rect>
        <x>250</x>
-       <y>200</y>
+       <y>220</y>
        <width>36</width>
        <height>36</height>
       </rect>
@@ -427,7 +427,7 @@
      <property name="geometry">
       <rect>
        <x>144</x>
-       <y>200</y>
+       <y>220</y>
        <width>80</width>
        <height>36</height>
       </rect>
@@ -437,7 +437,7 @@
      <property name="geometry">
       <rect>
        <x>8</x>
-       <y>200</y>
+       <y>220</y>
        <width>120</width>
        <height>36</height>
       </rect>
@@ -446,9 +446,9 @@
       <font>
        <family>微软雅黑</family>
        <pointsize>10</pointsize>
-       <weight>75</weight>
+       <weight>50</weight>
        <italic>false</italic>
-       <bold>true</bold>
+       <bold>false</bold>
        <underline>false</underline>
       </font>
      </property>
@@ -469,7 +469,7 @@
      <property name="geometry">
       <rect>
        <x>4</x>
-       <y>248</y>
+       <y>268</y>
        <width>80</width>
        <height>16</height>
       </rect>
@@ -501,7 +501,7 @@
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>260</y>
+       <y>280</y>
        <width>360</width>
        <height>56</height>
       </rect>
@@ -511,9 +511,9 @@
      <property name="geometry">
       <rect>
        <x>210</x>
-       <y>40</y>
+       <y>50</y>
        <width>96</width>
-       <height>40</height>
+       <height>50</height>
       </rect>
      </property>
      <property name="font">

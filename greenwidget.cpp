@@ -4,6 +4,8 @@
 #include <QFont>
 #include <QTabBar>
 #include <QHBoxLayout>
+#include <QLabel>
+#include <QEvent>
 #include <qtmaterialradiobutton.h>
 
 GreenWidget::GreenWidget(QWidget *parent) :
@@ -11,6 +13,66 @@ GreenWidget::GreenWidget(QWidget *parent) :
     ui(new Ui::GreenWidget)
 {
     ui->setupUi(this);
+
+    //==========toggle按钮外观设置==========
+    ui->isSevere_para_background->setUseThemeColors(false); 
+    ui->padMethodSelect_para_pad->setUseThemeColors(false);
+    ui->isSevere_para_background->setActiveColor(QColor("#55aaff"));
+    ui->padMethodSelect_para_pad->setActiveColor(QColor("#55aaff"));
+
+    // ========== Toggle 两侧 QLabel 颜色联动 ==========
+    // 逻辑：滑块拨到哪一侧，那一侧的 QLabel 显示主题色 #55aaff（选中），另一侧显示 #9e9e9e（未选中）
+    // QtMaterialToggle unchecked 时滑块在左侧，checked 时滑块在右侧
+
+    // isSevere toggle 联动：左侧 notSevereLabel，右侧 isSevereLabel
+    //   unchecked(滑块在左)→notSevereLabel=#55aaff(选中), isSevereLabel=#9e9e9e(未选中)
+    //   checked(滑块在右)→notSevereLabel=#9e9e9e(未选中), isSevereLabel=#55aaff(选中)
+    connect(ui->isSevere_para_background, &QAbstractButton::toggled, this, [this](bool checked) {
+        if (checked) {
+            ui->notSevereLabel->setStyleSheet("color: #9e9e9e;");   // 左侧未选中：灰色
+            ui->isSevereLabel->setStyleSheet("color: #55aaff;");    // 右侧选中：主题蓝色
+        } else {
+            ui->notSevereLabel->setStyleSheet("color: #55aaff;");   // 左侧选中：主题蓝色
+            ui->isSevereLabel->setStyleSheet("color: #9e9e9e;");    // 右侧未选中：灰色
+        }
+    });
+
+    // pad toggle 联动：左侧 zeroPad(0填充)，右侧 synPad(对称填充)
+    //   unchecked(滑块在左)→zeroPad=#55aaff(选中), synPad=#9e9e9e(未选中)
+    //   checked(滑块在右)→zeroPad=#9e9e9e(未选中), synPad=#55aaff(选中)
+    connect(ui->padMethodSelect_para_pad, &QAbstractButton::toggled, this, [this](bool checked) {
+        if (checked) {
+            ui->synPad->setStyleSheet("color: #9e9e9e;");     // 左侧选中：主题蓝色
+            ui->zeroPad->setStyleSheet("color: #55aaff;");      // 左侧未选中：灰色
+        } else {
+            ui->synPad->setStyleSheet("color: #55aaff;");     // 右侧选中：主题蓝色
+            ui->zeroPad->setStyleSheet("color: #9e9e9e;");      // 右侧未选中：灰色
+        }
+    });
+
+    // 设置 QLabel 初始颜色（toggle 默认 unchecked，滑块在左侧，左侧选中）
+    ui->notSevereLabel->setStyleSheet("color: #55aaff;");     // 初始选中：主题蓝色
+    ui->isSevereLabel->setStyleSheet("color: #9e9e9e;");      // 初始未选中：灰色
+    ui->synPad->setStyleSheet("color: #55aaff;");             // 初始选中：主题蓝色
+    ui->zeroPad->setStyleSheet("color: #9e9e9e;");              // 初始未选中：灰色
+
+
+    //==========AutoComplete Editline外观设置==========
+    ui->Line_para_emwave->setUseThemeColors(false);
+    ui->Line_para_NA->setUseThemeColors(false);
+    ui->Line_para_pixelsize->setUseThemeColors(false);
+    ui->Line_para_factor->setUseThemeColors(false);
+    ui->Line_para_emwave->setInkColor(QColor("#55aaff"));
+    ui->Line_para_NA->setInkColor(QColor("#55aaff"));
+    ui->Line_para_pixelsize->setInkColor(QColor("#55aaff"));
+    ui->Line_para_factor->setInkColor(QColor("#55aaff"));
+
+    // ========== AutoComplete 获得焦点时，左侧 QLabel 加粗+变主题色 ==========
+    // 为4个 AutoComplete 输入框安装事件过滤器，捕获焦点进入/离开事件
+    ui->Line_para_emwave->installEventFilter(this);     // 发射波长输入框
+    ui->Line_para_NA->installEventFilter(this);         // 数值孔径输入框
+    ui->Line_para_pixelsize->installEventFilter(this);  // 像素尺寸输入框
+    ui->Line_para_factor->installEventFilter(this);     // 分辨率比例因子输入框
 
     // ========== 去噪方式单选按钮组（在 widget_denoiseRadioButtonPlaceholder 占位容器中添加） ==========
     // 为占位容器创建水平布局，三个单选按钮从左到右排列
@@ -39,17 +101,23 @@ GreenWidget::GreenWidget(QWidget *parent) :
     hLayout_denoiseRadioBtn->addWidget(denoiseMethodNo_para_denoise);      // 右侧：不去噪
 
 
+    //==========RadioButton外观设置==========
+    denoiseMethodGauss_para_denoise->setUseThemeColors(false);   // 关闭主题色，使用自定义颜色
+    denoiseMethodMid_para_denoise->setUseThemeColors(false);     // 关闭主题色，使用自定义颜色
+    denoiseMethodNo_para_denoise->setUseThemeColors(false);      // 关闭主题色，使用自定义颜色
+    denoiseMethodGauss_para_denoise->setCheckedColor(QColor("#55aaff"));  // 选中颜色：主题蓝色
+    denoiseMethodMid_para_denoise->setCheckedColor(QColor("#55aaff"));    // 选中颜色：主题蓝色
+    denoiseMethodNo_para_denoise->setCheckedColor(QColor("#55aaff"));     // 选中颜色：主题蓝色
+
+
+
     // ========== QTabWidget 样式表设置 ==========
     // 设置 tabWidget 的整体外观
     ui->tabWidget->setStyleSheet(
-        //---------- QTabWidget 整体：底部留出空间供标签下沉显示 ----------
-        "QTabWidget {"
-        "   border: 2px solid #55aaff;"            // 选中边框：#55aaff 蓝色（2px加粗更醒目）
-        "}"
 
         // ---------- 标签栏整体容器（面板区域） ----------
         "QTabWidget::pane {"
-        "   border: 2px solid #55aaff;"           // 主题色
+        "   border: 2px solid #9e9e9e;"           // 主题色
         "   border-radius: 4px;"                   // 边框圆角：4像素
         "   background-color: #ffffff;"            // 面板背景色：浅灰白
         "}"
@@ -79,6 +147,7 @@ GreenWidget::GreenWidget(QWidget *parent) :
         "   border: 2px solid #55aaff;"            // 选中边框：#55aaff 蓝色（2px加粗更醒目）
         "   font-weight: bold;"                    // 选中时文字加粗
         "   padding: 6px 8px;"                     // 内边距：上下6px、左右8px
+        "   outline: none;"                        // 去掉焦点虚线框
         "}"
 
         // ---------- 悬停状态的标签（非选中时的悬停） ----------
@@ -205,4 +274,44 @@ void GreenWidget::setPixelsize(double value)
 void GreenWidget::setFactor(int value)
 {
     ui->Line_para_factor->setText(QString::number(value));
+}
+
+// ========== 事件过滤器：AutoComplete 获得焦点时左侧 QLabel 加粗+变主题色 ==========
+// 捕获4个 AutoComplete 输入框的 FocusIn/FocusOut 事件
+// FocusIn → 对应左侧 QLabel 文本加粗+变#55aaff
+// FocusOut → 对应左侧 QLabel 恢复正常字重+默认颜色
+bool GreenWidget::eventFilter(QObject *watched, QEvent *event)
+{
+    // 只处理焦点进入和焦点离开事件
+    if (event->type() == QEvent::FocusIn || event->type() == QEvent::FocusOut) {
+        // 根据被监视的控件，找到对应的左侧 QLabel
+        QLabel *label = nullptr;
+        if (watched == ui->Line_para_emwave) {
+            label = ui->emwaveLabel;            // 发射波长标签
+        } else if (watched == ui->Line_para_NA) {
+            label = ui->NALabel;                // 数值孔径标签
+        } else if (watched == ui->Line_para_pixelsize) {
+            label = ui->pixelLabel;             // 像素尺寸标签
+        } else if (watched == ui->Line_para_factor) {
+            label = ui->factorLabel;            // 分辨率比例因子标签
+        }
+
+        if (label) {
+            QFont font = label->font();         // 获取当前字体
+            if (event->type() == QEvent::FocusIn) {
+                // 获得焦点：加粗+主题蓝色
+                font.setBold(true);             // 设置字体为加粗
+                label->setFont(font);           // 应用字体
+                label->setStyleSheet("color: #55aaff;");  // 选中颜色：主题蓝色
+            } else {
+                // 失去焦点：恢复正常字重+默认颜色
+                font.setBold(false);            // 恢复字体为正常字重
+                label->setFont(font);           // 应用字体
+                label->setStyleSheet("");       // 清除样式，恢复默认颜色
+            }
+        }
+    }
+
+    // 继续传递事件给基类处理，不截断事件流
+    return QWidget::eventFilter(watched, event);
 }
