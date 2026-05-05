@@ -6,6 +6,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QEvent>
+#include <QApplication>
 #include <qtmaterialradiobutton.h>
 
 GreenWidget::GreenWidget(QWidget *parent) :
@@ -157,6 +158,89 @@ GreenWidget::GreenWidget(QWidget *parent) :
         "   border: 1px solid #9e9e9e;"            // 悬停边框：#9e9e9e 灰色
         "}"
     );
+
+    // ========== QTabWidget 焦点联动：内部任意控件获得焦点时边框变蓝 ==========
+    // 通过 QApplication::focusChanged 全局信号监听焦点变化
+    // 判断新焦点控件是否属于 tabWidget 的后代，动态切换 pane 边框颜色
+    connect(qApp, &QApplication::focusChanged, this, [this](QWidget *, QWidget *now) {
+        if (now && ui->tabWidget->isAncestorOf(now)) {
+            // 焦点在 tabWidget 内部 → pane 边框变主题蓝色
+            ui->tabWidget->setStyleSheet(
+                "QTabWidget::pane {"
+                "   border: 2px solid #55aaff;"           // 焦点在内：主题蓝色边框
+                "   border-radius: 4px;"
+                "   background-color: #ffffff;"
+                "}"
+                "QTabBar::tab {"
+                "   min-width: 136px;"
+                "   max-width: 136px;"
+                "   height: 24px;"
+                "   font-size: 18px;"
+                "   font-family: \"Microsoft YaHei\";"
+                "   color: #888888;"
+                "   background-color: #e0e0e0;"
+                "   border: 1px solid #3a3a3a;"
+                "   border-bottom-left-radius: 2px;"
+                "   border-bottom-right-radius: 2px;"
+                "   border-top-left-radius: 0px;"
+                "   border-top-right-radius: 0px;"
+                "   padding: 2px 8px;"
+                "   outline: none;"
+                "}"
+                "QTabBar::tab:selected {"
+                "   background-color: #c8e4ff;"
+                "   color: #1565C0;"
+                "   border: 2px solid #55aaff;"
+                "   font-weight: bold;"
+                "   padding: 6px 8px;"
+                "   outline: none;"
+                "}"
+                "QTabBar::tab:hover:!selected {"
+                "   background-color: #d5d5d5;"
+                "   color: #333333;"
+                "   border: 1px solid #9e9e9e;"
+                "}"
+            );
+        } else {
+            // 焦点在 tabWidget 外部 → pane 边框变灰色
+            ui->tabWidget->setStyleSheet(
+                "QTabWidget::pane {"
+                "   border: 2px solid #9e9e9e;"           // 焦点在外：灰色边框
+                "   border-radius: 4px;"
+                "   background-color: #ffffff;"
+                "}"
+                "QTabBar::tab {"
+                "   min-width: 136px;"
+                "   max-width: 136px;"
+                "   height: 24px;"
+                "   font-size: 18px;"
+                "   font-family: \"Microsoft YaHei\";"
+                "   color: #888888;"
+                "   background-color: #e0e0e0;"
+                "   border: 1px solid #3a3a3a;"
+                "   border-bottom-left-radius: 2px;"
+                "   border-bottom-right-radius: 2px;"
+                "   border-top-left-radius: 0px;"
+                "   border-top-right-radius: 0px;"
+                "   padding: 2px 8px;"
+                "   outline: none;"
+                "}"
+                "QTabBar::tab:selected {"
+                "   background-color: #c8e4ff;"
+                "   color: #1565C0;"
+                "   border: 2px solid #55aaff;"
+                "   font-weight: bold;"
+                "   padding: 6px 8px;"
+                "   outline: none;"
+                "}"
+                "QTabBar::tab:hover:!selected {"
+                "   background-color: #d5d5d5;"
+                "   color: #333333;"
+                "   border: 1px solid #9e9e9e;"
+                "}"
+            );
+        }
+    });
 }
 
 GreenWidget::~GreenWidget()
