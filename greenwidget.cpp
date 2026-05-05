@@ -111,6 +111,45 @@ GreenWidget::GreenWidget(QWidget *parent) :
     denoiseMethodNo_para_denoise->setCheckedColor(QColor("#55aaff"));     // 选中颜色：主题蓝色
 
 
+    //========== 第二页参数组件外观设置 ==========
+    // lineEdit ~ lineEdit_6 已在 .ui 中提升为 QtMaterialTextField
+    // 设置外观：关闭主题色、显示浮动标签、标签颜色#55aaff、墨水颜色#55aaff
+    ui->lineEdit->setUseThemeColors(false);        // 关闭主题色，使用自定义颜色
+    ui->lineEdit_2->setUseThemeColors(false);      // 关闭主题色，使用自定义颜色
+    ui->lineEdit_3->setUseThemeColors(false);      // 关闭主题色，使用自定义颜色
+    ui->lineEdit_4->setUseThemeColors(false);      // 关闭主题色，使用自定义颜色
+    ui->lineEdit_5->setUseThemeColors(false);      // 关闭主题色，使用自定义颜色
+    ui->lineEdit_6->setUseThemeColors(false);      // 关闭主题色，使用自定义颜色
+
+    ui->lineEdit->setInkColor(QColor("#55aaff"));     // 墨水颜色（焦点线条颜色）：主题蓝色
+    ui->lineEdit_2->setInkColor(QColor("#55aaff"));   // 墨水颜色（焦点线条颜色）：主题蓝色
+    ui->lineEdit_3->setInkColor(QColor("#55aaff"));   // 墨水颜色（焦点线条颜色）：主题蓝色
+    ui->lineEdit_4->setInkColor(QColor("#55aaff"));   // 墨水颜色（焦点线条颜色）：主题蓝色
+    ui->lineEdit_5->setInkColor(QColor("#55aaff"));   // 墨水颜色（焦点线条颜色）：主题蓝色
+    ui->lineEdit_6->setInkColor(QColor("#55aaff"));   // 墨水颜色（焦点线条颜色）：主题蓝色
+
+    ui->lineEdit->setShowLabel(true);              // 显示浮动标签
+    ui->lineEdit_2->setShowLabel(true);            // 显示浮动标签
+    ui->lineEdit_3->setShowLabel(true);            // 显示浮动标签
+    ui->lineEdit_4->setShowLabel(true);            // 显示浮动标签
+    ui->lineEdit_5->setShowLabel(true);            // 显示浮动标签
+    ui->lineEdit_6->setShowLabel(true);            // 显示浮动标签
+
+    ui->lineEdit->setLabelColor(QColor("#55aaff"));   // 标签颜色：主题蓝色
+    ui->lineEdit_2->setLabelColor(QColor("#55aaff")); // 标签颜色：主题蓝色
+    ui->lineEdit_3->setLabelColor(QColor("#55aaff")); // 标签颜色：主题蓝色
+    ui->lineEdit_4->setLabelColor(QColor("#55aaff")); // 标签颜色：主题蓝色
+    ui->lineEdit_5->setLabelColor(QColor("#55aaff")); // 标签颜色：主题蓝色
+    ui->lineEdit_6->setLabelColor(QColor("#55aaff")); // 标签颜色：主题蓝色
+
+    ui->lineEdit->setLabel("推荐 2~15");              // 浮动标签显示推荐值
+    ui->lineEdit_2->setLabel("推荐 0.5");            // 浮动标签显示推荐值    
+    ui->lineEdit_3->setLabel("推荐 15~40");            // 浮动显示标签推荐值
+    ui->lineEdit_4->setLabel("推荐 6,3");            // 浮动显示标签
+    ui->lineEdit_5->setLabel("推荐 3,2或2,2");            // 显示标签
+    ui->lineEdit_6->setLabel("推荐 1,1");            // 显示标签
+
+
 
     // ========== QTabWidget 样式表设置 ==========
     // 设置 tabWidget 的整体外观
@@ -358,6 +397,82 @@ void GreenWidget::setPixelsize(double value)
 void GreenWidget::setFactor(int value)
 {
     ui->Line_para_factor->setText(QString::number(value));
+}
+
+// ========== getter 方法实现（高级参数：第二页 lineEdit ~ lineEdit_6） ==========
+
+// 读取 thres 输入框 → 返回 int
+int GreenWidget::getThres() const
+{
+    return ui->lineEdit->text().toInt();
+}
+
+// 读取 divide 输入框 → 返回 double
+double GreenWidget::getDivide() const
+{
+    return ui->lineEdit_2->text().toDouble();
+}
+
+// 读取 padsize 输入框 → 返回 int
+int GreenWidget::getPadsize() const
+{
+    return ui->lineEdit_3->text().toInt();
+}
+
+// 读取 deg 输入框 → 返回 QString（逗号分隔，如 "6,3,1.2"）
+QString GreenWidget::getDeg() const
+{
+    return ui->lineEdit_4->text();
+}
+
+// 读取 dep 输入框 → 返回 QString（逗号分隔，如 "3,3,2"）
+QString GreenWidget::getDep() const
+{
+    return ui->lineEdit_5->text();
+}
+
+// 读取 hl 输入框 → 返回 QString（逗号分隔，如 "1,1,1"）
+QString GreenWidget::getHl() const
+{
+    return ui->lineEdit_6->text();
+}
+
+// ========== setter 方法实现（高级参数：第二页 lineEdit ~ lineEdit_6） ==========
+
+// 设置 thres 输入框文本
+void GreenWidget::setThres(int value)
+{
+    ui->lineEdit->setText(QString::number(value));
+}
+
+// 设置 divide 输入框文本
+void GreenWidget::setDivide(double value)
+{
+    ui->lineEdit_2->setText(QString::number(value));
+}
+
+// 设置 padsize 输入框文本
+void GreenWidget::setPadsize(int value)
+{
+    ui->lineEdit_3->setText(QString::number(value));
+}
+
+// 设置 deg 输入框文本（逗号分隔字符串）
+void GreenWidget::setDeg(const QString &value)
+{
+    ui->lineEdit_4->setText(value);
+}
+
+// 设置 dep 输入框文本（逗号分隔字符串）
+void GreenWidget::setDep(const QString &value)
+{
+    ui->lineEdit_5->setText(value);
+}
+
+// 设置 hl 输入框文本（逗号分隔字符串）
+void GreenWidget::setHl(const QString &value)
+{
+    ui->lineEdit_6->setText(value);
 }
 
 // ========== 事件过滤器：AutoComplete 获得焦点时左侧 QLabel 加粗+变主题色 ==========

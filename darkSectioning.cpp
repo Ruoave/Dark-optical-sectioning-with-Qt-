@@ -45,8 +45,8 @@ void DarkSectioning::process()
     int background = paramsBasicSet.background; // 0-离焦不严重, 1-离焦严重
     int pad = paramsBasicSet.pad;               // 1-对称填充, 0-零填充
     int denoise = paramsBasicSet.denoise;       // 0-不去噪, 1-高斯平滑, 2-中值滤波
-    int thres = 70;     // Threshold to distinguish background and information，划分信息和背景的阈值;荧光信号越强，阈值要越高
-    double divide = 0.5; //划分高频/低频部分的边界;基本不用调
+    int thres = paramsExpertSet.thres;   // 划分信息和背景的阈值;荧光信号越强，阈值要越高
+    double divide = paramsExpertSet.divide; //划分高频/低频部分的边界;基本不用调
 
     // 背景设置
     int maxtime;
@@ -55,14 +55,14 @@ void DarkSectioning::process()
     // 0-middle,1-severve
     if (background == 1) {
         maxtime = 2;
-        deg_matrix = {6, 3, 1.2};   //即EL1/2 参数，deg控制的是 极低通滤波器宽度:sigmaLP / deg; deg越小 → 滤波器越宽 → EL保留更多低频 → 大气光估计更平滑
-        dep_matrix = {3, 3, 2};     //假设场景深度，rep_atmosphere = dep * rep_atmosphere; 场景越深去雾越激进
-        hl_matrix = {1, 1, 1};      //result = Lo_process/hl + Hi;hl 越大 → Lo_process/hl 越小 → 低频贡献被 压制 ，高频细节更突出
+        deg_matrix = parseExpertVector(paramsExpertSet.deg);
+        dep_matrix = parseExpertVector(paramsExpertSet.dep);
+        hl_matrix = parseExpertVector(paramsExpertSet.hl);
     } else if (background == 0) {
         maxtime = 1;
-        deg_matrix = {6};
-        dep_matrix = {3};
-        hl_matrix = {1};
+        deg_matrix = parseExpertVector(paramsExpertSet.deg);
+        dep_matrix = parseExpertVector(paramsExpertSet.dep);
+        hl_matrix = parseExpertVector(paramsExpertSet.hl);
     }
 
     // 预处理：多通道图像栈读取和处理
@@ -208,7 +208,7 @@ void DarkSectioning::process()
 
 
     // 预处理：通道级边缘填充
-    int pad_size = 15; // 用于边缘渐变的填充大小
+    int pad_size = paramsExpertSet.padsize; // 用于边缘渐变的填充大小
     std::vector<std::vector<cv::Mat>> result_stack(Nc, std::vector<cv::Mat>(Nz));      //用于存储最终高低频融合后的结果图像数据
     std::vector<std::vector<cv::Mat>> Lo_process_stack(Nc, std::vector<cv::Mat>(Nz));  //用于存储经过去雾处理中的低频部分图像数据
     std::vector<std::vector<cv::Mat>> Hi_stack(Nc, std::vector<cv::Mat>(Nz));          //用于存储分离出的高频部分图像数据

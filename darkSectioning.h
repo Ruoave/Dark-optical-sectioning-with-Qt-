@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include "ui_mainwindow.h"
 #include "paramsBasic.h"
+#include "paramsExpert.h"
 #include "orangebar.h"
 #include <opencv2/opencv.hpp>
 #include <iostream>
@@ -25,6 +26,9 @@ public:
     
     // 基本算法参数，供 MainWindow 从 GreenWidget 控件读取后设置
     ParamsBasic paramsBasicSet;
+    
+    // 高级算法参数，供 MainWindow 从 GreenWidget 控件读取后设置
+    ParamsExpert paramsExpertSet;
     
     // 公共数据成员：供MainWindow访问处理前后的图像数据
     std::vector<cv::Mat> imageStack;              // 处理前图像栈（OpenCV Mat数据）
