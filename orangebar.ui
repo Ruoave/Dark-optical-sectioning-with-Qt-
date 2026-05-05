@@ -200,14 +200,14 @@ QProgressBar::chunk {
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QtMaterialSlider</class>
-   <extends>QSlider</extends>
-   <header location="global">qtmaterialslider.h</header>
-  </customwidget>
-  <customwidget>
    <class>QtMaterialAutoComplete</class>
    <extends>QLineEdit</extends>
    <header location="global">qtmaterialautocomplete.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QtMaterialSlider</class>
+   <extends>QSlider</extends>
+   <header location="global">qtmaterialslider.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -45,8 +45,8 @@ void DarkSectioning::process()
     int background = paramsBasicSet.background; // 0-离焦不严重, 1-离焦严重
     int pad = paramsBasicSet.pad;               // 1-对称填充, 0-零填充
     int denoise = paramsBasicSet.denoise;       // 0-不去噪, 1-高斯平滑, 2-中值滤波
-    int thres = 70;     // Threshold to distinguish background and information，划分信息和背景的阈值
-    double divide = 0.5; //划分高频/低频部分的边界
+    int thres = 70;     // Threshold to distinguish background and information，划分信息和背景的阈值;荧光信号越强，阈值要越高
+    double divide = 0.5; //划分高频/低频部分的边界;基本不用调
 
     // 背景设置
     int maxtime;
@@ -55,9 +55,9 @@ void DarkSectioning::process()
     // 0-middle,1-severve
     if (background == 1) {
         maxtime = 2;
-        deg_matrix = {6, 3, 1.2};
-        dep_matrix = {3, 3, 2};
-        hl_matrix = {1, 1, 1};
+        deg_matrix = {6, 3, 1.2};   //即EL1/2 参数，deg控制的是 极低通滤波器宽度:sigmaLP / deg; deg越小 → 滤波器越宽 → EL保留更多低频 → 大气光估计更平滑
+        dep_matrix = {3, 3, 2};     //假设场景深度，rep_atmosphere = dep * rep_atmosphere; 场景越深去雾越激进
+        hl_matrix = {1, 1, 1};      //result = Lo_process/hl + Hi;hl 越大 → Lo_process/hl 越小 → 低频贡献被 压制 ，高频细节更突出
     } else if (background == 0) {
         maxtime = 1;
         deg_matrix = {6};
