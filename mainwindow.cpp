@@ -67,14 +67,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->widget_greenPlaceholder->setPixelsize(defaults.pixelsize);
     ui->widget_greenPlaceholder->setFactor(defaults.factor);
 
-    // 用 ParamsExpert 默认值初始化 GreenWidget 第二页控件显示
-    ParamsExpert expertDefaults;  // 自带默认值：thres=70, divide=0.5, padsize=15, deg="6,3,1.2", dep="3,3,2", hl="1,1,1"
-    ui->widget_greenPlaceholder->setThres(expertDefaults.thres);
-    ui->widget_greenPlaceholder->setDivide(expertDefaults.divide);
-    ui->widget_greenPlaceholder->setPadsize(expertDefaults.padsize);
-    ui->widget_greenPlaceholder->setDeg(QString::fromStdString(expertDefaults.deg));
-    ui->widget_greenPlaceholder->setDep(QString::fromStdString(expertDefaults.dep));
-    ui->widget_greenPlaceholder->setHl(QString::fromStdString(expertDefaults.hl));
+    // 第二页高级参数 lineEdit~lineEdit_6 启动时不显示内容（文本为空）
+    // 算法默认值保留在 ParamsExpert 结构体中，用户未输入时算法使用默认值
     
     // 2.5：【橙区】OrangeWidget已通过方法B（容器提升法）在.ui中提升
     // ui->widget_orangePlaceholder 的类型已是 OrangeWidget*，由uic在setupUi时自动创建
@@ -220,12 +214,15 @@ void MainWindow::on_pushButton_run_clicked()
     darkSectioning->paramsBasicSet.factor = ui->widget_greenPlaceholder->getFactor();
     
     // 从 GreenWidget 第二页控件读取高级参数值，写入 DarkSectioning 的 paramsExpertSet
-    darkSectioning->paramsExpertSet.thres = ui->widget_greenPlaceholder->getThres();
-    darkSectioning->paramsExpertSet.divide = ui->widget_greenPlaceholder->getDivide();
-    darkSectioning->paramsExpertSet.padsize = ui->widget_greenPlaceholder->getPadsize();
-    darkSectioning->paramsExpertSet.deg = ui->widget_greenPlaceholder->getDeg().toStdString();
-    darkSectioning->paramsExpertSet.dep = ui->widget_greenPlaceholder->getDep().toStdString();
-    darkSectioning->paramsExpertSet.hl = ui->widget_greenPlaceholder->getHl().toStdString();
+    // 仅当用户输入了内容时才覆盖默认值，否则保留 ParamsExpert 结构体的默认值
+    if (!ui->widget_greenPlaceholder->getDeg().isEmpty()) {
+        darkSectioning->paramsExpertSet.thres = ui->widget_greenPlaceholder->getThres();
+        darkSectioning->paramsExpertSet.divide = ui->widget_greenPlaceholder->getDivide();
+        darkSectioning->paramsExpertSet.padsize = ui->widget_greenPlaceholder->getPadsize();
+        darkSectioning->paramsExpertSet.deg = ui->widget_greenPlaceholder->getDeg().toStdString();
+        darkSectioning->paramsExpertSet.dep = ui->widget_greenPlaceholder->getDep().toStdString();
+        darkSectioning->paramsExpertSet.hl = ui->widget_greenPlaceholder->getHl().toStdString();
+    }
     
     // ========== 第4步：调用原有的DarkSectioning处理函数（保持原有业务逻辑不变） ==========
     

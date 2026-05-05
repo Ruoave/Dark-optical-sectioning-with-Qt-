@@ -8,6 +8,7 @@
 #include <QEvent>
 #include <QApplication>
 #include <qtmaterialradiobutton.h>
+#include <qtmaterialtextfield.h>
 
 GreenWidget::GreenWidget(QWidget *parent) :
     QWidget(parent),
@@ -75,6 +76,8 @@ GreenWidget::GreenWidget(QWidget *parent) :
     ui->Line_para_pixelsize->installEventFilter(this);  // 像素尺寸输入框
     ui->Line_para_factor->installEventFilter(this);     // 分辨率比例因子输入框
 
+
+
     // ========== 去噪方式单选按钮组（在 widget_denoiseRadioButtonPlaceholder 占位容器中添加） ==========
     // 为占位容器创建水平布局，三个单选按钮从左到右排列
     QHBoxLayout *hLayout_denoiseRadioBtn = new QHBoxLayout(ui->widget_denoiseRadioButtonPlaceholder);
@@ -135,19 +138,41 @@ GreenWidget::GreenWidget(QWidget *parent) :
     ui->lineEdit_5->setShowLabel(true);            // 显示浮动标签
     ui->lineEdit_6->setShowLabel(true);            // 显示浮动标签
 
-    ui->lineEdit->setLabelColor(QColor("#55aaff"));   // 标签颜色：主题蓝色
-    ui->lineEdit_2->setLabelColor(QColor("#55aaff")); // 标签颜色：主题蓝色
-    ui->lineEdit_3->setLabelColor(QColor("#55aaff")); // 标签颜色：主题蓝色
-    ui->lineEdit_4->setLabelColor(QColor("#55aaff")); // 标签颜色：主题蓝色
-    ui->lineEdit_5->setLabelColor(QColor("#55aaff")); // 标签颜色：主题蓝色
-    ui->lineEdit_6->setLabelColor(QColor("#55aaff")); // 标签颜色：主题蓝色
+    ui->lineEdit->setLabelColor(QColor("#9e9e9e"));    // 标签颜色：灰色（未聚焦时）
+    ui->lineEdit_2->setLabelColor(QColor("#9e9e9e"));  // 标签颜色：灰色（未聚焦时）
+    ui->lineEdit_3->setLabelColor(QColor("#9e9e9e"));  // 标签颜色：灰色（未聚焦时）
+    ui->lineEdit_4->setLabelColor(QColor("#9e9e9e"));  // 标签颜色：灰色（未聚焦时）
+    ui->lineEdit_5->setLabelColor(QColor("#9e9e9e"));  // 标签颜色：灰色（未聚焦时）
+    ui->lineEdit_6->setLabelColor(QColor("#9e9e9e"));  // 标签颜色：灰色（未聚焦时）
 
-    ui->lineEdit->setLabel("推荐 2~15");              // 浮动标签显示推荐值
-    ui->lineEdit_2->setLabel("推荐 0.5");            // 浮动标签显示推荐值    
-    ui->lineEdit_3->setLabel("推荐 15~40");            // 浮动显示标签推荐值
-    ui->lineEdit_4->setLabel("推荐 6,3");            // 浮动显示标签
-    ui->lineEdit_5->setLabel("推荐 3,2或2,2");            // 显示标签
-    ui->lineEdit_6->setLabel("推荐 1,1");            // 显示标签
+    // 设置 lineEdit ~ lineEdit_6 的浮动标签字体为微软雅黑
+    // QtMaterialTextField 无公共接口设置标签字体，但 setShowLabel(true) 后标签已作为 QWidget 子控件存在
+    // 通过遍历直接子对象，找到标签 QWidget 并设置字体（标签是唯一的 QWidget 子控件）
+    QFont labelFont("微软雅黑", 9.8);              // 标签字体：微软雅黑 
+    for (auto *textField : {ui->lineEdit, ui->lineEdit_2, ui->lineEdit_3,
+                            ui->lineEdit_4, ui->lineEdit_5, ui->lineEdit_6}) {
+        for (QObject *child : textField->children()) {
+            QWidget *w = qobject_cast<QWidget*>(child);  // 尝试转换为QWidget
+            if (w) {
+                w->setFont(labelFont);            // 标签是唯一的QWidget子控件，设置字体
+            }
+        }
+    }
+
+    ui->lineEdit->setLabel("推荐2~15");            // 浮动标签显示推荐值
+    ui->lineEdit_2->setLabel("推荐0.5");           // 浮动标签显示推荐值    
+    ui->lineEdit_3->setLabel("推荐15~40");         // 浮动标签标签推荐值
+    ui->lineEdit_4->setLabel("推荐6,3");           // 浮动标签显示推荐值
+    ui->lineEdit_5->setLabel("推荐3,2或2,2");      // 浮动标签显示推荐值
+    ui->lineEdit_6->setLabel("推荐1,1");           // 浮动标签显示推荐值
+
+    // 第二页 lineEdit~lineEdit_6 事件过滤器：获得焦点时左侧 QLabel 加粗+变主题色
+    ui->lineEdit->installEventFilter(this);             // thres 输入框
+    ui->lineEdit_2->installEventFilter(this);           // divide 输入框
+    ui->lineEdit_3->installEventFilter(this);           // padsize 输入框
+    ui->lineEdit_4->installEventFilter(this);           // deg 输入框
+    ui->lineEdit_5->installEventFilter(this);           // dep 输入框
+    ui->lineEdit_6->installEventFilter(this);           // hl 输入框
 
 
 
@@ -419,19 +444,19 @@ int GreenWidget::getPadsize() const
     return ui->lineEdit_3->text().toInt();
 }
 
-// 读取 deg 输入框 → 返回 QString（逗号分隔，如 "6,3,1.2"）
+// 读取 deg 输入框 → 返回 QString（逗号分隔，如 "6,3"）
 QString GreenWidget::getDeg() const
 {
     return ui->lineEdit_4->text();
 }
 
-// 读取 dep 输入框 → 返回 QString（逗号分隔，如 "3,3,2"）
+// 读取 dep 输入框 → 返回 QString（逗号分隔，如 "3,3"）
 QString GreenWidget::getDep() const
 {
     return ui->lineEdit_5->text();
 }
 
-// 读取 hl 输入框 → 返回 QString（逗号分隔，如 "1,1,1"）
+// 读取 hl 输入框 → 返回 QString（逗号分隔，如 "1,1"）
 QString GreenWidget::getHl() const
 {
     return ui->lineEdit_6->text();
@@ -493,6 +518,18 @@ bool GreenWidget::eventFilter(QObject *watched, QEvent *event)
             label = ui->pixelLabel;             // 像素尺寸标签
         } else if (watched == ui->Line_para_factor) {
             label = ui->factorLabel;            // 分辨率比例因子标签
+        } else if (watched == ui->lineEdit) {
+            label = ui->Label;                  // thres 标签
+        } else if (watched == ui->lineEdit_2) {
+            label = ui->Label_2;                // divide 标签
+        } else if (watched == ui->lineEdit_3) {
+            label = ui->Label_3;                // padsize 标签
+        } else if (watched == ui->lineEdit_4) {
+            label = ui->Label_4;                // deg 标签
+        } else if (watched == ui->lineEdit_5) {
+            label = ui->Label_5;                // dep 标签
+        } else if (watched == ui->lineEdit_6) {
+            label = ui->Label_6;                // hl 标签
         }
 
         if (label) {
@@ -507,6 +544,31 @@ bool GreenWidget::eventFilter(QObject *watched, QEvent *event)
                 font.setBold(false);            // 恢复字体为正常字重
                 label->setFont(font);           // 应用字体
                 label->setStyleSheet("");       // 清除样式，恢复默认颜色
+            }
+        }
+
+        // 第二页 lineEdit~lineEdit_6：焦点变化时切换浮动标签颜色
+        // 获得焦点 → 浮动标签变主题蓝色#55aaff；失去焦点 → 浮动标签变灰色#9e9e9e
+        QtMaterialTextField *textField = nullptr;
+        if (watched == ui->lineEdit) {
+            textField = ui->lineEdit;           // thres 输入框
+        } else if (watched == ui->lineEdit_2) {
+            textField = ui->lineEdit_2;         // divide 输入框
+        } else if (watched == ui->lineEdit_3) {
+            textField = ui->lineEdit_3;         // padsize 输入框
+        } else if (watched == ui->lineEdit_4) {
+            textField = ui->lineEdit_4;         // deg 输入框
+        } else if (watched == ui->lineEdit_5) {
+            textField = ui->lineEdit_5;         // dep 输入框
+        } else if (watched == ui->lineEdit_6) {
+            textField = ui->lineEdit_6;         // hl 输入框
+        }
+
+        if (textField) {
+            if (event->type() == QEvent::FocusIn) {
+                textField->setLabelColor(QColor("#55aaff"));  // 获得焦点：标签变主题蓝色
+            } else {
+                textField->setLabelColor(QColor("#9e9e9e"));  // 失去焦点：标签变灰色
             }
         }
     }

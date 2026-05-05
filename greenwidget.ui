@@ -590,8 +590,8 @@
       <rect>
        <x>80</x>
        <y>90</y>
-       <width>90</width>
-       <height>48</height>
+       <width>88</width>
+       <height>56</height>
       </rect>
      </property>
     </widget>
@@ -600,8 +600,8 @@
       <rect>
        <x>80</x>
        <y>170</y>
-       <width>90</width>
-       <height>48</height>
+       <width>88</width>
+       <height>56</height>
       </rect>
      </property>
     </widget>
@@ -610,18 +610,18 @@
       <rect>
        <x>80</x>
        <y>250</y>
-       <width>90</width>
-       <height>48</height>
+       <width>88</width>
+       <height>56</height>
       </rect>
      </property>
     </widget>
     <widget class="QtMaterialTextField" name="lineEdit_4">
      <property name="geometry">
       <rect>
-       <x>250</x>
+       <x>240</x>
        <y>90</y>
-       <width>90</width>
-       <height>48</height>
+       <width>100</width>
+       <height>56</height>
       </rect>
      </property>
     </widget>
@@ -724,7 +724,7 @@
     <widget class="QLabel" name="Label_4">
      <property name="geometry">
       <rect>
-       <x>200</x>
+       <x>190</x>
        <y>120</y>
        <width>40</width>
        <height>22</height>
@@ -756,7 +756,7 @@
     <widget class="QLabel" name="Label_5">
      <property name="geometry">
       <rect>
-       <x>200</x>
+       <x>190</x>
        <y>200</y>
        <width>40</width>
        <height>22</height>
@@ -788,17 +788,17 @@
     <widget class="QtMaterialTextField" name="lineEdit_5">
      <property name="geometry">
       <rect>
-       <x>250</x>
+       <x>240</x>
        <y>170</y>
-       <width>90</width>
-       <height>48</height>
+       <width>100</width>
+       <height>56</height>
       </rect>
      </property>
     </widget>
     <widget class="QLabel" name="Label_6">
      <property name="geometry">
       <rect>
-       <x>200</x>
+       <x>190</x>
        <y>280</y>
        <width>40</width>
        <height>22</height>
@@ -830,10 +830,10 @@
     <widget class="QtMaterialTextField" name="lineEdit_6">
      <property name="geometry">
       <rect>
-       <x>250</x>
+       <x>240</x>
        <y>250</y>
-       <width>90</width>
-       <height>48</height>
+       <width>100</width>
+       <height>56</height>
       </rect>
      </property>
     </widget>
