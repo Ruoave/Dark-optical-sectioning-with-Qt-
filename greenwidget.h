@@ -50,6 +50,11 @@ public:
     void setDep(const QString &value);   // setText(value)
     void setHl(const QString &value);    // setText(value)
 
+    // ========== 检查方法（高级参数）：供 MainWindow 判断控件是否为空 ==========
+    bool isThresEmpty() const;           // 判断 lineEdit（thres）是否为空
+    bool isDivideEmpty() const;          // 判断 lineEdit_2（divide）是否为空
+    bool isPadsizeEmpty() const;         // 判断 lineEdit_3（padsize）是否为空
+
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
 

@@ -45,6 +45,7 @@ void DarkSectioning::process()
     int background = paramsBasicSet.background; // 0-离焦不严重, 1-离焦严重
     int pad = paramsBasicSet.pad;               // 1-对称填充, 0-零填充
     int denoise = paramsBasicSet.denoise;       // 0-不去噪, 1-高斯平滑, 2-中值滤波
+
     int thres = paramsExpertSet.thres;   // 划分信息和背景的阈值;荧光信号越强，阈值要越高
     double divide = paramsExpertSet.divide; //划分高频/低频部分的边界;基本不用调
 

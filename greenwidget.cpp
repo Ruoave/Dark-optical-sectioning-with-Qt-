@@ -305,6 +305,9 @@ GreenWidget::GreenWidget(QWidget *parent) :
             );
         }
     });
+
+    // ========== 设置 tabWidget 初始索引为 0（第一个标签页） ==========
+    ui->tabWidget->setCurrentIndex(0);
 }
 
 GreenWidget::~GreenWidget()
@@ -498,6 +501,26 @@ void GreenWidget::setDep(const QString &value)
 void GreenWidget::setHl(const QString &value)
 {
     ui->lineEdit_6->setText(value);
+}
+
+// ========== 检查方法实现（高级参数）：供 MainWindow 判断控件是否为空 ==========
+
+// 判断 thres 输入框是否为空
+bool GreenWidget::isThresEmpty() const
+{
+    return ui->lineEdit->text().isEmpty();
+}
+
+// 判断 divide 输入框是否为空
+bool GreenWidget::isDivideEmpty() const
+{
+    return ui->lineEdit_2->text().isEmpty();
+}
+
+// 判断 padsize 输入框是否为空
+bool GreenWidget::isPadsizeEmpty() const
+{
+    return ui->lineEdit_3->text().isEmpty();
 }
 
 // ========== 事件过滤器：AutoComplete 获得焦点时左侧 QLabel 加粗+变主题色 ==========

@@ -214,14 +214,24 @@ void MainWindow::on_pushButton_run_clicked()
     darkSectioning->paramsBasicSet.factor = ui->widget_greenPlaceholder->getFactor();
     
     // 从 GreenWidget 第二页控件读取高级参数值，写入 DarkSectioning 的 paramsExpertSet
-    // 仅当用户输入了内容时才覆盖默认值，否则保留 ParamsExpert 结构体的默认值
+    // 每个参数独立判断：有填写就写入，没填写保持 ParamsExpert 结构体的默认值
     if (!ui->widget_greenPlaceholder->getDeg().isEmpty()) {
-        darkSectioning->paramsExpertSet.thres = ui->widget_greenPlaceholder->getThres();
-        darkSectioning->paramsExpertSet.divide = ui->widget_greenPlaceholder->getDivide();
-        darkSectioning->paramsExpertSet.padsize = ui->widget_greenPlaceholder->getPadsize();
         darkSectioning->paramsExpertSet.deg = ui->widget_greenPlaceholder->getDeg().toStdString();
+    }
+    if (!ui->widget_greenPlaceholder->getDep().isEmpty()) {
         darkSectioning->paramsExpertSet.dep = ui->widget_greenPlaceholder->getDep().toStdString();
+    }
+    if (!ui->widget_greenPlaceholder->getHl().isEmpty()) {
         darkSectioning->paramsExpertSet.hl = ui->widget_greenPlaceholder->getHl().toStdString();
+    }
+    if (!ui->widget_greenPlaceholder->isThresEmpty()) {  // thres
+        darkSectioning->paramsExpertSet.thres = ui->widget_greenPlaceholder->getThres();
+    }
+    if (!ui->widget_greenPlaceholder->isDivideEmpty()) {  // divide
+        darkSectioning->paramsExpertSet.divide = ui->widget_greenPlaceholder->getDivide();
+    }
+    if (!ui->widget_greenPlaceholder->isPadsizeEmpty()) {  // padsize
+        darkSectioning->paramsExpertSet.padsize = ui->widget_greenPlaceholder->getPadsize();
     }
     
     // ========== 第4步：调用原有的DarkSectioning处理函数（保持原有业务逻辑不变） ==========
