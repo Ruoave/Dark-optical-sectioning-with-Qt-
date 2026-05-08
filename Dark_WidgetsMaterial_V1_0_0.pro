@@ -23,48 +23,47 @@ PRE_TARGETDEPS += $$PWD/SDK/Material/staticlib/libcomponents.a
 RESOURCES += $$PWD/SDK/Material/components/resources.qrc
 
 
+# 子目录头文件搜索路径（文件移动到子文件夹后，#include "xxx.h" 仍可被编译器找到）
+INCLUDEPATH += $$PWD/ui \
+               $$PWD/algorithm \
+               $$PWD/params \
+               $$PWD/verify
+
 SOURCES += \
-    greenwidget.cpp \
+    ui/greenwidget.cpp \
     main.cpp \
-    mainwindow.cpp \
-    darkSectioning.cpp \
-    Lp_denoise.cpp \
-    OTF_estimate.cpp \
-    PSF_Generator.cpp \
-    confirm_block.cpp \
-    dehaze.cpp \
-    dehaze_fast2.cpp \
-    get_atmosphere.cpp \
-    get_dark_channel.cpp \
-    get_laplacian.cpp \
-    get_radiance.cpp \
-    get_transmission_estimate.cpp \
-    guided_filter.cpp \
-    guidedfilter.cpp \
-    kmeans.cpp \
-    orangebar.cpp \
-    orangewidget.cpp \
-    qt_readTiffFrame.cpp \
-    separateHiLo.cpp \
-    window_sum_filter.cpp \
-    ViewMat.cpp \
-    port_matlab2opencv.cpp
+    ui/mainwindow.cpp \
+    algorithm/darkSectioning.cpp \
+    algorithm/PSF_Generator.cpp \
+    algorithm/confirm_block.cpp \
+    algorithm/dehaze_fast2.cpp \
+    algorithm/get_atmosphere.cpp \
+    algorithm/get_dark_channel.cpp \
+    algorithm/get_laplacian.cpp \
+    algorithm/get_radiance.cpp \
+    algorithm/get_transmission_estimate.cpp \
+    algorithm/guided_filter.cpp \
+    ui/orangebar.cpp \
+    ui/orangewidget.cpp \
+    algorithm/separateHiLo.cpp \
+    algorithm/window_sum_filter.cpp \
+    verify/ViewMat.cpp \
+    algorithm/port_matlab2opencv.cpp
 HEADERS += \
-    greenwidget.h \
-    mainwindow.h \
-    darkSectioning.h \
-    orangebar.h \
-    orangewidget.h \
-    paramsBasic.h \
-    paramsExpert.h \
-    qt_readTiffFrame.h \
-    ViewMat.h \
-    port_matlab2opencv.h
+    ui/greenwidget.h \
+    ui/mainwindow.h \
+    algorithm/darkSectioning.h \
+    ui/orangebar.h \
+    ui/orangewidget.h \
+    params/paramsBasic.h \
+    params/paramsExpert.h \
+    algorithm/port_matlab2opencv.h \
+    verify/ViewMat.h
 FORMS += \
-    greenwidget.ui \
-    mainwindow.ui \
-    orangebar.ui \
-    orangewidget.ui
+    ui/greenwidget.ui \
+    ui/mainwindow.ui \
+    ui/orangebar.ui \
+    ui/orangewidget.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
