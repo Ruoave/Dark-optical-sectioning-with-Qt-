@@ -41,6 +41,7 @@ public:
     QString getDeg() const;              // 读取 lineEdit_4 文本 → 返回 QString（逗号分隔）
     QString getDep() const;              // 读取 lineEdit_5 文本 → 返回 QString（逗号分隔）
     QString getHl() const;               // 读取 lineEdit_6 文本 → 返回 QString（逗号分隔）
+    int getIsQuick() const;              // 读取 SingleFrameRunning 选中状态 → 返回 0(未选中) 或 1(选中)
 
     // ========== setter 方法（高级参数）：供 MainWindow 设置第二页控件默认值 ==========
     void setThres(int value);            // setText(QString::number(value))

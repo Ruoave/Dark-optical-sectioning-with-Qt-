@@ -233,6 +233,7 @@ void MainWindow::on_pushButton_run_clicked()
     if (!ui->widget_greenPlaceholder->isPadsizeEmpty()) {  // padsize
         darkSectioning->paramsExpertSet.padsize = ui->widget_greenPlaceholder->getPadsize();
     }
+    darkSectioning->paramsExpertSet.isQuick = ui->widget_greenPlaceholder->getIsQuick();  // 单帧处理模式：0-多帧(默认), 1-单帧快速
     
     // ========== 第4步：调用原有的DarkSectioning处理函数（保持原有业务逻辑不变） ==========
     

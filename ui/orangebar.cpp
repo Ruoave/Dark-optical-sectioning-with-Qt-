@@ -330,11 +330,14 @@ void OrangeBar::setSyncMode(bool sync)
 
     if (m_isSyncMode) {
         // ========== 开启同步模式 ==========
-        // 立即将处理后滑块同步到处理前滑块的当前值
-        // 阻止processedSlider发射valueChanged信号（避免触发onSliderProcessedValueChanged导致循环）
-        ui->sliderProcessed->blockSignals(true);
-        ui->sliderProcessed->setValue(ui->sliderOriginal->value());  // 同步到处理前滑块的值
-        ui->sliderProcessed->blockSignals(false);  // 恢复信号发射
+        // 立即将处理前滑块同步到处理后滑块的当前值
+        // 这样在单帧模式下（处理后只有1帧），处理前滑块不会超出处理后范围
+        // 阻止sliderOriginal发射valueChanged信号（避免触发onSliderOriginalValueChanged导致循环）
+        ui->sliderOriginal->blockSignals(true);
+        ui->sliderOriginal->setValue(ui->sliderProcessed->value());  // 同步到处理后滑块的值
+        ui->sliderOriginal->blockSignals(false);  // 恢复信号发射
+        // 同步处理前帧号输入框显示（blockSignals阻止了valueChanged，需手动更新lineEdit）
+        updateLineEditFromSlider(ui->sliderOriginal, ui->lineEdit_original);
 
         // 发射日志消息信号（OrangeWidget会转发给主窗口紫区日志栏）
         emit logMessage("同步模式已开启: 前后图片帧数将联动");

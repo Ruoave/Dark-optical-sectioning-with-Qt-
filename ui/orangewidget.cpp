@@ -1,4 +1,4 @@
-﻿// OrangeWidget 橙区模块实
+// OrangeWidget 橙区模块实现
 // 功能：双图像显示区域 + 两行底部控制条
 // 包含：处理前/后图片对比显示、帧切换控制、进度显示、同步帧功能
 
@@ -381,7 +381,7 @@ void OrangeWidget::connectOrangeAreaSignals()
             // ========== 开启同步模式 ==========
             m_syncButton->setText("同步中");       // 按钮文字改为"同步中"
 
-            // 同步帧索引（OrangeBar已将processedSlider同步到originalSlider的值）
+            // 同步帧索引（OrangeBar已将originalSlider同步到processedSlider的值）
             currentProcessedFrame = ui->widget_orangeBarPlaceholder->processedFrame();
             currentOriginalFrame = ui->widget_orangeBarPlaceholder->originalFrame();
 

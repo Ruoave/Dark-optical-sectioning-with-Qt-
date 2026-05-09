@@ -175,6 +175,30 @@ GreenWidget::GreenWidget(QWidget *parent) :
     ui->lineEdit_6->installEventFilter(this);           // hl 输入框
 
 
+    // 第二页SingleFrameRunning checkbox组件外观设置
+    ui->SingleFrameRunning->setUseThemeColors(false);                   // 关闭主题颜色
+    ui->SingleFrameRunning->setCheckedColor(QColor("#55aaff"));         // 选中时图标显示蓝色
+    
+    // ========== SingleFrameRunning 选中状态文字颜色切换 ==========
+    // 信号源：ui->SingleFrameRunning（QtMaterialCheckBox）的toggled(bool)信号
+    // 功能：选中时文字颜色变为#55aaff，未选中时为黑色
+    void (QAbstractButton::*toggledSignal)(bool) = &QAbstractButton::toggled;
+    connect(ui->SingleFrameRunning, toggledSignal, this, [this](bool checked) {
+        if (checked) {
+            // 选中时：文字颜色变为主题蓝色 并且加粗
+            ui->SingleFrameRunning->setTextColor(QColor("#55aaff"));
+            QFont font = ui->SingleFrameRunning->font();
+            font.setBold(true);
+            ui->SingleFrameRunning->setFont(font);
+        } else {
+            // 未选中时：文字颜色变更为黑色，恢复普通字体
+            ui->SingleFrameRunning->setTextColor(Qt::black);
+            QFont font = ui->SingleFrameRunning->font();
+            font.setBold(false);
+            ui->SingleFrameRunning->setFont(font);
+        }
+    });
+    
 
     // ========== QTabWidget 样式表设置 ==========
     // 设置 tabWidget 的整体外观
@@ -463,6 +487,12 @@ QString GreenWidget::getDep() const
 QString GreenWidget::getHl() const
 {
     return ui->lineEdit_6->text();
+}
+
+// 读取 SingleFrameRunning 选中状态 → 返回 0(未选中) 或 1(选中)
+int GreenWidget::getIsQuick() const
+{
+    return ui->SingleFrameRunning->isChecked() ? 1 : 0;
 }
 
 // ========== setter 方法实现（高级参数：第二页 lineEdit ~ lineEdit_6） ==========

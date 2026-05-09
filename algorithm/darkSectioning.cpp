@@ -48,6 +48,8 @@ void DarkSectioning::process()
 
     int thres = paramsExpertSet.thres;   // 划分信息和背景的阈值;荧光信号越强，阈值要越高
     double divide = paramsExpertSet.divide; //划分高频/低频部分的边界;基本不用调
+    int pad_size = paramsExpertSet.padsize; // padsize用于边缘渐变的填充大小
+    int isQuick = paramsExpertSet.isQuick;  // 单帧处理模式：0-多帧处理（默认），1-单帧快速处理
 
     // 背景设置
     int maxtime;
@@ -91,19 +93,36 @@ void DarkSectioning::process()
         ui->textEdit_log->append("没有选择输出目录，图片将输出到桌面");
     }
 
+
+
     std::string inputPath = inputPathQt.toStdString();
     bool success = cv::imreadmulti(inputPath, imageStack, cv::IMREAD_UNCHANGED);
 
     // 检查图像读取结果
     if (!success || imageStack.empty()) {
         std::cout << "图片读取失败" << std::endl;
-        ui->textEdit_log->append("Error: Could not read input image stack");
-        ui->textEdit_log->append(QString::fromStdString("Please make sure the input file exists: " + inputPath));
+        ui->textEdit_log->append("Error: 无法读取输入图片栈");
+    // 检查输入路径是否含有中文字符
+    // 遍历路径字符串中的每个字符，若Unicode码点超出ASCII范围（>127）则判定为非ASCII字符（如中文）
+        bool hasChinese = false;
+        for (const QChar &ch : inputPathQt) {
+            if (ch.unicode() > 127) {
+                hasChinese = true;
+                break;
+            }
+        }
+        if (hasChinese) {
+            ui->textEdit_log->append("Error: 输入目录或文件名中含有中文，请选择纯英文路径");
+            return;
+        }
+        else{
+            ui->textEdit_log->append(QString::fromStdString("Error: 请确定输入图片是否已损坏: " + inputPath));
+        }
         return;
     } 
 
     // 获取图像栈信息
-    int Nz = imageStack.size();
+    int Nz0 = imageStack.size();
     int Nx0, Ny0, Nc;
     getImageDimensions(imageStack[0], Nx0, Ny0, Nc);
 
@@ -116,6 +135,13 @@ void DarkSectioning::process()
 
     int Nx = Nx0;
     int Ny = Ny0;
+    int Nz;
+    if (isQuick == 1) {
+        Nz = 1;    // 单帧处理模式：只处理第一帧
+        ui->textEdit_log->append("选择了单帧处理模式，将只处理第一帧");
+    } else {
+        Nz = Nz0;  // 默认处理模式：处理全部帧
+    }
 
     ui->textEdit_log->append("Dark-based optical Sectioning算法已成功接收到图像: " + QString::number(Nx0) + "x" +
                          QString::number(Ny0) + ", " + QString::number(Nz) + " 帧" +
@@ -209,7 +235,7 @@ void DarkSectioning::process()
 
 
     // 预处理：通道级边缘填充
-    int pad_size = paramsExpertSet.padsize; // 用于边缘渐变的填充大小
+    // pad_size 已在函数开头从 paramsExpertSet.padsize 读取， padsize用于边缘渐变的填充大小
     std::vector<std::vector<cv::Mat>> result_stack(Nc, std::vector<cv::Mat>(Nz));      //用于存储最终高低频融合后的结果图像数据
     std::vector<std::vector<cv::Mat>> Lo_process_stack(Nc, std::vector<cv::Mat>(Nz));  //用于存储经过去雾处理中的低频部分图像数据
     std::vector<std::vector<cv::Mat>> Hi_stack(Nc, std::vector<cv::Mat>(Nz));          //用于存储分离出的高频部分图像数据
@@ -449,12 +475,23 @@ void DarkSectioning::process()
     
     // 保存多页TIFF
     if (Nz == 1) {
-        // 单帧图像，使用imwrite
+        // 单帧图像，使用imwrite，可以输出多种格式图像，这是为悬着图片保存格式留的接口
         std::string savePath = outputPath + outputFileNameStd;
         bool success = cv::imwrite(savePath, final_images[0]);
         if (success) {
             ui->textEdit_log->append("成功保存单帧TIFF图像");
         } else {
+            // 检查输出路径是否含有中文字符，给出可能的失败原因提示
+            bool hasChinese = false;
+            for (const QChar &ch : outputPathQt) {
+                if (ch.unicode() > 127) {
+                    hasChinese = true;
+                    break;
+                }
+            }
+            if (hasChinese) {
+                ui->textEdit_log->append("Error: 输出目录中含有中文，请选择纯英文路径");
+            }
             ui->textEdit_log->append("保存单帧TIFF图像失败");
         }
         //暂时先默认存为tif，imwrite还可以存png，jpg文件，后面再加功能
@@ -465,14 +502,20 @@ void DarkSectioning::process()
         if (success) {
             ui->textEdit_log->append("成功保存多帧TIFF图像");
         } else {
-            ui->textEdit_log->append("保存多帧TIFF图像失败，已保存为单帧图像");
-            // 保存失败时的备用方案
-            std::string savePathFirst = outputPath + outputFileNameStd;
-            cv::imwrite(savePathFirst, final_images[0]);
-            for (int z = 1; z < Nz; z++) {
-                std::string filename = outputPath + baseName.toStdString() + "_Darked_" + std::to_string(z) + ".tif";
-                cv::imwrite(filename, final_images[z]);
+            // 检查输出路径是否含有中文字符，给出可能的失败原因提示
+            bool hasChinese = false;
+            for (const QChar &ch : outputPathQt) {
+                if (ch.unicode() > 127) {
+                    hasChinese = true;
+                    break;
+                }
             }
+            if (hasChinese) {
+                ui->textEdit_log->append("Error: 输出目录中含有中文，请选择纯英文路径");
+            }
+            else{
+             ui->textEdit_log->append("保存多帧TIFF图像失败");
+             }
         }
     }
 
