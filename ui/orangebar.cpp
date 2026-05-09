@@ -172,6 +172,19 @@ void OrangeBar::startProcessing()
 
 
 // ============================================================================
+// 【清空帧号输入框文本】
+// 功能：将 lineEdit_original 和 lineEdit_progressed 的文本清空
+// 调用时机：OrangeWidget::clearAll()中调用（由MainWindow"清空输入"菜单触发）
+// 说明：清空后输入框显示为空，用户下次运行处理后由finishProcessing重新填入帧号
+// ============================================================================
+void OrangeBar::clearLineEdits()
+{
+    ui->lineEdit_original->setText("");            // 清空处理前帧号输入框
+    ui->lineEdit_progressed->setText("");          // 清空处理后帧号输入框
+}
+
+
+// ============================================================================
 // 【完成处理流程】
 // 功能：配置滑块的有效范围、显示滑块、重置帧索引到第一帧
 // 调用时机：OrangeWidget::finishProcessing()中调用

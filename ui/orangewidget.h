@@ -204,6 +204,12 @@ public:
     // 返回值：QImage对象（读取失败返回空QImage）
     QImage readTiffFrame(const QString& filePath, int frameIndex);
 
+    // 清空橙区所有显示内容（供MainWindow"清空输入"菜单项调用）
+    // 功能：清空输入/输出路径、清空两个图片label、禁用同步帧按钮、
+    //       重置帧索引、清空OrangeBar帧号输入框
+    // 调用时机：MainWindow"设置→清空输入"菜单项点击时
+    void clearAll();
+
 private:
     // 内部辅助函数：更新图像显示的核心实现
     // 根据当前帧索引从文件读取对应帧，等比缩放后显示到两个QLabel上

@@ -883,14 +883,14 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QtMaterialToggle</class>
-   <extends>QCheckBox</extends>
-   <header>qtmaterialtoggle.h</header>
-  </customwidget>
-  <customwidget>
    <class>QtMaterialAutoComplete</class>
    <extends>QLineEdit</extends>
    <header location="global">qtmaterialautocomplete.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QtMaterialToggle</class>
+   <extends>QCheckBox</extends>
+   <header>qtmaterialtoggle.h</header>
   </customwidget>
   <customwidget>
    <class>QtMaterialTextField</class>

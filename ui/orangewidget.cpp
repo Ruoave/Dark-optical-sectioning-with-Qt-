@@ -651,6 +651,39 @@ void OrangeWidget::updateImageDisplay()
 }
 
 
+// ============================================================================
+// 【清空橙区所有显示内容】
+// 功能：清空输入/输出路径、清空两个图片label、禁用同步帧按钮、
+//       重置帧索引、清空OrangeBar帧号输入框
+// 调用时机：MainWindow"设置→清空输入"菜单项点击时
+// 说明：清空后橙区恢复到程序刚启动时的空白状态
+// ============================================================================
+void OrangeWidget::clearAll()
+{
+    // ========== 第1步：清空文件路径 ==========
+    m_inputFilePath = "";                           // 清空输入文件路径
+    m_outputFilePath = "";                          // 清空输出文件路径
+
+    // ========== 第2步：清空图片显示 ==========
+    // QLabel::clear() 同时清除 pixmap 和 text，恢复为空白label
+    ui->label_originalImage->clear();               // 清空左侧处理前图片
+    ui->label_processedImage->clear();              // 清空右侧处理后图片
+
+    // ========== 第3步：重置帧索引 ==========
+    currentOriginalFrame = 0;                       // 重置处理前帧索引
+    currentProcessedFrame = 0;                      // 重置处理后帧索引
+
+    // ========== 第4步：禁用同步帧按钮 ==========
+    // 恢复到初始状态（程序启动时m_syncButton为disabled）
+    m_syncButton->setEnabled(false);                // 禁用同步帧按钮
+    m_syncButton->setChecked(false);                // 取消选中状态（如果之前被选中）
+
+    // ========== 第5步：清空OrangeBar帧号输入框 ==========
+    // 委托OrangeBar清空lineEdit_original和lineEdit_progressed的文本
+    ui->widget_orangeBarPlaceholder->clearLineEdits();
+}
+
+
 // 内部辅助函数：更新图像显示的核心实现（私有函数，不对外暴露）
 // 详细流程：
 //   1. 检查是否有有效的文件路径

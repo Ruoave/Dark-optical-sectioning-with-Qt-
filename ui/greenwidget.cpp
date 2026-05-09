@@ -159,7 +159,7 @@ GreenWidget::GreenWidget(QWidget *parent) :
         }
     }
 
-    ui->lineEdit->setLabel("推荐2~15");            // 浮动标签显示推荐值
+    ui->lineEdit->setLabel("推荐20~150");            // 浮动标签显示推荐值
     ui->lineEdit_2->setLabel("推荐0.5");           // 浮动标签显示推荐值    
     ui->lineEdit_3->setLabel("推荐15~40");         // 浮动标签标签推荐值
     ui->lineEdit_4->setLabel("推荐6,3");           // 浮动标签显示推荐值
@@ -531,6 +531,59 @@ void GreenWidget::setDep(const QString &value)
 void GreenWidget::setHl(const QString &value)
 {
     ui->lineEdit_6->setText(value);
+}
+
+// 设置 SingleFrameRunning 复选框状态：0→未选中(多帧处理)，1→选中(单帧快速处理)
+// 此方法供 MainWindow 的"恢复默认参数"功能调用
+void GreenWidget::setIsQuick(int value)
+{
+    // setChecked(false)=多帧处理(默认)，setChecked(true)=单帧快速处理
+    // setChecked 会触发 toggled 信号，lambda 中已处理文字颜色/字体切换，无需额外操作
+    ui->SingleFrameRunning->setChecked(value == 1);
+}
+
+// ============================================================================
+// 【清空输入字段】
+// 功能：清空参数栏所有输入框文本，重置toggle/radioButton为程序启动时的初始状态
+// 调用时机：MainWindow"设置→清空输入"菜单项点击时
+// 说明：
+//   - 第一页AutoComplete输入框：清空文本（无浮动标签，清空后显示为空）
+//   - toggle开关：重置为unchecked（程序启动时的初始状态）
+//   - radioButton：全部设为未选中（程序启动时无默认选中项）
+//   - 第二页QtMaterialTextField：清空文本但保留浮动标签显示
+//     QtMaterialTextField::setText("") 只清除输入内容，浮动标签不受影响
+// ============================================================================
+void GreenWidget::clearInputFields()
+{
+    // ========== 第一页：清空4个AutoComplete输入框文本 ==========
+    ui->Line_para_NA->setText("");                  // 清空数值孔径输入框
+    ui->Line_para_emwave->setText("");              // 清空发射波长输入框
+    ui->Line_para_factor->setText("");              // 清空分辨率比例因子输入框
+    ui->Line_para_pixelsize->setText("");           // 清空像素尺寸输入框
+
+    // ========== 第一页：重置toggle开关为初始状态（unchecked） ==========
+    // 程序启动时两个toggle均为unchecked：
+    //   isSevere_para_background unchecked → "不严重"选中（左侧蓝色）
+    //   padMethodSelect_para_pad unchecked → "对称填充"选中（左侧蓝色）
+    // setChecked会触发toggled信号，lambda中自动更新两侧QLabel颜色，无需手动处理
+    ui->isSevere_para_background->setChecked(false);   // 重置为"不严重"（滑块在左侧）
+    ui->padMethodSelect_para_pad->setChecked(false);    // 重置为"对称填充"（滑块在左侧）
+
+    // ========== 第一页：重置去噪方式radioButton为初始状态（全部未选中） ==========
+    // 程序启动时三个radioButton均未选中，用户需手动选择去噪方式
+    denoiseMethodGauss_para_denoise->setChecked(false); // 高斯平滑：未选中
+    denoiseMethodMid_para_denoise->setChecked(false);   // 中值滤波：未选中
+    denoiseMethodNo_para_denoise->setChecked(false);    // 不去噪：未选中
+
+    // ========== 第二页：清空6个QtMaterialTextField文本（保留浮动标签） ==========
+    // QtMaterialTextField::setText("") 只清除输入文本，浮动标签仍显示
+    // 因为浮动标签是通过setLabel()设置的独立属性，与输入文本无关
+    ui->lineEdit->setText("");                       // 清空 thres 输入框
+    ui->lineEdit_2->setText("");                     // 清空 divide 输入框
+    ui->lineEdit_3->setText("");                     // 清空 padsize 输入框
+    ui->lineEdit_4->setText("");                     // 清空 deg 输入框
+    ui->lineEdit_5->setText("");                     // 清空 dep 输入框
+    ui->lineEdit_6->setText("");                     // 清空 hl 输入框
 }
 
 // ========== 检查方法实现（高级参数）：供 MainWindow 判断控件是否为空 ==========

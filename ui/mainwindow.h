@@ -78,6 +78,18 @@ private slots:
     // 流程：安全检查final_images非空 → 弹出保存对话框 → 多帧用imwritemulti存tif/单帧可选格式 → 写出图像
     // 功能：将整个处理后图像栈另存（多帧存为多页TIFF，单帧可选tif/jpg/png）
     void on_actionSave_Image_triggered();
+
+    // Qt原生公共槽函数：响应"恢复默认参数"菜单项点击
+    // 信号源：ui->actionResetParams triggered()信号
+    // 流程：读取 paramsBasic.h 和 paramsExpert.h 结构体默认值 → 填入 GreenWidget 参数栏控件
+    // 功能：将参数栏所有控件恢复为头文件中定义的默认值
+    void on_actionResetParams_triggered();
+
+    // Qt原生公共槽函数：响应"清空输入"菜单项点击
+    // 信号源：ui->actionReset triggered()信号
+    // 流程：清空输入/输出路径 → 复位SingleFrameRunning → 委托OrangeWidget清空全部
+    // 功能：一键清空所有输入内容和显示，恢复到程序刚启动时的空白状态
+    void on_actionReset_triggered();
     
 protected:
     // Qt原生事件重载：窗口大小改变时自动调用

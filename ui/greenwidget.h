@@ -50,6 +50,12 @@ public:
     void setDeg(const QString &value);   // setText(value)
     void setDep(const QString &value);   // setText(value)
     void setHl(const QString &value);    // setText(value)
+    void setIsQuick(int value);          // 0→setChecked(false), 1→setChecked(true) 复位 SingleFrameRunning
+
+    // ========== 清空方法：供 MainWindow"清空输入"菜单项调用 ==========
+    // 清空第一页4个AutoComplete输入框文本、重置toggle/radioButton为初始状态、
+    // 清空第二页6个QtMaterialTextField文本（保留浮动标签显示）
+    void clearInputFields();
 
     // ========== 检查方法（高级参数）：供 MainWindow 判断控件是否为空 ==========
     bool isThresEmpty() const;           // 判断 lineEdit（thres）是否为空

@@ -117,6 +117,11 @@ public:
     // 调用时机：DarkSectioning在各进度更新点直接调用
     void setProgress(int value);
 
+    // 清空帧号输入框文本（供OrangeWidget::clearAll()调用）
+    // 功能：将 lineEdit_original 和 lineEdit_progressed 的文本清空
+    // 调用时机：MainWindow"清空输入"菜单项点击时，通过OrangeWidget委托调用
+    void clearLineEdits();
+
 signals:
     // ==================== 信号（OrangeBar发射，OrangeWidget接收） ====================
 

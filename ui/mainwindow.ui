@@ -624,17 +624,25 @@
    </widget>
    <widget class="QMenu" name="menuAnalysis">
     <property name="title">
-     <string>分析</string>
+     <string>设置</string>
     </property>
+    <addaction name="actionResetParams"/>
+    <addaction name="actionReset"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
      <string>帮助</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menuAbout">
+    <property name="title">
+     <string>关于</string>
+    </property>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuAnalysis"/>
    <addaction name="menuHelp"/>
+   <addaction name="menuAbout"/>
   </widget>
   <action name="actionSave_Image">
    <property name="text">
@@ -664,6 +672,16 @@
   <action name="action_2">
    <property name="text">
     <string>最近输入的图片</string>
+   </property>
+  </action>
+  <action name="actionResetParams">
+   <property name="text">
+    <string>恢复默认参数</string>
+   </property>
+  </action>
+  <action name="actionReset">
+   <property name="text">
+    <string>清空输入</string>
    </property>
   </action>
  </widget>

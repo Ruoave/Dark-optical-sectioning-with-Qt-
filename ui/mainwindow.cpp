@@ -732,12 +732,103 @@ void MainWindow::on_actionSave_Image_triggered()
         }
     }
 }
+
+
+
 // 功能：显示程序运行状态、错误信息、处理进度等文本日志
 // 包含组件：textEdit_log（Qt原生QTextEdit）
 // 说明：使用Qt原生控件，保持文本显示的最佳性能
 // ============================================================================
     // 当前版本：紫区通过其他区域的槽函数被动更新，无自定义信号槽
 
+
+// ============================================================================
+// 【恢复默认参数】菜单槽函数实现
+// 信号源：ui->actionResetParams triggered()信号（位于"设置"菜单下）
+// 流程：读取 paramsBasic.h 和 paramsExpert.h 结构体默认值 → 通过 GreenWidget setter 填入参数控件
+// 功能：一键将 GreenWidget 参数栏所有控件恢复为头文件中定义的默认值
+// 说明：高级参数（thres/divide/padsize/deg/dep/hl/isQuick）也一并恢复，
+//       构造函数中启动时高级参数控件为空，但此功能会填入默认值
+// ============================================================================
+void MainWindow::on_actionResetParams_triggered()
+{
+    // ========== 第1步：创建 ParamsBasic 默认结构体 ==========
+    // ParamsBasic 的默认值在 paramsBasic.h 的结构体定义中：
+    //   background=0, pad=1, denoise=0, NA=1.49, emwavelength=610,
+    //   pixelsize=65, factor=2, Nx=0, Ny=0
+    // Nx和Ny没有对应的控件，会跳过
+    ParamsBasic defaultsBasic;
+
+    // ========== 第2步：将基本参数默认值填入 GreenWidget 控件 ==========
+    // 调用 GreenWidget 的 setter 方法，这些方法内部会更新对应的 UI 控件
+    ui->widget_greenPlaceholder->setBackground(defaultsBasic.background);      // 离焦严重toggle：恢复为"不严重"(0)
+    ui->widget_greenPlaceholder->setPad(defaultsBasic.pad);                    // 填充方式toggle：恢复为"对称填充"(1)
+    ui->widget_greenPlaceholder->setDenoise(defaultsBasic.denoise);            // 去噪方式单选按钮：恢复为"不去噪"(0)
+    ui->widget_greenPlaceholder->setNA(defaultsBasic.NA);                      // 数值孔径：恢复为1.49
+    ui->widget_greenPlaceholder->setEmwavelength(defaultsBasic.emwavelength);  // 发射波长：恢复为610nm
+    ui->widget_greenPlaceholder->setPixelsize(defaultsBasic.pixelsize);        // 像素尺寸：恢复为65nm
+    ui->widget_greenPlaceholder->setFactor(defaultsBasic.factor);              // 分辨率比例因子：恢复为2
+
+    // ========== 第3步：创建 ParamsExpert 默认结构体 ==========
+    // ParamsExpert 的默认值在 paramsExpert.h 的结构体定义中：
+    //   thres=70, divide=0.5, padsize=15, deg="6,3", dep="3,3", hl="1,1", isQuick=0
+    ParamsExpert defaultsExpert;
+
+    // ========== 第4步：将高级参数默认值填入 GreenWidget 第二页控件 ==========
+    // 高级参数在构造函数中启动时为空，此功能会填入默认值供用户参考和修改
+    ui->widget_greenPlaceholder->setThres(defaultsExpert.thres);                  // 阈值thres：恢复为70
+    ui->widget_greenPlaceholder->setDivide(defaultsExpert.divide);                // divide：恢复为0.5
+    ui->widget_greenPlaceholder->setPadsize(defaultsExpert.padsize);              // padsize：恢复为15
+    // deg/dep/hl 是 std::string 类型，需要转为 QString
+    ui->widget_greenPlaceholder->setDeg(QString::fromStdString(defaultsExpert.deg));   // deg：恢复为"6,3"
+    ui->widget_greenPlaceholder->setDep(QString::fromStdString(defaultsExpert.dep));   // dep：恢复为"3,3"
+    ui->widget_greenPlaceholder->setHl(QString::fromStdString(defaultsExpert.hl));     // hl：恢复为"1,1"
+
+    // ========== 第5步：重置 SingleFrameRunning 复选框 ==========
+    // isQuick 默认值为 0（多帧处理模式），通过 setIsQuick 复位复选框
+    // setIsQuick(0) 内部调用 setChecked(false)，会触发 toggled 信号，
+    // 在 greenwidget.cpp 的 lambda 中自动将文字颜色恢复为黑色、字体恢复为正常
+    ui->widget_greenPlaceholder->setIsQuick(defaultsExpert.isQuick);  // 单帧处理：恢复为多帧模式(0)
+
+    // ========== 第6步：写入日志提示 ==========
+    ui->textEdit_log->append(QString::fromUtf8("参数已恢复为默认值"));
+}
+
+
+// ============================================================================
+// 【清空输入】菜单槽函数实现
+// 信号源：ui->actionReset triggered()信号（位于"设置"菜单下）
+// 流程：清空输入/输出路径 → 清空绿区参数栏 → 委托橙区清空全部
+// 功能：一键清空所有输入内容和显示，恢复到程序刚启动时的空白状态
+// 说明：与"恢复默认参数"不同，此功能是清空（抹掉内容），不是填入默认值
+// ============================================================================
+void MainWindow::on_actionReset_triggered()
+{
+    // ========== 第1步：清空蓝区输入/输出路径 ==========
+    ui->lineEdit_inputPath->clear();                // 清空输入文件路径
+    ui->lineEdit_outputPath->clear();               // 清空输出目录路径
+
+    // ========== 第2步：清空绿区参数栏所有输入字段 ==========
+    // GreenWidget::clearInputFields() 内部会：
+    //   1. 清空 Line_para_NA/emwave/factor/pixelsize 四个AutoComplete输入框文本
+    //   2. 重置 isSevere_para_background 和 padMethodSelect_para_pad 为unchecked
+    //   3. 重置三个去噪radioButton为全部未选中
+    //   4. 清空 lineEdit~lineEdit_6 六个QtMaterialTextField文本（保留浮动标签）
+    //   5. 复位 SingleFrameRunning 为未选中（等同于之前的 setIsQuick(0)）
+    ui->widget_greenPlaceholder->clearInputFields();
+
+    // ========== 第3步：委托橙区清空全部显示内容 ==========
+    // OrangeWidget::clearAll() 内部会：
+    //   1. 清空 m_inputFilePath 和 m_outputFilePath
+    //   2. 清空 label_originalImage 和 label_processedImage 的图片
+    //   3. 重置帧索引为0
+    //   4. 禁用同步帧按钮 m_syncButton
+    //   5. 委托 OrangeBar::clearLineEdits() 清空帧号输入框
+    ui->widget_orangePlaceholder->clearAll();
+
+    // ========== 第4步：写入日志提示 ==========
+    ui->textEdit_log->append(QString::fromUtf8("输入已清空"));
+}
 
 
 // ============================================================================
