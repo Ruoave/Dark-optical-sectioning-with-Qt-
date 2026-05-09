@@ -612,8 +612,14 @@ void OrangeWidget::finishProcessing(int originalFrames, int processedFrames)
     // 刷新图像显示（调用辅助函数显示第一帧的处理前/后对比图像）
     updateImageDisplay();
 
-    // 启用同步帧按钮（程序已完成一次运行，用户现在可以使用同步功能）
-    m_syncButton->setEnabled(true);
+    // 同步帧按钮启用/禁用逻辑
+    // 单帧模式（processedFrames==1且originalFrames>1）时保持禁用，因为前后帧数不同步无意义
+    // 多帧模式时启用，允许用户使用同步功能
+    if (processedFrames == 1 && originalFrames > 1) {
+        m_syncButton->setEnabled(false);            // 单帧处理模式：保持禁用
+    } else {
+        m_syncButton->setEnabled(true);             // 正常处理模式：启用同步帧按钮
+    }
 
     // 强制最终UI刷新（确保所有变更都立刻呈现给用户）
     QApplication::processEvents();

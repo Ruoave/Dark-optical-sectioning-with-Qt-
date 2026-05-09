@@ -185,10 +185,6 @@ public:
     //   processedFrames - 处理后图片的总帧数
     void finishProcessing(int originalFrames, int processedFrames);
     
-    // 设置单帧处理模式标志（由主窗口在运行前调用）
-    // 参数：quick - 1表示单帧模式（同步帧按钮保持禁用），0表示多帧模式
-    void setIsQuick(int quick);
-    
     // 获取OrangeBar指针（供DarkSectioning直接调用setProgress等接口）
     // 返回值：OrangeBar控件指针
     OrangeBar* orangeBar() const;
