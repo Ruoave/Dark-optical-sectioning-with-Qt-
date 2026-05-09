@@ -26,6 +26,9 @@
 #include <QTimer>
 #include <QPalette>
 
+// 引入批量处理对话框头文件（独立功能，菜单"批量处理"弹出模态窗口）
+#include "batchdialog.h"
+
 using namespace cv;
 using namespace std;
 using namespace chrono;
@@ -472,6 +475,21 @@ void MainWindow::on_actionImport_Parameters_triggered()
 
     // 日志提示导入成功
     ui->textEdit_log->append(QString::fromUtf8("参数已从文件导入并显示在参数控件上: ") + filePath);
+}
+
+
+// ============================================================================
+// 【菜单栏槽函数：批量处理】
+// 信号源：ui->actionBatch_Process triggered()信号
+// 流程：弹出 BatchWidget 模态对话框 → 用户选择目录和参数 → 点击运行 → 批量处理
+// 功能：批量处理多张图片，参数从txt文件直接注入（独立于主窗口UI）
+// 说明：批量处理完全独立，不使用主窗口的 DarkSectioning，也不经过 GreenWidget 参数栏
+// ============================================================================
+void MainWindow::on_actionBatch_Process_triggered()
+{
+    // 创建批量处理对话框（模态窗口，处理期间阻塞主窗口交互）
+    BatchDialog dlg(this);
+    dlg.exec();  // exec() = 模态显示，用户关闭对话框后才返回
 }
 
 

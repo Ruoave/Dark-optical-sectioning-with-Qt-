@@ -30,10 +30,12 @@ INCLUDEPATH += $$PWD/ui \
                $$PWD/verify
 
 SOURCES += \
+    ui/batchdialog.cpp \
     ui/greenwidget.cpp \
     main.cpp \
     ui/mainwindow.cpp \
     algorithm/darkSectioning.cpp \
+    algorithm/darkSectioning_cleanForBatch.cpp \
     algorithm/PSF_Generator.cpp \
     algorithm/confirm_block.cpp \
     algorithm/dehaze_fast2.cpp \
@@ -50,9 +52,11 @@ SOURCES += \
     verify/ViewMat.cpp \
     algorithm/port_matlab2opencv.cpp
 HEADERS += \
+    ui/batchdialog.h \
     ui/greenwidget.h \
     ui/mainwindow.h \
     algorithm/darkSectioning.h \
+    algorithm/darkSectioning_cleanForBatch.h \
     ui/orangebar.h \
     ui/orangewidget.h \
     params/paramsBasic.h \
@@ -60,6 +64,7 @@ HEADERS += \
     algorithm/port_matlab2opencv.h \
     verify/ViewMat.h
 FORMS += \
+    ui/batchdialog.ui \
     ui/greenwidget.ui \
     ui/mainwindow.ui \
     ui/orangebar.ui \

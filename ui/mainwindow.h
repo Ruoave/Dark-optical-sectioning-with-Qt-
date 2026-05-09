@@ -60,6 +60,12 @@ private slots:
     // 流程：弹出打开文件对话框 → 用户选择txt → 解析键值对 → 设置GreenWidget控件值
     // 功能：从txt文件读取参数并显示在GreenWidget参数控件上
     void on_actionImport_Parameters_triggered();
+
+    // Qt原生公共槽函数：响应"批量处理"菜单项点击
+    // 信号源：ui->actionBatch_Process triggered()信号
+    // 流程：弹出BatchDialog模态对话框 → 用户选择目录和参数 → 点击运行 → 批量处理
+    // 功能：批量处理多张图片，参数从txt文件直接注入（绕过主窗口UI）
+    void on_actionBatch_Process_triggered();
     
 protected:
     // Qt原生事件重载：窗口大小改变时自动调用
