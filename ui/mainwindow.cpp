@@ -14,6 +14,9 @@
 #include <ViewMat.h>
 #include <vector>
 #include <QFileDialog>
+#include <QFile>            // 用于读写参数txt文件
+#include <QTextStream>      // 用于文本流读写键值对
+#include <QMessageBox>      // 用于弹出警告/错误提示框
 #include <QString>
 #include <QStandardPaths>
 #include <QImage>
@@ -289,6 +292,186 @@ void MainWindow::on_pushButton_run_clicked()
     
     // 强制最终UI刷新（确保所有变更都立刻呈现给用户）
     QApplication::processEvents();
+}
+
+
+// ============================================================================
+// 【菜单栏槽函数：导出算法所用参数】
+// 信号源：ui->actionExport_Parameters triggered()信号
+// 流程：弹出保存文件对话框 → 用户选择路径 → 写入键值对格式txt文件
+// 功能：将darkSectioning中paramsBasicSet/paramsExpertSet的当前值导出为txt
+// 说明：所有参数字段均有默认值，无需"已运行过"检查
+// ============================================================================
+void MainWindow::on_actionExport_Parameters_triggered()
+{
+    // 弹出保存文件对话框，让用户自选导出路径和文件名
+    QString filePath = QFileDialog::getSaveFileName(
+        this,                                              // 父窗口
+        QString::fromUtf8("导出算法所用参数"),               // 对话框标题
+        QStandardPaths::writableLocation(QStandardPaths::DesktopLocation),  // 默认保存到桌面
+        QString::fromUtf8("文本文件 (*.txt)")               // 文件过滤器：仅显示txt
+    );
+
+    // 用户取消选择时filePath为空字符串，直接返回
+    if (filePath.isEmpty()) {
+        return;
+    }
+
+    // 打开文件准备写入（覆盖模式）
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        // 无法创建文件（如路径权限问题），弹出错误提示
+        QMessageBox::warning(this,
+            QString::fromUtf8("错误"),
+            QString::fromUtf8("无法创建文件，请检查路径权限"));
+        return;
+    }
+
+    // 创建文本输出流，连接文件进行写入
+    QTextStream out(&file);
+
+    // ========== 写入 [ParamsBasic] 段 ==========
+    out << "[ParamsBasic]\n";
+    out << "Nx=" << darkSectioning->paramsBasicSet.Nx << "\n";
+    out << "Ny=" << darkSectioning->paramsBasicSet.Ny << "\n";
+    out << "NA=" << darkSectioning->paramsBasicSet.NA << "\n";
+    out << "emwavelength=" << darkSectioning->paramsBasicSet.emwavelength << "\n";
+    out << "pixelsize=" << darkSectioning->paramsBasicSet.pixelsize << "\n";
+    out << "factor=" << darkSectioning->paramsBasicSet.factor << "\n";
+    out << "background=" << darkSectioning->paramsBasicSet.background << "\n";
+    out << "pad=" << darkSectioning->paramsBasicSet.pad << "\n";
+    out << "denoise=" << darkSectioning->paramsBasicSet.denoise << "\n";
+
+    out << "\n";  // 两个段之间用空行分隔，方便人类阅读
+
+    // ========== 写入 [ParamsExpert] 段 ==========
+    out << "[ParamsExpert]\n";
+    out << "thres=" << darkSectioning->paramsExpertSet.thres << "\n";
+    out << "divide=" << darkSectioning->paramsExpertSet.divide << "\n";
+    out << "padsize=" << darkSectioning->paramsExpertSet.padsize << "\n";
+    // deg/dep/hl是std::string类型，需要用QString::fromStdString()转换
+    out << "deg=" << QString::fromStdString(darkSectioning->paramsExpertSet.deg) << "\n";
+    out << "dep=" << QString::fromStdString(darkSectioning->paramsExpertSet.dep) << "\n";
+    out << "hl=" << QString::fromStdString(darkSectioning->paramsExpertSet.hl) << "\n";
+    //isQuick不导出，GreenWidget无对应setter，导入要额外写一个，而且从需求分析上来说不需要导出，这是用来测试参数的快处理选项，用户想要快处理自己点选择框即可
+    // 关闭文件（确保数据写入磁盘）
+    file.close();
+
+    // 日志提示导出成功
+    ui->textEdit_log->append(QString::fromUtf8("参数已导出到: ") + filePath);
+}
+
+
+// ============================================================================
+// 【菜单栏槽函数：导入参数到参数栏】
+// 信号源：ui->actionImport_Parameters triggered()信号
+// 流程：弹出打开文件对话框 → 用户选择txt → 逐行解析键值对 → 设置GreenWidget控件值
+// 功能：从txt文件读取参数值并显示在GreenWidget参数控件上
+// 说明：导入的值写入GreenWidget控件显示，不写入darkSectioning，
+//       后续用户点击"运行"时参数将通过on_pushButton_run_clicked()自动传入
+// ============================================================================
+void MainWindow::on_actionImport_Parameters_triggered()
+{
+    // 弹出打开文件对话框，让用户选择要导入的txt文件
+    QString filePath = QFileDialog::getOpenFileName(
+        this,                                              // 父窗口
+        QString::fromUtf8("导入参数文件"),                   // 对话框标题
+        QStandardPaths::writableLocation(QStandardPaths::DesktopLocation),  // 默认打开桌面
+        QString::fromUtf8("文本文件 (*.txt)")               // 文件过滤器：仅显示txt
+    );
+
+    // 用户取消选择时filePath为空字符串，直接返回
+    if (filePath.isEmpty()) {
+        return;
+    }
+
+    // 打开文件准备读取
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        // 无法打开文件（如文件不存在、权限问题），弹出错误提示
+        QMessageBox::warning(this,
+            QString::fromUtf8("错误"),
+            QString::fromUtf8("无法打开文件，请检查文件是否存在且可读"));
+        return;
+    }
+
+    // 创建文本输入流，连接文件进行逐行读取
+    QTextStream in(&file);
+    QString currentSection;  // 记录当前解析到的段："Basic" 或 "Expert"，空字符串表示尚未遇到段标题
+
+    // 逐行读取文件内容
+    while (!in.atEnd()) {
+        QString line = in.readLine().trimmed();  // 读取一行并去除首尾空白字符
+
+        // 跳过空行（不包含任何内容）
+        if (line.isEmpty()) {
+            continue;
+        }
+
+        // 检测段标题：[ParamsBasic] 或 [ParamsExpert]
+        if (line == "[ParamsBasic]") {
+            currentSection = "Basic";  // 切换到基本参数字段
+            continue;  // 段标题本身不需要解析键值
+        }
+        if (line == "[ParamsExpert]") {
+            currentSection = "Expert";  // 切换到高级参数字段
+            continue;  // 段标题本身不需要解析键值
+        }
+
+        // 解析键=值格式
+        int eqPos = line.indexOf('=');  // 查找等号位置
+        if (eqPos <= 0) {
+            // 等号不存在或等号在行首（key为空），跳过该行
+            continue;
+        }
+
+        // 提取键和值（等号左边为键，右边为值）
+        QString key = line.left(eqPos).trimmed();        // 等号左边的部分是键名
+        QString value = line.mid(eqPos + 1).trimmed();   // 等号右边的部分是值
+
+        // 根据当前段和键名，将值设置到GreenWidget对应的参数控件上
+        if (currentSection == "Basic") {
+            // GreenWidget没有Nx/Ny的控件，这两个值跳过不设置
+            if (key == "NA") {
+                ui->widget_greenPlaceholder->setNA(value.toDouble());
+            } else if (key == "emwavelength") {
+                ui->widget_greenPlaceholder->setEmwavelength(value.toDouble());
+            } else if (key == "pixelsize") {
+                ui->widget_greenPlaceholder->setPixelsize(value.toDouble());
+            } else if (key == "factor") {
+                ui->widget_greenPlaceholder->setFactor(value.toInt());
+            } else if (key == "background") {
+                ui->widget_greenPlaceholder->setBackground(value.toInt());
+            } else if (key == "pad") {
+                ui->widget_greenPlaceholder->setPad(value.toInt());
+            } else if (key == "denoise") {
+                ui->widget_greenPlaceholder->setDenoise(value.toInt());
+            }
+            // Nx、Ny：GreenWidget无对应控件，跳过不处理
+        }
+        else if (currentSection == "Expert") {
+            if (key == "thres") {
+                ui->widget_greenPlaceholder->setThres(value.toInt());
+            } else if (key == "divide") {
+                ui->widget_greenPlaceholder->setDivide(value.toDouble());
+            } else if (key == "padsize") {
+                ui->widget_greenPlaceholder->setPadsize(value.toInt());
+            } else if (key == "deg") {
+                ui->widget_greenPlaceholder->setDeg(value);
+            } else if (key == "dep") {
+                ui->widget_greenPlaceholder->setDep(value);
+            } else if (key == "hl") {
+                ui->widget_greenPlaceholder->setHl(value);
+            }
+            // isQuick：GreenWidget无对应setter（对应SingleFrameRunning复选框），跳过不处理
+        }
+    }
+
+    // 关闭文件（释放文件句柄）
+    file.close();
+
+    // 日志提示导入成功
+    ui->textEdit_log->append(QString::fromUtf8("参数已从文件导入并显示在参数控件上: ") + filePath);
 }
 
 

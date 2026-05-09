@@ -2,8 +2,8 @@
 #define PARAMSBASIC_H
 
 struct ParamsBasic {
-    int Nx;
-    int Ny;
+    int Nx=0;
+    int Ny=0;
     double NA = 1.49;              // 数值孔径
     double emwavelength = 610;     // 发射波长(nm)
     double pixelsize = 65;         // 像素尺寸(nm)

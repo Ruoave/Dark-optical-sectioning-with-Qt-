@@ -48,6 +48,18 @@ private slots:
     // 信号源：ui->pushButton_browseOutput clicked信号
     // 功能：打开文件夹选择对话框选择输出目录
     void on_pushButton_browseOutput_clicked();
+
+    // Qt原生公共槽函数：响应"导出算法所用参数"菜单项点击
+    // 信号源：ui->actionExport_Parameters triggered()信号
+    // 流程：弹出保存文件对话框 → 用户选择路径 → 写入键值对格式txt
+    // 功能：将darkSectioning中paramsBasicSet/paramsExpertSet的值导出为txt
+    void on_actionExport_Parameters_triggered();
+
+    // Qt原生公共槽函数：响应"导入参数到参数栏"菜单项点击
+    // 信号源：ui->actionImport_Parameters triggered()信号
+    // 流程：弹出打开文件对话框 → 用户选择txt → 解析键值对 → 设置GreenWidget控件值
+    // 功能：从txt文件读取参数并显示在GreenWidget参数控件上
+    void on_actionImport_Parameters_triggered();
     
 protected:
     // Qt原生事件重载：窗口大小改变时自动调用

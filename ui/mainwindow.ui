@@ -615,23 +615,16 @@
      <string>文件</string>
     </property>
     <addaction name="actionSave_Image"/>
-    <addaction name="actionSave_Parameters"/>
+    <addaction name="actionSave_ImageFrame"/>
     <addaction name="separator"/>
-    <addaction name="actionImport_Image"/>
+    <addaction name="actionExport_Parameters"/>
     <addaction name="actionImport_Parameters"/>
-    <addaction name="separator"/>
-    <addaction name="action_2"/>
     <addaction name="separator"/>
     <addaction name="actionBatch_Process"/>
    </widget>
    <widget class="QMenu" name="menuAnalysis">
     <property name="title">
      <string>分析</string>
-    </property>
-   </widget>
-   <widget class="QMenu" name="menuSettings">
-    <property name="title">
-     <string>设置</string>
     </property>
    </widget>
    <widget class="QMenu" name="menuHelp">
@@ -641,27 +634,26 @@
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuAnalysis"/>
-   <addaction name="menuSettings"/>
    <addaction name="menuHelp"/>
   </widget>
   <action name="actionSave_Image">
    <property name="text">
-    <string>保存图片</string>
+    <string>图片另存为</string>
    </property>
   </action>
-  <action name="actionSave_Parameters">
+  <action name="actionSave_ImageFrame">
    <property name="text">
-    <string>保存参数</string>
+    <string>当前帧另存为</string>
    </property>
   </action>
-  <action name="actionImport_Image">
+  <action name="actionExport_Parameters">
    <property name="text">
-    <string>导入图片</string>
+    <string>导出算法所用参数</string>
    </property>
   </action>
   <action name="actionImport_Parameters">
    <property name="text">
-    <string>导入参数</string>
+    <string>导入参数到参数栏</string>
    </property>
   </action>
   <action name="actionBatch_Process">
