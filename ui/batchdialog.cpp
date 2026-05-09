@@ -114,6 +114,22 @@ void BatchDialog::on_pushButton_batchRun_clicked()
         return;
     }
 
+    // ========== 检查三个路径中是否含有中文字符 ==========
+    // 遍历路径字符串中的每个字符，若Unicode码点超出ASCII范围（>127）则判定为非ASCII字符（如中文）
+    auto checkChinesePath = [this](const QString &path, const QString &pathName) -> bool {
+        for (const QChar &ch : path) {
+            if (ch.unicode() > 127) {
+                ui->textEdit_batchLog->append(
+                    QString::fromUtf8("错误: %1 中含有中文字符，请选择纯英文路径").arg(pathName));
+                return true;  // 含有中文
+            }
+        }
+        return false;  // 不含中文
+    };
+    if (checkChinesePath(inputDir,  QString::fromUtf8("输入目录")))  return;
+    if (checkChinesePath(outputDir, QString::fromUtf8("输出目录")))  return;
+    if (checkChinesePath(paramPath, QString::fromUtf8("参数文件路径"))) return;
+
     // ========== 第2步：从txt文件解析参数直接注入结构体（绕过GreenWidget UI）==========
     ParamsBasic  paramsBasicSet;   // 结构体自带默认值（NA=1.49, emwavelength=610, pixelsize=65, factor=2, background=0, pad=1, denoise=0）
     ParamsExpert paramsExpertSet;  // 结构体自带默认值（thres=70, divide=0.5, padsize=200, deg="", dep="", hl=""）
@@ -122,7 +138,7 @@ void BatchDialog::on_pushButton_batchRun_clicked()
         ui->textEdit_batchLog->append(QString::fromUtf8("错误: 无法打开参数文件，请检查文件是否存在"));
         return;
     }
-    ui->textEdit_batchLog->append(QString::fromUtf8("参数解析完成（已自动跳过 Nx/Ny/isQuick）"));
+    ui->textEdit_batchLog->append(QString::fromUtf8("参数解析完成"));
 
     // ========== 第3步：扫描输入目录中的所有图片文件 ==========
     QDir dir(inputDir);
@@ -154,6 +170,13 @@ void BatchDialog::on_pushButton_batchRun_clicked()
 
     // 设置输出目录（所有输出文件都写到同一目录）
     batchProcessor.setOutputPath(outputDir);
+
+    // 注入日志控件（process() 内部所有的日志都会输出到 BatchDialog 的 textEdit_batchLog）
+    batchProcessor.setLogWidget(ui->textEdit_batchLog);
+
+    // 一次性初始化批量处理参数（从父类 paramsBasicSet/paramsExpertSet 缓存到本类成员变量）
+    // 所有文件共用同一参数，避免每次 process() 重复读取
+    batchProcessor.initBatchParams();
 
     // ========== 第5步：逐文件循环处理 ==========
     int successCount = 0;  // 成功处理的文件计数

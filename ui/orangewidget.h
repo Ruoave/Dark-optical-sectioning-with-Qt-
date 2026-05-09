@@ -193,6 +193,10 @@ public:
     // 在窗口resize或帧切换时自动调用
     void updateImageDisplay();
     
+    // 获取当前处理后图片的帧索引（供MainWindow另存图片时使用）
+    // 返回值：当前帧索引（从0开始，与final_images数组索引一致）
+    int getCurrentProcessedFrame() const { return currentProcessedFrame; }
+
     // 从多帧TIFF文件中读取指定帧（Qt原生方式，无需OpenCV转换）
     // 参数：
     //   filePath - TIFF文件路径

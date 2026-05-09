@@ -66,6 +66,12 @@ private slots:
     // 流程：弹出BatchDialog模态对话框 → 用户选择目录和参数 → 点击运行 → 批量处理
     // 功能：批量处理多张图片，参数从txt文件直接注入（绕过主窗口UI）
     void on_actionBatch_Process_triggered();
+
+    // Qt原生公共槽函数：响应"当前帧另存为"菜单项点击
+    // 信号源：ui->actionSave_ImageFrame triggered()信号
+    // 流程：安全检查final_images非空 → 获取当前帧索引 → 弹出保存对话框 → 根据格式写出图像
+    // 功能：将当前显示的处理后图片帧另存为用户指定格式（tif/jpg/png）
+    void on_actionSave_ImageFrame_triggered();
     
 protected:
     // Qt原生事件重载：窗口大小改变时自动调用

@@ -1,5 +1,7 @@
 #include "darkSectioning_cleanForBatch.h"  // 改为包含批量处理专用头文件（内含 DarkSectioningBatch 类声明）
 #include <QStandardPaths>                    // 用于获取桌面路径（默认输出目录）
+#include <QTextEdit>                         // 用于 batchLog() 输出日志到 textEdit_batchLog
+#include <QFileInfo>                         // 用于 QFileInfo 提取文件名/baseName/image_name
 
 // ========== 外部算法函数声明（与原文件 darkSectioning.cpp 完全相同，不可修改）==========
 // 函数功能：将图像分离为高频（Hi）和低频（Lo）两个部分
@@ -18,6 +20,36 @@ DarkSectioningBatch::DarkSectioningBatch()
 // ========== 析构函数 ==========
 DarkSectioningBatch::~DarkSectioningBatch()
 {}
+
+// ========== 一次性初始化批量处理参数（所有文件共用，不必每次重新读取）==========
+// 调用时机：BatchDialog 在注入 paramsBasicSet/paramsExpertSet 后、循环处理前调用一次
+// 功能：从父类成员变量读取参数值并缓存到本类成员变量
+void DarkSectioningBatch::initBatchParams()
+{
+    // 从父类 paramsBasicSet 读取基本参数并缓存
+    m_background = paramsBasicSet.background; // 背景类型：0-离焦不严重，1-离焦严重
+    m_pad        = paramsBasicSet.pad;        // 填充方式：0-零填充，1-对称填充
+    m_denoise    = paramsBasicSet.denoise;    // 去噪方式：0-不去噪，1-高斯平滑，2-中值滤波
+
+    // 从父类 paramsExpertSet 读取高级参数并缓存
+    m_thres      = paramsExpertSet.thres;     // 划分信息和背景的阈值（荧光信号越强阈值越高）
+    m_divide     = paramsExpertSet.divide;    // 划分高频/低频部分的边界值
+    m_padSize    = paramsExpertSet.padsize;   // 边缘渐变填充大小
+    m_isQuick    = paramsExpertSet.isQuick;   // 单帧处理模式：0-多帧处理（批量固定），1-单帧快速
+}
+
+// ========== 统一日志输出函数 ==========
+// 若 m_logWidget 不为空 → 输出到 BatchDialog 的 textEdit_batchLog
+// 若 m_logWidget 为空 → 回退到 std::cout（调试/独立运行场景）
+// 参数：message - 要输出的日志文本（QString 类型）
+void DarkSectioningBatch::batchLog(const QString &message)
+{
+    if (m_logWidget) {
+        m_logWidget->append(message);           // 输出到 BatchDialog 的文本日志控件
+    } else {
+        std::cout << message.toStdString() << std::endl;  // 回退到标准输出
+    }
+}
 
 // ========== 辅助函数：获取图像尺寸（与原版算法完全相同，仅类名前缀改为 DarkSectioningBatch）==========
 void DarkSectioningBatch::getImageDimensions(const cv::Mat &image, int &Nx, int &Ny, int &Nc)
@@ -39,15 +71,15 @@ void DarkSectioningBatch::process()
     // 计时开始
     auto start = std::chrono::high_resolution_clock::now();
 
-    // ========== 重建参数：从父类 paramsBasicSet 成员变量读取（由调用方在运行前导入）==========
-    int background = paramsBasicSet.background; // 0-离焦不严重, 1-离焦严重
-    int pad = paramsBasicSet.pad;               // 1-对称填充, 0-零填充
-    int denoise = paramsBasicSet.denoise;       // 0-不去噪, 1-高斯平滑, 2-中值滤波
+    // ========== 使用 initBatchParams() 预先缓存的参数（所有文件共用，避免每次重复读取）==========
+    int background = m_background; // 0-离焦不严重, 1-离焦严重
+    int pad = m_pad;               // 1-对称填充, 0-零填充
+    int denoise = m_denoise;       // 0-不去噪, 1-高斯平滑, 2-中值滤波
 
-    int thres = paramsExpertSet.thres;     // 划分信息和背景的阈值;荧光信号越强，阈值要越高
-    double divide = paramsExpertSet.divide; // 划分高频/低频部分的边界;基本不用调
-    int pad_size = paramsExpertSet.padsize; // padsize用于边缘渐变的填充大小
-    int isQuick = paramsExpertSet.isQuick;  // 单帧处理模式：0-多帧处理（默认），1-单帧快速处理
+    int thres = m_thres;           // 划分信息和背景的阈值;荧光信号越强，阈值要越高
+    double divide = m_divide;      // 划分高频/低频部分的边界;基本不用调
+    int pad_size = m_padSize;      // padsize用于边缘渐变的填充大小
+    int isQuick = m_isQuick;       // 单帧处理模式：0-多帧处理（默认），1-单帧快速处理
 
     // ========== 背景设置 ==========
     int maxtime;
@@ -74,7 +106,7 @@ void DarkSectioningBatch::process()
     // ========== 从 m_inputPath 成员变量读取输入路径（替代原 ui->lineEdit_inputPath->text()）==========
     QString inputPathQt = m_inputPath;
     if (inputPathQt.isEmpty()) {
-        std::cerr << "Error: 请先设置输入图片路径（调用 setInputPath()）" << std::endl;
+        batchLog(QString::fromUtf8("[ERROR-1] 输入图片路径为空，请先调用 setInputPath() 设置路径"));
         return;
     }
 
@@ -87,7 +119,7 @@ void DarkSectioningBatch::process()
         // 设置默认输出目录为桌面
         QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
         outputPathQt = desktopPath;  // 使用桌面作为默认输出路径
-        std::cout << "没有选择输出目录，图片将输出到桌面: " << desktopPath.toStdString() << std::endl;
+        batchLog(QString::fromUtf8("没有选择输出目录，图片将输出到桌面: ") + desktopPath);
     }
 
     std::string inputPath = inputPathQt.toStdString();
@@ -95,7 +127,7 @@ void DarkSectioningBatch::process()
 
     // ========== 检查图像读取结果 ==========
     if (!success || imageStack.empty()) {
-        std::cerr << "图片读取失败" << std::endl;
+        batchLog(QString::fromUtf8("图片读取失败"));
         // 检查输入路径是否含有中文字符
         // 遍历路径字符串中的每个字符，若Unicode码点超出ASCII范围（>127）则判定为非ASCII字符（如中文）
         bool hasChinese = false;
@@ -106,11 +138,11 @@ void DarkSectioningBatch::process()
             }
         }
         if (hasChinese) {
-            std::cerr << "Error: 输入目录或文件名中含有中文，请选择纯英文路径" << std::endl;
+            batchLog(QString::fromUtf8("[ERROR-2] 图片读取失败：输入路径含有中文字符，请选择纯英文路径"));
             return;
         }
         else {
-            std::cerr << "Error: 请确定输入图片是否已损坏: " << inputPath << std::endl;
+            batchLog(QString::fromUtf8("[ERROR-3] 图片读取失败：文件可能已损坏 → ") + QString::fromStdString(inputPath));
         }
         return;
     }
@@ -122,7 +154,7 @@ void DarkSectioningBatch::process()
 
     // 检查图像尺寸是否有效
     if (Nx0 <= 0 || Ny0 <= 0 || Nc <= 0) {
-        std::cerr << "图像尺寸无效" << std::endl;
+        batchLog(QString::fromUtf8("[ERROR-4] 图像尺寸无效：Nx0=%1, Ny0=%2, Nc=%3").arg(Nx0).arg(Ny0).arg(Nc));
         return;
     }
 
@@ -402,7 +434,7 @@ void DarkSectioningBatch::process()
         std::string savePath = outputPath + outputFileNameStd;
         bool success = cv::imwrite(savePath, final_images[0]);
         if (success) {
-            std::cout << "成功保存单帧TIFF图像: " << savePath << std::endl;
+            batchLog(QString::fromUtf8("成功保存单帧TIFF图像: ") + QString::fromStdString(savePath));
         } else {
             // 检查输出路径是否含有中文字符，给出可能的失败原因提示
             bool hasChinese = false;
@@ -413,9 +445,9 @@ void DarkSectioningBatch::process()
                 }
             }
             if (hasChinese) {
-                std::cerr << "Error: 输出目录中含有中文，请选择纯英文路径" << std::endl;
+                batchLog(QString::fromUtf8("Error: 输出目录中含有中文，请选择纯英文路径"));
             }
-            std::cerr << "保存单帧TIFF图像失败: " << savePath << std::endl;
+            batchLog(QString::fromUtf8("保存单帧TIFF图像失败: ") + QString::fromStdString(savePath));
         }
         // 暂时先默认存为tif，imwrite还可以存png，jpg文件，后面再加功能
     } else {
@@ -423,7 +455,7 @@ void DarkSectioningBatch::process()
         std::string savePath = outputPath + outputFileNameStd;
         bool success = cv::imwritemulti(savePath, final_images);
         if (success) {
-            std::cout << "成功保存多帧TIFF图像: " << savePath << std::endl;
+            batchLog(QString::fromUtf8("成功保存多帧TIFF图像: ") + QString::fromStdString(savePath));
         } else {
             // 检查输出路径是否含有中文字符，给出可能的失败原因提示
             bool hasChinese = false;
@@ -434,78 +466,19 @@ void DarkSectioningBatch::process()
                 }
             }
             if (hasChinese) {
-                std::cerr << "Error: 输出目录中含有中文，请选择纯英文路径" << std::endl;
+                batchLog(QString::fromUtf8("Error: 输出目录中含有中文，请选择纯英文路径"));
             } else {
-                std::cerr << "保存多帧TIFF图像失败: " << savePath << std::endl;
+                batchLog(QString::fromUtf8("保存多帧TIFF图像失败: ") + QString::fromStdString(savePath));
             }
         }
     }
 
     // ========== 输出处理完成信息 ==========
-    std::cout << "图像处理完成: " << baseName.toStdString() << std::endl;
+    batchLog(QString::fromUtf8("图像处理完成: ") + baseName);
 
     // 计时结束
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    std::cout << "Processing time: " << duration.count() << " ms" << std::endl;
-    std::cout << "Processed " << Nz << " frames" << std::endl;
-}
-
-// ========== 批量处理入口：遍历文件夹下所有图片，逐个调用 process() ==========
-void DarkSectioningBatch::processFolder(const QString &folderPath)
-{
-    // ========== 参数校验 ==========
-    if (folderPath.isEmpty()) {
-        std::cerr << "Error: 文件夹路径为空" << std::endl;
-        return;
-    }
-
-    QDir dir(folderPath);
-    if (!dir.exists()) {
-        std::cerr << "Error: 文件夹不存在: " << folderPath.toStdString() << std::endl;
-        return;
-    }
-
-    // ========== 列出支持的图片文件 ==========
-    QStringList filters;  // 支持的图片格式过滤器
-    filters << "*.tif" << "*.tiff" << "*.png" << "*.jpg" << "*.jpeg" << "*.bmp";
-    QFileInfoList fileList = dir.entryInfoList(filters, QDir::Files | QDir::NoDotAndDotDot);
-
-    if (fileList.isEmpty()) {
-        std::cout << "Warning: 文件夹中没有找到支持的图片文件（tif/tiff/png/jpg/jpeg/bmp）" << std::endl;
-        return;
-    }
-
-    std::cout << "=== 开始批量处理，共 " << fileList.size() << " 个文件 ===" << std::endl;
-
-    int successCount = 0;  // 成功处理计数
-    int failCount = 0;     // 失败处理计数
-
-    // ========== 逐文件循环处理 ==========
-    for (int i = 0; i < fileList.size(); i++) {
-        const QFileInfo &fileInfo = fileList[i];
-        QString filePath = fileInfo.absoluteFilePath();  // 获取当前文件的绝对路径
-
-        std::cout << "[" << (i + 1) << "/" << fileList.size() << "] 正在处理: "
-                  << fileInfo.fileName().toStdString() << std::endl;
-
-        // 设置当前输入图片路径（process() 通过 m_inputPath 读取）
-        setInputPath(filePath);
-
-        // 调用单张图片处理函数（算法逻辑未经任何修改）
-        process();
-
-        // 通过检查 final_images 是否为空来判断处理是否成功
-        // process() 成功执行后 final_images 会被填充
-        if (!final_images.empty()) {
-            successCount++;
-        } else {
-            std::cerr << "Error: 处理失败: " << filePath.toStdString() << std::endl;
-            failCount++;
-        }
-    }
-
-    // ========== 输出批量处理汇总 ==========
-    std::cout << "=== 批量处理完成 ===" << std::endl;
-    std::cout << "成功: " << successCount << " 个, 失败: " << failCount << " 个" << std::endl;
+    batchLog(QString("Processing time: %1 ms").arg(duration.count()));
+    batchLog(QString("Processed %1 frames").arg(Nz));
 }

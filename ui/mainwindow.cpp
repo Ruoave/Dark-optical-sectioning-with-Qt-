@@ -494,6 +494,118 @@ void MainWindow::on_actionBatch_Process_triggered()
 
 
 // ============================================================================
+// 【菜单栏槽函数：当前帧另存为】
+// 信号源：ui->actionSave_ImageFrame triggered()信号
+// 流程：安全检查final_images非空 → 获取当前帧索引 → 弹出保存对话框 → 根据格式写出图像
+// 功能：将当前显示的处理后图片帧另存为用户指定格式（tif/jpg/png）
+// 说明：直接从darkSectioning->final_images[帧索引]获取cv::Mat数据，
+//       使用cv::imwrite写出，无需darkSectioning参与任何操作
+//       final_images是CV_16U精度（16位），tif/png支持16位，jpg需降为8位
+// ============================================================================
+void MainWindow::on_actionSave_ImageFrame_triggered()
+{
+    // ========== 第1步：安全检查 - final_images是否为空 ==========
+    // 如果用户尚未运行处理，final_images为空，无法另存
+    if (darkSectioning->final_images.empty()) {
+        QMessageBox::information(this,
+            QString::fromUtf8("提示"),
+            QString::fromUtf8("请先运行处理，获得处理后图像栈"));
+        return;
+    }
+
+    // ========== 第2步：获取当前帧索引 ==========
+    // currentProcessedFrame从0开始，与final_images数组索引一致，无需偏移
+    int frameIndex = ui->widget_orangePlaceholder->getCurrentProcessedFrame();
+
+    // 边界安全检查：确保帧索引在final_images的有效范围内
+    if (frameIndex < 0 || frameIndex >= static_cast<int>(darkSectioning->final_images.size())) {
+        QMessageBox::warning(this,
+            QString::fromUtf8("错误"),
+            QString::fromUtf8("帧索引超出范围，请检查图像栈状态"));
+        return;
+    }
+
+    // ========== 第3步：弹出保存对话框 ==========
+    // 让用户选择保存路径和文件格式
+    // 过滤器提供三种格式：TIFF（16位无损）、PNG（16位无损）、JPEG（8位有损）
+    QString savePath = QFileDialog::getSaveFileName(
+        this,
+        QString::fromUtf8("另存当前帧图像"),
+        QStandardPaths::writableLocation(QStandardPaths::DesktopLocation),
+        QString::fromUtf8("TIFF图像 (*.tif);;PNG图像 (*.png);;JPEG图像 (*.jpg)")
+    );
+
+    // 用户取消选择时savePath为空字符串，直接返回
+    if (savePath.isEmpty()) {
+        return;
+    }
+
+    // ========== 第4步：根据格式处理数据并写出 ==========
+    // 从final_images中取出当前帧的cv::Mat数据（CV_16U精度）
+    cv::Mat frameToSave = darkSectioning->final_images[frameIndex];
+
+    // 检查Mat数据是否有效（非空）
+    if (frameToSave.empty()) {
+        QMessageBox::warning(this,
+            QString::fromUtf8("错误"),
+            QString::fromUtf8("当前帧图像数据为空，无法保存"));
+        return;
+    }
+
+    // 判断用户选择的格式：根据文件扩展名决定是否需要转换
+    // toLower()统一转小写，避免.TIF/.Tif等大小写差异导致判断失败
+    QString ext = QFileInfo(savePath).suffix().toLower();
+
+    if (ext == "jpg" || ext == "jpeg") {
+        // JPEG格式不支持16位深度，需要转换为8位
+        // 转换方式：将CV_16U（0~65535）线性映射到CV_8U（0~255）
+        // 除以256.0实现近似映射：65535/256.0 ≈ 255.99，截断后为255
+        cv::Mat frame8u;
+        frameToSave.convertTo(frame8u, CV_8U, 1.0 / 256.0);
+
+        // 调用cv::imwrite写出8位JPEG图像
+        // imwrite根据文件扩展名自动选择JPEG编码器
+        bool success = cv::imwrite(savePath.toStdString(), frame8u);
+
+        if (success) {
+            ui->textEdit_log->append(
+                QString::fromUtf8("已另存第 %1 帧为JPEG格式（8位精度）: %2")
+                    .arg(frameIndex + 1).arg(savePath));
+        } else {
+            QMessageBox::warning(this,
+                QString::fromUtf8("错误"),
+                QString::fromUtf8("保存JPEG图像失败，请检查输出路径是否含中文字符"));
+        }
+    } else {
+        // TIFF或PNG格式：直接写出16位原始精度数据，无需转换
+        // imwrite根据文件扩展名自动选择TIFF或PNG编码器
+        bool success = cv::imwrite(savePath.toStdString(), frameToSave);
+
+        if (success) {
+            // 根据扩展名显示不同的精度提示
+            if (ext == "tif" || ext == "tiff") {
+                ui->textEdit_log->append(
+                    QString::fromUtf8("已另存第 %1 帧为TIFF格式（16位精度）: %2")
+                        .arg(frameIndex + 1).arg(savePath));
+            } else if (ext == "png") {
+                ui->textEdit_log->append(
+                    QString::fromUtf8("已另存第 %1 帧为PNG格式（16位精度）: %2")
+                        .arg(frameIndex + 1).arg(savePath));
+            } else {
+                ui->textEdit_log->append(
+                    QString::fromUtf8("已另存第 %1 帧: %2")
+                        .arg(frameIndex + 1).arg(savePath));
+            }
+        } else {
+            QMessageBox::warning(this,
+                QString::fromUtf8("错误"),
+                QString::fromUtf8("保存图像失败，请检查输出路径是否含中文字符"));
+        }
+    }
+}
+
+
+// ============================================================================
 // 【紫区】运行日志栏
 // 功能：显示程序运行状态、错误信息、处理进度等文本日志
 // 包含组件：textEdit_log（Qt原生QTextEdit）
