@@ -127,7 +127,7 @@ void DarkSectioningBatch::process()
 
     // ========== 检查图像读取结果 ==========
     if (!success || imageStack.empty()) {
-        batchLog(QString::fromUtf8("图片读取失败"));
+        batchLog(QString::fromUtf8("[ERROR] 图片读取失败（imreadmulti 返回 false 或图像栈为空）"));
         // 检查输入路径是否含有中文字符
         // 遍历路径字符串中的每个字符，若Unicode码点超出ASCII范围（>127）则判定为非ASCII字符（如中文）
         bool hasChinese = false;

@@ -220,12 +220,11 @@ void BatchDialog::on_pushButton_batchRun_clicked()
             fi.baseName() + "_Darked.tif");  // 预期输出文件名：原始文件名_Darked.tif
         if (QFileInfo::exists(expectedOutput)) {
             ui->textEdit_batchLog->append(
-                QString("[%1/%2] 完成 → %3")
-                    .arg(i + 1).arg(imageFiles.size()).arg(expectedOutput));
+                QString("[%1/%2] ✓ 完成").arg(i + 1).arg(imageFiles.size()));
             successCount++;
         } else {
             ui->textEdit_batchLog->append(
-                QString("[%1/%2] 警告: 输出文件未生成 → %3")
+                QString("[%1/%2] ✗ 警告: 输出文件未生成 → %3")
                     .arg(i + 1).arg(imageFiles.size()).arg(expectedOutput));
             failCount++;
         }

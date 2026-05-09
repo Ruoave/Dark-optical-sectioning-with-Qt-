@@ -72,6 +72,12 @@ private slots:
     // 流程：安全检查final_images非空 → 获取当前帧索引 → 弹出保存对话框 → 根据格式写出图像
     // 功能：将当前显示的处理后图片帧另存为用户指定格式（tif/jpg/png）
     void on_actionSave_ImageFrame_triggered();
+
+    // Qt原生公共槽函数：响应"图片另存为"菜单项点击
+    // 信号源：ui->actionSave_Image triggered()信号
+    // 流程：安全检查final_images非空 → 弹出保存对话框 → 多帧用imwritemulti存tif/单帧可选格式 → 写出图像
+    // 功能：将整个处理后图像栈另存（多帧存为多页TIFF，单帧可选tif/jpg/png）
+    void on_actionSave_Image_triggered();
     
 protected:
     // Qt原生事件重载：窗口大小改变时自动调用

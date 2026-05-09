@@ -606,7 +606,132 @@ void MainWindow::on_actionSave_ImageFrame_triggered()
 
 
 // ============================================================================
-// 【紫区】运行日志栏
+// 【菜单栏槽函数：图片另存为】
+// 信号源：ui->actionSave_Image triggered()信号
+// 流程：安全检查final_images非空 → 弹出保存对话框 → 多帧用imwritemulti存tif/单帧可选格式 → 写出图像
+// 功能：将整个处理后图像栈另存（多帧存为多页TIFF，单帧可选tif/jpg/png）
+// 说明：直接从darkSectioning->final_images获取全部cv::Mat数据，
+//       多帧时cv::imwritemulti只支持tif/tiff格式（OpenCV限制）
+//       单帧时cv::imwrite支持tif/png/jpg等多种格式
+//       final_images是CV_16U精度（16位），tif/png支持16位，jpg需降为8位
+// ============================================================================
+void MainWindow::on_actionSave_Image_triggered()
+{
+    // ========== 第1步：安全检查 - final_images是否为空 ==========
+    // 如果用户尚未运行处理，final_images为空，无法另存
+    if (darkSectioning->final_images.empty()) {
+        QMessageBox::information(this,
+            QString::fromUtf8("提示"),
+            QString::fromUtf8("请先运行处理，获得处理后图像栈"));
+        return;
+    }
+
+    // 获取总帧数，用于判断是多帧还是单帧
+    int totalFrames = static_cast<int>(darkSectioning->final_images.size());
+
+    // ========== 第2步：弹出保存对话框 ==========
+    // 多帧图像只能存为TIFF格式（cv::imwritemulti的限制）
+    // 单帧图像可以选择TIFF/PNG/JPEG等多种格式
+    QString savePath;
+
+    if (totalFrames > 1) {
+        // 多帧图像：过滤器仅提供TIFF格式（imwritemulti只支持多页TIFF）
+        savePath = QFileDialog::getSaveFileName(
+            this,
+            QString::fromUtf8("另存全部帧图像（%1帧，仅支持TIFF格式）").arg(totalFrames),
+            QStandardPaths::writableLocation(QStandardPaths::DesktopLocation),
+            QString::fromUtf8("TIFF图像 (*.tif)")
+        );
+    } else {
+        // 单帧图像：提供多种格式选择
+        savePath = QFileDialog::getSaveFileName(
+            this,
+            QString::fromUtf8("另存图像"),
+            QStandardPaths::writableLocation(QStandardPaths::DesktopLocation),
+            QString::fromUtf8("TIFF图像 (*.tif);;PNG图像 (*.png);;JPEG图像 (*.jpg)")
+        );
+    }
+
+    // 用户取消选择时savePath为空字符串，直接返回
+    if (savePath.isEmpty()) {
+        return;
+    }
+
+    // ========== 第3步：根据帧数和格式写出图像 ==========
+
+    if (totalFrames > 1) {
+        // ---------- 多帧模式：使用cv::imwritemulti保存为多页TIFF ----------
+        // imwritemulti将所有帧写入同一个TIFF文件，每帧作为独立页面
+        // 多页TIFF只支持tif/tiff格式，这是OpenCV的限制
+        bool success = cv::imwritemulti(savePath.toStdString(), darkSectioning->final_images);
+
+        if (success) {
+            ui->textEdit_log->append(
+                QString::fromUtf8("已另存全部 %1 帧为多页TIFF格式（16位精度）: %2")
+                    .arg(totalFrames).arg(savePath));
+        } else {
+            QMessageBox::warning(this,
+                QString::fromUtf8("错误"),
+                QString::fromUtf8("保存多页TIFF图像失败，请检查输出路径是否含中文字符"));
+        }
+    } else {
+        // ---------- 单帧模式：使用cv::imwrite保存，支持多种格式 ----------
+        cv::Mat frameToSave = darkSectioning->final_images[0];
+
+        // 检查Mat数据是否有效（非空）
+        if (frameToSave.empty()) {
+            QMessageBox::warning(this,
+                QString::fromUtf8("错误"),
+                QString::fromUtf8("图像数据为空，无法保存"));
+            return;
+        }
+
+        // 判断用户选择的格式：根据文件扩展名决定是否需要转换
+        // toLower()统一转小写，避免.TIF/.Tif等大小写差异导致判断失败
+        QString ext = QFileInfo(savePath).suffix().toLower();
+
+        if (ext == "jpg" || ext == "jpeg") {
+            // JPEG格式不支持16位深度，需要转换为8位
+            // 转换方式：将CV_16U（0~65535）线性映射到CV_8U（0~255）
+            // 除以256.0实现近似映射：65535/256.0 ≈ 255.99，截断后为255
+            cv::Mat frame8u;
+            frameToSave.convertTo(frame8u, CV_8U, 1.0 / 256.0);
+
+            // 调用cv::imwrite写出8位JPEG图像
+            bool success = cv::imwrite(savePath.toStdString(), frame8u);
+
+            if (success) {
+                ui->textEdit_log->append(
+                    QString::fromUtf8("已另存为JPEG格式（8位精度）: %1").arg(savePath));
+            } else {
+                QMessageBox::warning(this,
+                    QString::fromUtf8("错误"),
+                    QString::fromUtf8("保存JPEG图像失败，请检查输出路径是否含中文字符"));
+            }
+        } else {
+            // TIFF或PNG格式：直接写出16位原始精度数据，无需转换
+            bool success = cv::imwrite(savePath.toStdString(), frameToSave);
+
+            if (success) {
+                // 根据扩展名显示不同的精度提示
+                if (ext == "tif" || ext == "tiff") {
+                    ui->textEdit_log->append(
+                        QString::fromUtf8("已另存为TIFF格式（16位精度）: %1").arg(savePath));
+                } else if (ext == "png") {
+                    ui->textEdit_log->append(
+                        QString::fromUtf8("已另存为PNG格式（16位精度）: %1").arg(savePath));
+                } else {
+                    ui->textEdit_log->append(
+                        QString::fromUtf8("已另存图像: %1").arg(savePath));
+                }
+            } else {
+                QMessageBox::warning(this,
+                    QString::fromUtf8("错误"),
+                    QString::fromUtf8("保存图像失败，请检查输出路径是否含中文字符"));
+            }
+        }
+    }
+}
 // 功能：显示程序运行状态、错误信息、处理进度等文本日志
 // 包含组件：textEdit_log（Qt原生QTextEdit）
 // 说明：使用Qt原生控件，保持文本显示的最佳性能
