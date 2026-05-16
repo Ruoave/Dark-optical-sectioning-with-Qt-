@@ -225,6 +225,9 @@ void DarkSectioning::process()
         }
     }
 
+    imageStack_processed.clear();
+    imageStack_processed.shrink_to_fit();
+
     // 进度提示，后面可据此更新progressBar
     ui->textEdit_log->append("维度校准完成..." );
     //更新进度条
@@ -257,6 +260,9 @@ void DarkSectioning::process()
             }
         }
     }
+
+    image0Stack.clear();
+    image0Stack.shrink_to_fit();
 
     // 进度提示，后面可据此更新progressBar
     ui->textEdit_log->append("边缘填充完成..." );
@@ -350,6 +356,13 @@ void DarkSectioning::process()
     }// Dark sectioning 主处理流程
     ////////////////////////// Dark sectioning 主处理流程结束于此/////////////////////////////////////
 
+        imageStack_padded.clear();
+        imageStack_padded.shrink_to_fit();
+        Lo_process_stack.clear();
+        Lo_process_stack.shrink_to_fit();
+        Hi_stack.clear();
+        Hi_stack.shrink_to_fit();
+
         progressValue_calcu = 96;
         m_orangeBar->setProgress(static_cast<int>(progressValue_calcu));
         QApplication::processEvents();
@@ -411,6 +424,9 @@ void DarkSectioning::process()
         }
     }
 
+    result_stack.clear();
+    result_stack.shrink_to_fit();
+
     // 后处理优化：尺寸校准
     if (Nx0 != Nx || Ny0 != Ny) {
         for (int c = 0; c < Nc; c++) {
@@ -459,6 +475,9 @@ void DarkSectioning::process()
             final_images.push_back(final_image);
         }
     }
+
+    result_final.clear();
+    result_final.shrink_to_fit();
 
     // 获取用户选择的输出目录
     std::string outputPath = outputPathQt.toStdString();

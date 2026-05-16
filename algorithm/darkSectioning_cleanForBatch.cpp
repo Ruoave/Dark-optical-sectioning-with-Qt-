@@ -194,6 +194,9 @@ void DarkSectioningBatch::process()
         }
     }
 
+    imageStack.clear();
+    imageStack.shrink_to_fit();
+
     // ========== 维度校准（补0对齐）- 对每一帧和每一通道进行处理 ==========
     std::vector<std::vector<cv::Mat>> image0Stack = imageStack_processed;
     if (Ny > Nx) {
@@ -225,6 +228,9 @@ void DarkSectioningBatch::process()
         }
     }
 
+    imageStack_processed.clear();
+    imageStack_processed.shrink_to_fit();
+
     // ========== 预处理：通道级边缘填充 ==========
     // pad_size 已在函数开头从 paramsExpertSet.padsize 读取，padsize用于边缘渐变的填充大小
     std::vector<std::vector<cv::Mat>> result_stack(Nc, std::vector<cv::Mat>(Nz));      // 用于存储最终高低频融合后的结果图像数据
@@ -248,6 +254,9 @@ void DarkSectioningBatch::process()
             }
         }
     }
+
+    image0Stack.clear();
+    image0Stack.shrink_to_fit();
 
     // ========== 高低频分离：参数初始化 ==========
     paramsBasicSet.Nx = imageStack_padded[0][0].rows;
@@ -316,6 +325,13 @@ void DarkSectioningBatch::process()
     } // Dark sectioning 主处理流程
     ////////////////////////// Dark sectioning 主处理流程结束于此/////////////////////////////////////
 
+    imageStack_padded.clear();
+    imageStack_padded.shrink_to_fit();
+    Lo_process_stack.clear();
+    Lo_process_stack.shrink_to_fit();
+    Hi_stack.clear();
+    Hi_stack.shrink_to_fit();
+
     // ========== 后处理优化：多通道遍历，用所选方式去噪 ==========
     std::vector<std::vector<cv::Mat>> result_final(Nc, std::vector<cv::Mat>(Nz));
     for (int c = 0; c < Nc; c++) {
@@ -373,6 +389,9 @@ void DarkSectioningBatch::process()
         }
     }
 
+    result_stack.clear();
+    result_stack.shrink_to_fit();
+
     // ========== 后处理优化：尺寸校准 ==========
     if (Nx0 != Nx || Ny0 != Ny) {
         for (int c = 0; c < Nc; c++) {
@@ -414,6 +433,9 @@ void DarkSectioningBatch::process()
             final_images.push_back(final_image);
         }
     }
+
+    result_final.clear();
+    result_final.shrink_to_fit();
 
     // ========== 获取用户选择的输出目录 ==========
     std::string outputPath = outputPathQt.toStdString();
@@ -481,4 +503,10 @@ void DarkSectioningBatch::process()
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     batchLog(QString("Processing time: %1 ms").arg(duration.count()));
     batchLog(QString("Processed %1 frames").arg(Nz));
+
+    // ========== 显式释放内存（批量处理连续运行的关键） ==========
+    imageStack.clear();
+    imageStack.shrink_to_fit();
+    final_images.clear();
+    final_images.shrink_to_fit();
 }

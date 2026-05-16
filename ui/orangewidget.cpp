@@ -1253,6 +1253,30 @@ QImage OrangeWidget::readTiffFrame(const QString& filePath, int frameIndex)
                          .arg(frameIndex));
     }
 
+    // 第八步：16-bit灰度图转8-bit（解决QPixmap不支持Format_Grayscale16的问题）
+    // QPixmap::fromImage()在Windows上不支持16-bit灰度格式，会导致显示空白或程序崩溃
+    // 此处将16-bit数据线性映射到8-bit范围（0-255），仅用于屏幕显示，不影响原始文件数据
+    if (!image.isNull() && image.format() == QImage::Format_Grayscale16) {
+        QImage converted(image.width(), image.height(), QImage::Format_Grayscale8);
+        const uint16_t* srcBits = reinterpret_cast<const uint16_t*>(image.constBits());
+        uint8_t* dstBits = converted.bits();
+        int pixelCount = image.width() * image.height();
+
+        uint16_t minVal = 65535, maxVal = 0;
+        for (int i = 0; i < pixelCount; i++) {
+            if (srcBits[i] < minVal) minVal = srcBits[i];
+            if (srcBits[i] > maxVal) maxVal = srcBits[i];
+        }
+
+        float scale = (maxVal > minVal) ? 255.0f / (maxVal - minVal) : 1.0f;
+        for (int i = 0; i < pixelCount; i++) {
+            dstBits[i] = static_cast<uint8_t>((srcBits[i] - minVal) * scale);
+        }
+
+        return converted;
+    }
+
+
     // 返回读取到的QImage对象（无论成功还是失败都要返回，让调用方判断）
     return image;
 }

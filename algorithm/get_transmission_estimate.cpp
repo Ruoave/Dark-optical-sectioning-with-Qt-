@@ -35,9 +35,15 @@ Mat get_transmission_estimate(Mat rep_atmosphere, Mat image, double omega, int w
     // ***对应 Matlab: normalized_dark_channel = get_dark_channel(normalized_image, win_size);
     Mat normalized_dark_channel = get_dark_channel(normalized_image, win_size);
     
+
     // 计算初始透射率
     // ***对应 Matlab: trans_est = 1 - omega * normalized_dark_channel;
+//    auto dark_start = std::chrono::high_resolution_clock::now();
     Mat trans_est = 1.0 - omega * normalized_dark_channel;
+//    auto dark_end = std::chrono::high_resolution_clock::now();
+//    std::cout << "get_transmission_estimate  get_dark_channel running time is "
+//              << std::chrono::duration<double, std::milli>(dark_end - dark_start).count()
+//              << " ms" << std::endl;
     
     return trans_est;
 }

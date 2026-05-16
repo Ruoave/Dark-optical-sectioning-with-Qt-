@@ -38,7 +38,7 @@
     <enum>QTabWidget::Triangular</enum>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <property name="iconSize">
     <size>
@@ -465,7 +465,7 @@
       <enum>QFrame::Plain</enum>
      </property>
      <property name="text">
-      <string>分辨率比例因子</string>
+      <string>上采样因子</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
