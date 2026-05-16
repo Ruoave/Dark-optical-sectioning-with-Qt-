@@ -31,7 +31,7 @@ void separateHiLo(Mat image, ParamsBasic paramsBasicSet, double deg, double divi
     int Ny = paramsBasicSet.Ny;
     double NA = paramsBasicSet.NA;  //NA: 物镜的数值孔径
     double emwavelength = paramsBasicSet.emwavelength;  //emwavelength: 光波长
-    double factor = paramsBasicSet.factor;  //factor: 光波长与像素大小的比例
+    double factor = paramsBasicSet.factor;  //factor: Upscaling factor，上采样因子
     double pixel_size = paramsBasicSet.pixelsize;  //pixelsize: 像素大小
 
     // 高低频分离：截止频率计算

@@ -411,7 +411,9 @@ void DarkSectioning::process()
                 }
 
                 // 中值滤波去噪
+                temp.convertTo(temp, CV_32F);
                 cv::medianBlur(temp, temp, 3);
+                temp.convertTo(temp, CV_64F);
 
                 // 边缘裁剪
                 int crop_rows = std::floor(Nx / pad_size) + 1;
