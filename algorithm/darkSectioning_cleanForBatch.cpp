@@ -363,30 +363,7 @@ void DarkSectioningBatch::process()
 
                 result_final[c][z] = temp(cv::Rect(start_col, start_row, Ny, Nx)).clone();
             } else if (denoise == 2) {
-                // 中值滤波去噪，执行填充-去噪-裁剪流程
-                cv::Mat temp;
-                if (pad == 1) {
-                    int pad_rows = std::floor(Nx / pad_size) + 1;
-                    int pad_cols = std::floor(Ny / pad_size) + 1;
-                    cv::copyMakeBorder(result_stack[c][z], temp, pad_rows, pad_rows, pad_cols, pad_cols, cv::BORDER_REFLECT_101);
-                } else {
-                    int pad_rows = std::floor(Nx / pad_size) + 1;
-                    int pad_cols = std::floor(Ny / pad_size) + 1;
-                    cv::copyMakeBorder(result_stack[c][z], temp, pad_rows, pad_rows, pad_cols, pad_cols, cv::BORDER_CONSTANT, cv::Scalar(0));
-                }
-
-                // 中值滤波去噪
-                temp.convertTo(temp, CV_32F);
-                cv::medianBlur(temp, temp, 3);
-                temp.convertTo(temp, CV_64F);
-
-                // 边缘裁剪
-                int crop_rows = std::floor(Nx / pad_size) + 1;
-                int crop_cols = std::floor(Ny / pad_size) + 1;
-                int start_row = crop_rows;
-                int start_col = crop_cols;
-
-                result_final[c][z] = temp(cv::Rect(start_col, start_row, Ny, Nx)).clone();
+                result_final[c][z] = result_stack[c][z].clone();
             }
         }
     }
@@ -412,6 +389,7 @@ void DarkSectioningBatch::process()
     // 清空成员变量并保存结果到父类成员变量 final_images
     this->final_images.clear();
 
+    bool mdbutf_logged = false; // 避免每帧重复打印
     for (int z = 0; z < Nz; z++) {
         if (Nc == 1) {
             // 单通道灰度图像
@@ -419,6 +397,16 @@ void DarkSectioningBatch::process()
             cv::minMaxLoc(result_final[0][z], &minVal, &maxVal);
             cv::Mat final_image;
             result_final[0][z].convertTo(final_image, CV_16U, 65535.0 / maxVal);
+            
+            // denoise == 2：在范围转换后直接应用 MDBUTMF
+            if (denoise == 2) {
+                if (!mdbutf_logged) {
+                    batchLog("正在执行 MDBUTMF 改进中值滤波...");
+                    mdbutf_logged = true;
+                }
+                final_image = applyMDBUTMF(final_image);
+            }
+            
             final_images.push_back(final_image);
         } else {
             // 多通道彩色图像，合并通道
@@ -428,12 +416,27 @@ void DarkSectioningBatch::process()
                 cv::minMaxLoc(result_final[c][z], &minVal, &maxVal);
                 cv::Mat channel;
                 result_final[c][z].convertTo(channel, CV_16U, 65535.0 / maxVal);
+                
+                // denoise == 2：在范围转换后直接对每个通道应用 MDBUTMF
+                if (denoise == 2) {
+                    if (!mdbutf_logged) {
+                        batchLog("正在执行 MDBUTMF 改进中值滤波...");
+                        mdbutf_logged = true;
+                    }
+                    channel = applyMDBUTMF(channel);
+                }
+                
                 channels.push_back(channel);
             }
             cv::Mat final_image;
             cv::merge(channels, final_image);
             final_images.push_back(final_image);
         }
+    }
+
+    // denoise == 2：打印完成日志
+    if (denoise == 2) {
+        batchLog("MDBUTMF 改进中值滤波完成");
     }
 
     result_final.clear();

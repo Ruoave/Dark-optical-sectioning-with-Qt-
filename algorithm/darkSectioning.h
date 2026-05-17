@@ -34,6 +34,9 @@ public:
     std::vector<cv::Mat> imageStack;              // 处理前图像栈（OpenCV Mat数据）
     std::vector<cv::Mat> final_images;            // 处理后图像栈（OpenCV Mat数据）
     
+    // MDBUTMF 改进中值滤波（支持16位深 0-65535）
+    cv::Mat applyMDBUTMF(const cv::Mat &input, int windowSize = 3);
+    
 private:
     Ui::MainWindow *ui;
     OrangeBar *m_orangeBar;                       // OrangeBar指针，用于直接更新进度条
@@ -42,6 +45,12 @@ private:
     
     // 辅助函数
     void getImageDimensions(const cv::Mat &image, int &Nx, int &Ny, int &Nc);
+    
+    // MDBUTMF 辅助函数：获取窗口均值
+    double getWindowMean(const cv::Mat &input, int i, int j, int halfWin);
+    
+    // MDBUTMF 辅助函数：获取窗口并处理
+    std::vector<ushort> getWindowValues(const cv::Mat &input, int i, int j, int halfWin);
 };
 
 #endif // DARKSECTIONING_H
