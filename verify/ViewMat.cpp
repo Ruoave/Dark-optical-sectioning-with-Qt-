@@ -74,7 +74,7 @@ void ViewMat(const cv::Mat& mat, const QString& name)
     qDebug() << "Depth Type: " << depthName;
 
     // 确保输出目录存在
-    QString outputDir = "D:/QtWorkSpace/DarkQt_V_3_0/output";
+    QString outputDir = "D:/Qt/QtWorkSpace/DarkWidgets_V5_0_0/Output";
     QDir dir(outputDir);
     if (!dir.exists()) {
         dir.mkpath(outputDir);

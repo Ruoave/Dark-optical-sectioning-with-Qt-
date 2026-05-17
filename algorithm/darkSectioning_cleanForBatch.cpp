@@ -353,7 +353,7 @@ void DarkSectioningBatch::process()
                 }
 
                 // 高斯去噪
-                cv::GaussianBlur(temp, temp, cv::Size(2, 2), 1, 1, cv::BORDER_REPLICATE);
+                cv::GaussianBlur(temp, temp, cv::Size(3, 3), 1, 1, cv::BORDER_REPLICATE);
 
                 // 边缘裁剪
                 int crop_rows = std::floor(Nx / pad_size) + 1;

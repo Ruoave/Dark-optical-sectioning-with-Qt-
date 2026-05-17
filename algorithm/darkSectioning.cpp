@@ -2,8 +2,9 @@
 #include <QStandardPaths>
 #include <QApplication>  // 添加：用于保持UI响应
 #include <QFileInfo>     // 添加：用于文件路径操作
+#include "ViewMat.h"
 
-// 外部函数声明
+//// 外部函数声明
 void separateHiLo(cv::Mat image, ParamsBasic paramsBasicSet, double deg, double divide, cv::Mat& Hi, cv::Mat& Lo, cv::Mat& lp, cv::Mat& EL);
 int confirm_block(ParamsBasic paramsBasicSet, cv::Mat lp);
 cv::Mat dehaze_fast2(cv::Mat image, double omega, int win_size, cv::Mat EL, double dep, int thres);
@@ -367,6 +368,8 @@ void DarkSectioning::process()
         m_orangeBar->setProgress(static_cast<int>(progressValue_calcu));
         QApplication::processEvents();
 
+        ViewMat(result_stack[0][0], "For_denoise");
+
     // 后处理优化：多通道遍历，用高斯去噪（以后或许可以换成引导滤波去噪？）
     std::vector<std::vector<cv::Mat>> result_final(Nc, std::vector<cv::Mat>(Nz));
     for (int c = 0; c < Nc; c++) {
@@ -388,7 +391,7 @@ void DarkSectioning::process()
                 }
 
                 // 高斯去噪
-                cv::GaussianBlur(temp, temp, cv::Size(2, 2), 1, 1, cv::BORDER_REPLICATE);
+                cv::GaussianBlur(temp, temp, cv::Size(3, 3), 1, 1, cv::BORDER_REPLICATE);
 
                 // 边缘裁剪
                 int crop_rows = std::floor(Nx / pad_size) + 1;
@@ -477,6 +480,8 @@ void DarkSectioning::process()
             final_images.push_back(final_image);
         }
     }
+
+    ViewMat(final_images[0], "For_mid_denoise");
 
     result_final.clear();
     result_final.shrink_to_fit();
