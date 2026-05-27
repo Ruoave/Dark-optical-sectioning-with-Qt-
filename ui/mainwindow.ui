@@ -638,6 +638,7 @@
     <property name="title">
      <string>关于</string>
     </property>
+    <addaction name="actionAbout"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuAnalysis"/>
@@ -682,6 +683,11 @@
   <action name="actionReset">
    <property name="text">
     <string>清空输入</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>关于此软件</string>
    </property>
   </action>
  </widget>

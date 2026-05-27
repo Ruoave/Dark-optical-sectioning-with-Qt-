@@ -29,6 +29,9 @@
 // 引入批量处理对话框头文件（独立功能，菜单"批量处理"弹出模态窗口）
 #include "batchdialog.h"
 
+// 引入关于对话框头文件（菜单"关于此软件"弹出模态窗口）
+#include "aboutdialog.h"
+
 using namespace cv;
 using namespace std;
 using namespace chrono;
@@ -489,6 +492,20 @@ void MainWindow::on_actionBatch_Process_triggered()
 {
     // 创建批量处理对话框（模态窗口，处理期间阻塞主窗口交互）
     BatchDialog dlg(this);
+    dlg.exec();  // exec() = 模态显示，用户关闭对话框后才返回
+}
+
+
+// ============================================================================
+// 【菜单栏槽函数：关于此软件】
+// 信号源：ui->actionAbout triggered()信号
+// 流程：弹出 AboutDialog 模态对话框 → 显示软件版本/作者声明/仓库链接
+// 功能：显示关于对话框，包含项目介绍、开源声明和可点击的仓库链接
+// ============================================================================
+void MainWindow::on_actionAbout_triggered()
+{
+    // 创建关于对话框（模态窗口，关闭后才能继续操作主窗口）
+    AboutDialog dlg(this);
     dlg.exec();  // exec() = 模态显示，用户关闭对话框后才返回
 }
 

@@ -30,6 +30,7 @@ INCLUDEPATH += $$PWD/ui \
                $$PWD/verify
 
 SOURCES += \
+    ui/aboutdialog.cpp \
     ui/batchdialog.cpp \
     ui/greenwidget.cpp \
     main.cpp \
@@ -52,6 +53,7 @@ SOURCES += \
     verify/ViewMat.cpp \
     algorithm/port_matlab2opencv.cpp
 HEADERS += \
+    ui/aboutdialog.h \
     ui/batchdialog.h \
     ui/greenwidget.h \
     ui/mainwindow.h \

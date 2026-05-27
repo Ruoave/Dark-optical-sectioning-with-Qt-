@@ -90,6 +90,12 @@ private slots:
     // 流程：清空输入/输出路径 → 复位SingleFrameRunning → 委托OrangeWidget清空全部
     // 功能：一键清空所有输入内容和显示，恢复到程序刚启动时的空白状态
     void on_actionReset_triggered();
+
+    // Qt原生公共槽函数：响应"关于此软件"菜单项点击
+    // 信号源：ui->actionAbout triggered()信号
+    // 流程：弹出 AboutDialog 模态对话框 → 显示软件版本、作者声明、仓库链接
+    // 功能：显示关于对话框，包含项目介绍、开源声明和可点击的仓库链接
+    void on_actionAbout_triggered();
     
 protected:
     // Qt原生事件重载：窗口大小改变时自动调用
