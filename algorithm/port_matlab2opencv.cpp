@@ -109,6 +109,50 @@ void MYmeshgrid(Size size, Mat& x, Mat& y)
     }
 }
 
+// MYcircshift函数：二维循环移位，对应MATLAB的circshift(a,[sr,sc])
+// 输入：
+//   src - 输入矩阵
+//   shift_rows - 行方向移位量（正数向下移，负数向上移）
+//   shift_cols - 列方向移位量（正数向右移，负数向左移）
+// 输出：
+//   dst - 输出矩阵
+// 功能：
+//   对输入矩阵进行二维循环移位，对应MATLAB的circshift函数
+//   支持奇数和偶数尺寸，支持原地操作（src和dst为同一矩阵）
+static void MYcircshift(const Mat& src, Mat& dst, int shift_rows, int shift_cols)
+{
+    int rows = src.rows;
+    int cols = src.cols;
+
+    // 将移位量归一化到 [0, rows) 和 [0, cols)
+    shift_rows = ((shift_rows % rows) + rows) % rows;
+    shift_cols = ((shift_cols % cols) + cols) % cols;
+
+    if (shift_rows == 0 && shift_cols == 0) {
+        src.copyTo(dst);
+        return;
+    }
+
+    // 原地操作安全处理：若src和dst共享数据，先拷贝一份
+    Mat s;
+    if (src.data == dst.data) {
+        s = src.clone();
+    } else {
+        dst.create(rows, cols, src.type());
+        s = src;  // 仅引用，不拷贝
+    }
+
+    // 循环移位：将矩阵分成4块重新排列
+    // 输出[0..sr-1, 0..sc-1] = 输入[rows-sr..rows-1, cols-sc..cols-1]
+    s(Rect(cols - shift_cols, rows - shift_rows, shift_cols, shift_rows)).copyTo(dst(Rect(0, 0, shift_cols, shift_rows)));
+    // 输出[0..sr-1, sc..cols-1] = 输入[rows-sr..rows-1, 0..cols-sc-1]
+    s(Rect(0, rows - shift_rows, cols - shift_cols, shift_rows)).copyTo(dst(Rect(shift_cols, 0, cols - shift_cols, shift_rows)));
+    // 输出[sr..rows-1, 0..sc-1] = 输入[0..rows-sr-1, cols-sc..cols-1]
+    s(Rect(cols - shift_cols, 0, shift_cols, rows - shift_rows)).copyTo(dst(Rect(0, shift_rows, shift_cols, rows - shift_rows)));
+    // 输出[sr..rows-1, sc..cols-1] = 输入[0..rows-sr-1, 0..cols-sc-1]
+    s(Rect(0, 0, cols - shift_cols, rows - shift_rows)).copyTo(dst(Rect(shift_cols, shift_rows, cols - shift_cols, rows - shift_rows)));
+}
+
 // MYifftshift函数：将FFT的零频率分量移到频谱中心
 // 输入：
 //   src - 输入矩阵
@@ -116,50 +160,16 @@ void MYmeshgrid(Size size, Mat& x, Mat& y)
 //   dst - 输出矩阵
 // 功能：
 //   对输入矩阵进行象限交换，对应MATLAB的ifftshift函数
-//   对于偶数尺寸，交换四个象限
-//   对于奇数尺寸，调整偏移量以确保中心正确
+//   MATLAB实现：ifftshift(x) = circshift(x, ceil(size(x)/2))
+//   支持奇数和偶数尺寸，支持原地操作
 void MYifftshift(Mat& src, Mat& dst)
 {
     int rows = src.rows;
     int cols = src.cols;
-    
-    dst.create(rows, cols, src.type());
-    
-    int cx = cols / 2;
-    int cy = rows / 2;
-    
-    if (cols % 2 == 0 && rows % 2 == 0) {
-        Rect q0(Rect(0, 0, cx, cy));
-        Rect q1(Rect(cx, 0, cx, cy));
-        Rect q2(Rect(0, cy, cx, cy));
-        Rect q3(Rect(cx, cy, cx, cy));
-        
-        Mat temp;
-        src(q0).copyTo(temp);
-        src(q3).copyTo(dst(q0));
-        temp.copyTo(dst(q3));
-        
-        src(q1).copyTo(temp);
-        src(q2).copyTo(dst(q1));
-        temp.copyTo(dst(q2));
-    } else {
-        int cx_odd = (cols + 1) / 2;
-        int cy_odd = (rows + 1) / 2;
-        
-        Rect q0(Rect(0, 0, cx, cy));
-        Rect q1(Rect(cx, 0, cx_odd, cy));
-        Rect q2(Rect(0, cy, cx, cy_odd));
-        Rect q3(Rect(cx, cy, cx_odd, cy_odd));
-        
-        Mat temp;
-        src(q0).copyTo(temp);
-        src(q3).copyTo(dst(q0));
-        temp.copyTo(dst(q3));
-        
-        src(q1).copyTo(temp);
-        src(q2).copyTo(dst(q1));
-        temp.copyTo(dst(q2));
-    }
+    // 对应MATLAB: circshift(x, ceil(size(x)/2))
+    int shift_rows = (rows + 1) / 2;  // ceil(rows/2)
+    int shift_cols = (cols + 1) / 2;  // ceil(cols/2)
+    MYcircshift(src, dst, shift_rows, shift_cols);
 }
 
 // MYfftshift函数：将零频率分量从中心移开
@@ -169,50 +179,16 @@ void MYifftshift(Mat& src, Mat& dst)
 //   dst - 输出矩阵
 // 功能：
 //   对输入矩阵进行象限交换，对应MATLAB的fftshift函数
-//   对于偶数尺寸，交换四个象限
-//   对于奇数尺寸，调整偏移量以确保正确移位
+//   MATLAB实现：fftshift(x) = circshift(x, floor(size(x)/2))
+//   支持奇数和偶数尺寸，支持原地操作
 void MYfftshift(Mat& src, Mat& dst)
 {
     int rows = src.rows;
     int cols = src.cols;
-    
-    dst.create(rows, cols, src.type());
-    
-    int cx = cols / 2;
-    int cy = rows / 2;
-    
-    if (cols % 2 == 0 && rows % 2 == 0) {
-        Rect q0(Rect(0, 0, cx, cy));
-        Rect q1(Rect(cx, 0, cx, cy));
-        Rect q2(Rect(0, cy, cx, cy));
-        Rect q3(Rect(cx, cy, cx, cy));
-        
-        Mat temp;
-        src(q0).copyTo(temp);
-        src(q3).copyTo(dst(q0));
-        temp.copyTo(dst(q3));
-        
-        src(q1).copyTo(temp);
-        src(q2).copyTo(dst(q1));
-        temp.copyTo(dst(q2));
-    } else {
-        int cx_odd = (cols + 1) / 2;
-        int cy_odd = (rows + 1) / 2;
-        
-        Rect q0(Rect(0, 0, cx_odd, cy_odd));
-        Rect q1(Rect(cx_odd, 0, cx, cy_odd));
-        Rect q2(Rect(0, cy_odd, cx_odd, cy));
-        Rect q3(Rect(cx_odd, cy_odd, cx, cy));
-        
-        Mat temp;
-        src(q0).copyTo(temp);
-        src(q3).copyTo(dst(q0));
-        temp.copyTo(dst(q3));
-        
-        src(q1).copyTo(temp);
-        src(q2).copyTo(dst(q1));
-        temp.copyTo(dst(q2));
-    }
+    // 对应MATLAB: circshift(x, floor(size(x)/2))
+    int shift_rows = rows / 2;  // floor(rows/2)
+    int shift_cols = cols / 2;  // floor(cols/2)
+    MYcircshift (src, dst, shift_rows, shift_cols);
 }
 
 // MYfftshift_plural函数：直接处理双通道复数矩阵的fftshift
