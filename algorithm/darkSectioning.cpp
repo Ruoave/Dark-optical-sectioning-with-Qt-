@@ -278,8 +278,6 @@ void DarkSectioning::process()
     paramsBasicSet.Nx = imageStack_padded[0][0].rows;
     paramsBasicSet.Ny = imageStack_padded[0][0].cols;
 
-
-
     // Dark sectioning 主处理流程
     for (int time = 0; time < maxtime; time++) {
         // 参数设置
@@ -370,7 +368,6 @@ void DarkSectioning::process()
         m_orangeBar->setProgress(static_cast<int>(progressValue_calcu));
         QApplication::processEvents();
 
-        ViewMat(result_stack[0][0], "For_denoise");
 
     // 后处理优化：多通道遍历，用高斯去噪（以后或许可以换成引导滤波去噪？）
     std::vector<std::vector<cv::Mat>> result_final(Nc, std::vector<cv::Mat>(Nz));
@@ -485,8 +482,6 @@ void DarkSectioning::process()
     if (denoise == 2) {
         ui->textEdit_log->append("MDBUTMF 改进中值滤波完成");
     }
-
-    ViewMat(final_images[0], "For_mid_denoise");
 
     result_final.clear();
     result_final.shrink_to_fit();
