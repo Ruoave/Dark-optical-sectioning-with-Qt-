@@ -633,6 +633,9 @@
     <property name="title">
      <string>帮助</string>
     </property>
+    <addaction name="actionHowToUse"/>
+    <addaction name="actionExplainParams"/>
+    <addaction name="actionHelp_md"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
     <property name="title">
@@ -688,6 +691,26 @@
   <action name="actionAbout">
    <property name="text">
     <string>关于此软件</string>
+   </property>
+  </action>
+  <action name="actionHowToUse">
+   <property name="text">
+    <string>开始使用</string>
+   </property>
+  </action>
+  <action name="actionParamsExplain">
+   <property name="text">
+    <string>参数说明</string>
+   </property>
+  </action>
+  <action name="actionExplainParams">
+   <property name="text">
+    <string>参数说明</string>
+   </property>
+  </action>
+  <action name="actionHelp_md">
+   <property name="text">
+    <string>打开帮助文档</string>
    </property>
   </action>
  </widget>
