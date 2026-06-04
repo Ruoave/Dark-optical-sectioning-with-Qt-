@@ -22,6 +22,10 @@ INCLUDEPATH += $$PWD/SDK/Material/components
 PRE_TARGETDEPS += $$PWD/SDK/Material/staticlib/libcomponents.a
 RESOURCES += $$PWD/SDK/Material/components/resources.qrc
 
+# 定义项目源码目录的宏（用于 HelpDialog 定位 help.md 文件）
+# $$PWD = .pro 文件所在目录的绝对路径，编译时注入为 C 字符串常量
+DEFINES += PROJECT_SOURCE_DIR=\\\"$$PWD\\\"
+
 
 # 子目录头文件搜索路径（文件移动到子文件夹后，#include "xxx.h" 仍可被编译器找到）
 INCLUDEPATH += $$PWD/ui \
@@ -33,6 +37,7 @@ SOURCES += \
     ui/aboutdialog.cpp \
     ui/batchdialog.cpp \
     ui/greenwidget.cpp \
+    ui/helpdialog.cpp \
     main.cpp \
     ui/mainwindow.cpp \
     algorithm/darkSectioning.cpp \
@@ -56,6 +61,7 @@ HEADERS += \
     ui/aboutdialog.h \
     ui/batchdialog.h \
     ui/greenwidget.h \
+    ui/helpdialog.h \
     ui/mainwindow.h \
     algorithm/darkSectioning.h \
     algorithm/darkSectioning_cleanForBatch.h \

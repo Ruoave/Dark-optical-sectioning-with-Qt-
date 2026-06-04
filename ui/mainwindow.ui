@@ -635,6 +635,8 @@
     </property>
     <addaction name="actionHowToUse"/>
     <addaction name="actionExplainParams"/>
+    <addaction name="actionUseBatch"/>
+    <addaction name="separator"/>
     <addaction name="actionHelp_md"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
@@ -711,6 +713,11 @@
   <action name="actionHelp_md">
    <property name="text">
     <string>打开帮助文档</string>
+   </property>
+  </action>
+  <action name="actionUseBatch">
+   <property name="text">
+    <string>批量处理</string>
    </property>
   </action>
  </widget>

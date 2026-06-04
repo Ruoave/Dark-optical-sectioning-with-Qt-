@@ -93,9 +93,33 @@ private slots:
 
     // Qt原生公共槽函数：响应"关于此软件"菜单项点击
     // 信号源：ui->actionAbout triggered()信号
-    // 流程：弹出 AboutDialog 模态对话框 → 显示软件版本、作者声明、仓库链接
+    // 流程：弹出 AboutDialog 模态对话框 → 显示软件版本/作者声明/仓库链接
     // 功能：显示关于对话框，包含项目介绍、开源声明和可点击的仓库链接
     void on_actionAbout_triggered();
+
+    // Qt原生公共槽函数：响应"开始使用"菜单项点击
+    // 信号源：ui->actionHowToUse triggered()信号
+    // 流程：弹出 HelpDialog → 自动跳转到 {#quickstart} 章节
+    // 功能：显示帮助对话框并定位到"开始使用"章节
+    void on_actionHowToUse_triggered();
+
+    // Qt原生公共槽函数：响应"参数说明"菜单项点击
+    // 信号源：ui->actionExplainParams triggered()信号
+    // 流程：弹出 HelpDialog → 自动跳转到 {#paramsexplain} 章节
+    // 功能：显示帮助对话框并定位到"参数说明"章节
+    void on_actionExplainParams_triggered();
+
+    // Qt原生公共槽函数：响应"批量处理"菜单项点击
+    // 信号源：ui->actionUseBatch triggered()信号
+    // 流程：弹出 HelpDialog → 自动跳转到 {#batchuse} 章节
+    // 功能：显示帮助对话框并定位到"批量处理"章节
+    void on_actionUseBatch_triggered();
+
+    // Qt原生公共槽函数：响应"打开帮助文档"菜单项点击
+    // 信号源：ui->actionHelp_md triggered()信号
+    // 流程：弹出 HelpDialog 显示完整帮助 + 打开资源管理器定位 help.md 文件
+    // 功能：显示帮助文档并在文件管理器中显示 help.md 的位置
+    void on_actionHelp_md_triggered();
     
 protected:
     // Qt原生事件重载：窗口大小改变时自动调用
