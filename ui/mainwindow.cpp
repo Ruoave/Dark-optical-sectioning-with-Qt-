@@ -32,10 +32,7 @@
 // 引入关于对话框头文件（菜单"关于此软件"弹出模态窗口）
 #include "aboutdialog.h"
 
-// 引入帮助对话框头文件（菜单"帮助"下各子菜单弹出模态窗口）
-#include "helpdialog.h"
-
-// 引入 QDesktopServices（用于"打开帮助文档"时调用系统资源管理器）
+// 引入 QDesktopServices（用于"帮助"菜单各按钮调用系统默认浏览器打开 help.html）
 #include <QDesktopServices>
 
 using namespace cv;
@@ -517,69 +514,65 @@ void MainWindow::on_actionAbout_triggered()
 
 
 // ============================================================================
+// ============================================================================
 // 【菜单栏槽函数：开始使用】
 // 信号源：ui->actionHowToUse triggered()信号
-// 流程：弹出 HelpDialog → 自动跳转到 {#quickstart} 章节
-// 功能：显示帮助对话框并定位到"开始使用"章节
+// 流程：调用系统默认浏览器打开 help.html，URL 带锚点自动跳转到"开始使用"章节
+// 功能：在浏览器中打开帮助文档并定位到"开始使用"章节
 // ============================================================================
 void MainWindow::on_actionHowToUse_triggered()
 {
-    // 创建帮助对话框，指定锚点为"quickstart"（自动跳转到"开始使用"章节）
-    HelpDialog dlg("quickstart", this);
-    dlg.exec();  // 模态显示
+    // 构建 URL：文件路径 + #锚点名（浏览器会自动滚动到对应位置）
+    QString helpHtmlPath = QString(PROJECT_SOURCE_DIR) + "/help/help.html";
+    QUrl url = QUrl::fromLocalFile(helpHtmlPath);
+    url.setFragment(QStringLiteral("一）开始使用"));  // 锚点：Typora 导出的 <a name="一）开始使用">
+    QDesktopServices::openUrl(url);  // 调用默认浏览器打开
 }
 
 // ============================================================================
 // 【菜单栏槽函数：参数说明】
 // 信号源：ui->actionExplainParams triggered()信号
-// 流程：弹出 HelpDialog → 自动跳转到 {#paramsexplain} 章节
-// 功能：显示帮助对话框并定位到"参数说明"章节
+// 流程：调用系统默认浏览器打开 help.html，URL 带锚点自动跳转到"参数说明"章节
+// 功能：在浏览器中打开帮助文档并定位到"参数说明"章节
 // ============================================================================
 void MainWindow::on_actionExplainParams_triggered()
 {
-    // 创建帮助对话框，指定锚点为"paramsexplain"（自动跳转到"参数说明"章节）
-    HelpDialog dlg("paramsexplain", this);
-    dlg.exec();  // 模态显示
+    QString helpHtmlPath = QString(PROJECT_SOURCE_DIR) + "/help/help.html";
+    QUrl url = QUrl::fromLocalFile(helpHtmlPath);
+    url.setFragment(QStringLiteral("二）参数说明"));  // 锚点：Typora 导出的 <a name="二）参数说明">
+    QDesktopServices::openUrl(url);
 }
 
 // ============================================================================
 // 【菜单栏槽函数：批量处理】
 // 信号源：ui->actionUseBatch triggered()信号
-// 流程：弹出 HelpDialog → 自动跳转到 {#batchuse} 章节
-// 功能：显示帮助对话框并定位到"批量处理"章节
+// 流程：调用系统默认浏览器打开 help.html，URL 带锚点自动跳转到"批量处理"章节
+// 功能：在浏览器中打开帮助文档并定位到"批量处理"章节
 // ============================================================================
 void MainWindow::on_actionUseBatch_triggered()
 {
-    // 创建帮助对话框，指定锚点为"batchuse"（自动跳转到"批量处理"章节）
-    HelpDialog dlg("batchuse", this);
-    dlg.exec();  // 模态显示
+    QString helpHtmlPath = QString(PROJECT_SOURCE_DIR) + "/help/help.html";
+    QUrl url = QUrl::fromLocalFile(helpHtmlPath);
+    url.setFragment(QStringLiteral("三）使用批量处理"));  // 锚点：Typora 导出的 <a name="三）使用批量处理">
+    QDesktopServices::openUrl(url);
 }
 
 // ============================================================================
 // 【菜单栏槽函数：打开帮助文档】
 // 信号源：ui->actionHelp_md triggered()信号
-// 流程：打开帮助文件夹 + 打开 help.md（系统默认编辑器）+ 弹出 HTML 版 HelpDialog
-// 功能：资源管理器定位 help 文件夹，在默认编辑器中打开 help.md 方便修改，
-//       同时弹出 HelpDialog 显示 help.html 渲染效果供用户查看
+// 流程：资源管理器打开 help 文件夹 + 浏览器打开 help.html（从头显示）
+// 功能：让用户看到 help.md 的文件位置，同时在浏览器中查看渲染后的帮助文档
 // ============================================================================
 void MainWindow::on_actionHelp_md_triggered()
 {
-    // 第1步：打开资源管理器，定位到 help 文件夹
+    // 第1步：打开资源管理器，定位到 help 文件夹（让用户知道文件在哪）
     QString helpDir = QString(PROJECT_SOURCE_DIR) + "/help";
     QDesktopServices::openUrl(QUrl::fromLocalFile(helpDir));
 
-    // 第2步：调用系统默认编辑器打开 help.md（如 Typora/VS Code/记事本）
-    // 方便用户直接查看和编辑 Markdown 源文件
-    QString helpMdPath = QString(PROJECT_SOURCE_DIR) + "/help/help.md";
-    if (QFile::exists(helpMdPath)) {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(helpMdPath));
-    }
-
-    // 第3步：打开帮助对话框显示 HTML 渲染版本（模态对话框获得焦点）
-    // 第一个参数传 QString() 空字符串 = 不指定锚点，显示文档开头
-    // 第二个参数传 this = 父窗口指针
-    HelpDialog dlg(QString(), this);
-    dlg.exec();  // 模态显示
+    // 第2步：调用默认浏览器打开 help.html（不带锚点 = 显示文档开头）
+    // 浏览器完美支持 Typora 导出的 HTML：CSS 样式完整、GIF 动图正常、表格正确渲染
+    QString helpHtmlPath = QString(PROJECT_SOURCE_DIR) + "/help/help.html";
+    QDesktopServices::openUrl(QUrl::fromLocalFile(helpHtmlPath));
 }
 
 

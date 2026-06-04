@@ -37,7 +37,6 @@ SOURCES += \
     ui/aboutdialog.cpp \
     ui/batchdialog.cpp \
     ui/greenwidget.cpp \
-    ui/helpdialog.cpp \
     main.cpp \
     ui/mainwindow.cpp \
     algorithm/darkSectioning.cpp \
@@ -61,7 +60,6 @@ HEADERS += \
     ui/aboutdialog.h \
     ui/batchdialog.h \
     ui/greenwidget.h \
-    ui/helpdialog.h \
     ui/mainwindow.h \
     algorithm/darkSectioning.h \
     algorithm/darkSectioning_cleanForBatch.h \
