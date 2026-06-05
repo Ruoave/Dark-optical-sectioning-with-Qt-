@@ -6,7 +6,7 @@
 
 **原论文：** *Dark-based Optical Sectioning assists Background Removal in Fluorescence Microscopy* (Nature Methods, 2025)
 
-**开源协议：** Apache License 2.0
+**开源协议：** Apache License 
 
 
 
@@ -14,12 +14,19 @@
 
 本软件用于荧光显微图像的暗光学分层（Dark Optical Sectioning）处理，实现背景去除与信号增强。主要功能包括：
 
-- 单帧/批量图像处理
-- 基本参数与高级算法参数配置
+- 荧光显微图像多帧图像栈处理
+
+- 参数参数可视化配置
+
 - 处理前后图像实时对比显示
-- 参数导出/导入，方便批量复用
 
+- 单帧处理快速验证参数可用性
 
+- 批量处理
+
+- 参数导出/导入
+
+  
 
 ## 技术栈
 
@@ -41,15 +48,50 @@
 Dark_WidgetsMaterial_V1_0_0/
 ├── main.cpp                          // 程序入口
 ├── Dark_WidgetsMaterial_V1_0_0.pro   // qmake 工程文件
+│
 ├── algorithm/                        // 算法层：核心图像处理算法
+│   ├── darkSectioning.cpp/h              // 单帧处理主流程
+│   ├── darkSectioning_cleanForBatch.cpp/h // 批量处理主流程（继承 darkSectioning）
+│   ├── separateHiLo.cpp                  // 高低频分离
+│   ├── dehaze_fast2.cpp                  // 暗通道去雾
+│   ├── confirm_block.cpp                 // 腐蚀核尺寸确定
+│   ├── PSF_Generator.cpp                 // 点扩散函数（PSF）生成
+│   ├── get_dark_channel.cpp              // 暗通道计算
+│   ├── get_atmosphere.cpp                // 大气光估计
+│   ├── get_transmission_estimate.cpp     // 透射率初始估计
+│   ├── get_radiance.cpp                  // 辐照度恢复
+│   ├── get_laplacian.cpp                 // 拉普拉斯滤波器
+│   ├── guided_filter.cpp                 // 引导滤波
+│   ├── window_sum_filter.cpp             // 窗口求和滤波
+│   └── port_matlab2opencv.cpp/h          // MATLAB→OpenCV 移植辅助函数
+│
 ├── ui/                               // 界面层：Qt 界面控件与交互逻辑
+│   ├── mainwindow.cpp/h/ui               // 主窗口（菜单栏、路径选择、参数面板、图像显示、日志）
+│   ├── orangewidget.cpp/h/ui             // 橙区控件（图像对比显示区）
+│   ├── orangebar.cpp/h/ui                // 进度条控件
+│   ├── greenwidget.cpp/h/ui              // 绿区控件（参数配置区，含基本参数和高级参数两页）
+│   ├── batchdialog.cpp/h/ui              // 批量处理对话框
+│   └── aboutdialog.cpp/h                 // 关于对话框
+│
 ├── params/                           // 参数传递头文件
-├── verify/                           // 调试辅助工具
-├── help/                             // 帮助文档（Markdown + HTML）
-└── SDK/Material/                     // 第三方控件库：qt-material-widgets
-    ├── components/                   // 控件源码与头文件
-    ├── staticlib/                    // 预编译静态库
-    └── fonts/                        // Roboto 字体文件
+│   ├── paramsBasic.h                     // 基本参数结构体
+│   └── paramsExpert.h                    // 高级参数结构体与将字符串解析为vector的辅助函数
+│
+├── verify/                           // 调试辅助工具（仅调试用，正式构建不参与）
+│   └── ViewMat.cpp/h                    // 将OpenCV::Mat输出为.csv文件
+│
+├── help/                             // 帮助文档
+│   ├── help.md                           // Markdown 源文件
+│   ├── help.html                         // Typora 导出的 HTML 渲染文件
+│   └── help.assets/                     // 帮助文档使用的图片和 GIF 动图
+│
+└── SDK/Material/                      // 第三方控件库：qt-material-widgets
+    ├── components/                       // 控件源码与头文件（按钮、滑块、文本框等Material组件）
+    │   ├── icons/                            // Material Design 图标资源（SVG）
+    │   ├── lib/                              // 库内部实现（主题、样式、涟漪效果等）
+    │   └── layouts/                          // 布局辅助组件
+    ├── staticlib/                        // 预编译静态库（libcomponents.a）
+    └── fonts/                            // Roboto 字体文件（Material Design 标准字体）
 ```
 
 
@@ -60,11 +102,11 @@ Dark_WidgetsMaterial_V1_0_0/
 
 👉 [help/help.md](help/help.md)
 
-软件内也可通过菜单栏 **帮助 → 开始使用** 打开帮助文档。
+软件内也可通过菜单栏 **帮助 → 打开帮助文档** 打开help.html。
 
 
 
 ## 致谢
 
-- 原项目：[Cao-ruijie/Dark-sectioning](https://github.com/Cao-ruijie/Dark-sectioning)（Apache License）
+- 原项目：[Cao-ruijie/Dark-sectioning](https://github.com/Cao-ruijie/Dark-sectioning)
 - UI 组件库：[qt-material-widgets](https://github.com/laserpants/qt-material-widgets)

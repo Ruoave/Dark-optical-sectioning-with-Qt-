@@ -404,7 +404,7 @@ darkSectioning_cleanForBatch.cpp：L421-L427		批量模式中值滤波执行：`
 
 
 
-### 项目目录结构
+### 项目结构
 
 ```
 Dark_WidgetsMaterial_V1_0_0/
