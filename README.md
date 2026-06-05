@@ -1,5 +1,7 @@
 # Dark Optical Sectioning with Qt
 
+[![Download](https://img.shields.io/badge/Download-Release-blue?style=for-the-badge&logo=github)](https://github.com/Ruoave/Dark-optical-sectioning-with-Qt-/releases)
+
 基于 [Dark-sectioning](https://github.com/Cao-ruijie/Dark-sectioning) 项目的 MATLAB 代码，使用 C++/Qt 移植并添加了 Material Design 风格图形用户界面。
 
 **原项目作者：** 曹睿杰等
@@ -110,3 +112,11 @@ Dark_WidgetsMaterial_V1_0_0/
 
 - 原项目：[Cao-ruijie/Dark-sectioning](https://github.com/Cao-ruijie/Dark-sectioning)
 - UI 组件库：[qt-material-widgets](https://github.com/laserpants/qt-material-widgets)
+
+
+
+## License
+
+本项目基于 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) 开源发布。
+
+本项目是 [Cao-ruijie/Dark-sectioning](https://github.com/Cao-ruijie/Dark-sectioning)（Apache License 2.0）中 MATLAB 代码的 C++/Qt 移植版本，遵循原项目相同的开源协议。

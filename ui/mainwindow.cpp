@@ -521,9 +521,9 @@ void MainWindow::on_actionAbout_triggered()
 // ============================================================================
 void MainWindow::on_actionHowToUse_triggered()
 {
-    // 直接拼接 URL 字符串：file:///路径#锚点名
-    // 注意：不能用 QUrl::setFragment()，因为它会对中文进行 URL 编码导致锚点匹配失败
-    QString helpHtmlPath = QString(PROJECT_SOURCE_DIR) + "/help/help.html";
+    // 使用 applicationDirPath()：从 exe 所在目录查找 help 文件夹
+    // 开发时需将 help 文件夹复制到 build 输出目录；打包时 help 文件夹与 exe 放在一起
+    QString helpHtmlPath = QCoreApplication::applicationDirPath() + "/help/help.html";
     QString urlStr = QUrl::fromLocalFile(helpHtmlPath).toString() + "#quickstart";
     QDesktopServices::openUrl(QUrl(urlStr));
 }
@@ -536,7 +536,7 @@ void MainWindow::on_actionHowToUse_triggered()
 // ============================================================================
 //void MainWindow::on_actionExplainParams_triggered()
 //{
-//    QString helpHtmlPath = QString(PROJECT_SOURCE_DIR) + "/help/help.html";
+//    QString helpHtmlPath = QCoreApplication::applicationDirPath() + "/help/help.html";
 //    QString urlStr = QUrl::fromLocalFile(helpHtmlPath).toString() + "#paramsexplain";
 //    QDesktopServices::openUrl(QUrl(urlStr));
 //}
@@ -549,7 +549,7 @@ void MainWindow::on_actionHowToUse_triggered()
 // ============================================================================
 //void MainWindow::on_actionUseBatch_triggered()
 //{
-//    QString helpHtmlPath = QString(PROJECT_SOURCE_DIR) + "/help/help.html";
+//    QString helpHtmlPath = QCoreApplication::applicationDirPath() + "/help/help.html";
 //    QString urlStr = QUrl::fromLocalFile(helpHtmlPath).toString() + "#batchuse";
 //    QDesktopServices::openUrl(QUrl(urlStr));
 //}
@@ -563,11 +563,12 @@ void MainWindow::on_actionHowToUse_triggered()
 void MainWindow::on_actionHelp_md_triggered()
 {
     // 打开资源管理器，定位到 help 文件夹（让用户知道文件在哪）
-    QString helpDir = QString(PROJECT_SOURCE_DIR) + "/help";
+    // 使用 applicationDirPath()：从 exe 所在目录查找 help 文件夹
+    QString helpDir = QCoreApplication::applicationDirPath() + "/help";
     QDesktopServices::openUrl(QUrl::fromLocalFile(helpDir));
 
     // 已注释：不再自动打开 help.md
-    //QString helpMdPath = QString(PROJECT_SOURCE_DIR) + "/help/help.md";
+    //QString helpMdPath = QCoreApplication::applicationDirPath() + "/help/help.md";
     //if (QFile::exists(helpMdPath)) {
     //    QDesktopServices::openUrl(QUrl::fromLocalFile(helpMdPath));
     //}
