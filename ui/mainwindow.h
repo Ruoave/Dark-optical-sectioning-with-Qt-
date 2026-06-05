@@ -103,22 +103,16 @@ private slots:
     // 功能：在浏览器中打开帮助文档并定位到"开始使用"章节
     void on_actionHowToUse_triggered();
 
-    // Qt原生公共槽函数：响应"参数说明"菜单项点击
-    // 信号源：ui->actionExplainParams triggered()信号
-    // 流程：调用系统默认浏览器打开 help.html#二）参数说明
-    // 功能：在浏览器中打开帮助文档并定位到"参数说明"章节
-    void on_actionExplainParams_triggered();
+    // 已注释：已移除"参数说明"菜单项，保留声明以防后续恢复
+    //void on_actionExplainParams_triggered();
 
-    // Qt原生公共槽函数：响应"批量处理"菜单项点击
-    // 信号源：ui->actionUseBatch triggered()信号
-    // 流程：调用系统默认浏览器打开 help.html#三）使用批量处理
-    // 功能：在浏览器中打开帮助文档并定位到"批量处理"章节
-    void on_actionUseBatch_triggered();
+    // 已注释：已移除"批量处理"菜单项，保留声明以防后续恢复
+    //void on_actionUseBatch_triggered();
 
     // Qt原生公共槽函数：响应"打开帮助文档"菜单项点击
     // 信号源：ui->actionHelp_md triggered()信号
-    // 流程：资源管理器打开 help 文件夹 + 浏览器打开 help.html（从头显示）
-    // 功能：显示帮助文件位置并在浏览器中查看渲染后的完整帮助文档
+    // 流程：资源管理器打开 help 文件夹
+    // 功能：显示帮助文件位置，用户可自行打开 help.html 或 help.md
     void on_actionHelp_md_triggered();
     
 protected:

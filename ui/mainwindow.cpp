@@ -514,7 +514,6 @@ void MainWindow::on_actionAbout_triggered()
 
 
 // ============================================================================
-// ============================================================================
 // 【菜单栏槽函数：开始使用】
 // 信号源：ui->actionHowToUse triggered()信号
 // 流程：调用系统默认浏览器打开 help.html，URL 带锚点自动跳转到"开始使用"章节
@@ -522,57 +521,56 @@ void MainWindow::on_actionAbout_triggered()
 // ============================================================================
 void MainWindow::on_actionHowToUse_triggered()
 {
-    // 构建 URL：文件路径 + #锚点名（浏览器会自动滚动到对应位置）
+    // 直接拼接 URL 字符串：file:///路径#锚点名
+    // 注意：不能用 QUrl::setFragment()，因为它会对中文进行 URL 编码导致锚点匹配失败
     QString helpHtmlPath = QString(PROJECT_SOURCE_DIR) + "/help/help.html";
-    QUrl url = QUrl::fromLocalFile(helpHtmlPath);
-    url.setFragment(QStringLiteral("一）开始使用"));  // 锚点：Typora 导出的 <a name="一）开始使用">
-    QDesktopServices::openUrl(url);  // 调用默认浏览器打开
+    QString urlStr = QUrl::fromLocalFile(helpHtmlPath).toString() + "#quickstart";
+    QDesktopServices::openUrl(QUrl(urlStr));
 }
 
 // ============================================================================
-// 【菜单栏槽函数：参数说明】
+// 【菜单栏槽函数：参数说明】（已移除对应菜单项，保留代码以防后续恢复）
 // 信号源：ui->actionExplainParams triggered()信号
 // 流程：调用系统默认浏览器打开 help.html，URL 带锚点自动跳转到"参数说明"章节
 // 功能：在浏览器中打开帮助文档并定位到"参数说明"章节
 // ============================================================================
-void MainWindow::on_actionExplainParams_triggered()
-{
-    QString helpHtmlPath = QString(PROJECT_SOURCE_DIR) + "/help/help.html";
-    QUrl url = QUrl::fromLocalFile(helpHtmlPath);
-    url.setFragment(QStringLiteral("二）参数说明"));  // 锚点：Typora 导出的 <a name="二）参数说明">
-    QDesktopServices::openUrl(url);
-}
+//void MainWindow::on_actionExplainParams_triggered()
+//{
+//    QString helpHtmlPath = QString(PROJECT_SOURCE_DIR) + "/help/help.html";
+//    QString urlStr = QUrl::fromLocalFile(helpHtmlPath).toString() + "#paramsexplain";
+//    QDesktopServices::openUrl(QUrl(urlStr));
+//}
 
 // ============================================================================
-// 【菜单栏槽函数：批量处理】
+// 【菜单栏槽函数：参数说明】（已移除对应菜单项，保留代码以防后续恢复）
 // 信号源：ui->actionUseBatch triggered()信号
 // 流程：调用系统默认浏览器打开 help.html，URL 带锚点自动跳转到"批量处理"章节
 // 功能：在浏览器中打开帮助文档并定位到"批量处理"章节
 // ============================================================================
-void MainWindow::on_actionUseBatch_triggered()
-{
-    QString helpHtmlPath = QString(PROJECT_SOURCE_DIR) + "/help/help.html";
-    QUrl url = QUrl::fromLocalFile(helpHtmlPath);
-    url.setFragment(QStringLiteral("三）使用批量处理"));  // 锚点：Typora 导出的 <a name="三）使用批量处理">
-    QDesktopServices::openUrl(url);
-}
+//void MainWindow::on_actionUseBatch_triggered()
+//{
+//    QString helpHtmlPath = QString(PROJECT_SOURCE_DIR) + "/help/help.html";
+//    QString urlStr = QUrl::fromLocalFile(helpHtmlPath).toString() + "#batchuse";
+//    QDesktopServices::openUrl(QUrl(urlStr));
+//}
 
 // ============================================================================
 // 【菜单栏槽函数：打开帮助文档】
 // 信号源：ui->actionHelp_md triggered()信号
-// 流程：资源管理器打开 help 文件夹 + 浏览器打开 help.html（从头显示）
-// 功能：让用户看到 help.md 的文件位置，同时在浏览器中查看渲染后的帮助文档
+// 流程：资源管理器打开 help 文件夹，取消系统默认编辑器打开 help.md动作
+// 功能：显示帮助文件位置
 // ============================================================================
 void MainWindow::on_actionHelp_md_triggered()
 {
-    // 第1步：打开资源管理器，定位到 help 文件夹（让用户知道文件在哪）
+    // 打开资源管理器，定位到 help 文件夹（让用户知道文件在哪）
     QString helpDir = QString(PROJECT_SOURCE_DIR) + "/help";
     QDesktopServices::openUrl(QUrl::fromLocalFile(helpDir));
 
-    // 第2步：调用默认浏览器打开 help.html（不带锚点 = 显示文档开头）
-    // 浏览器完美支持 Typora 导出的 HTML：CSS 样式完整、GIF 动图正常、表格正确渲染
-    QString helpHtmlPath = QString(PROJECT_SOURCE_DIR) + "/help/help.html";
-    QDesktopServices::openUrl(QUrl::fromLocalFile(helpHtmlPath));
+    // 已注释：不再自动打开 help.md
+    //QString helpMdPath = QString(PROJECT_SOURCE_DIR) + "/help/help.md";
+    //if (QFile::exists(helpMdPath)) {
+    //    QDesktopServices::openUrl(QUrl::fromLocalFile(helpMdPath));
+    //}
 }
 
 
